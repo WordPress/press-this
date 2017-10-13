@@ -1,0 +1,12 @@
+{
+  "name": "press-this",
+  "version": "1.0.0",
+  "description": "A little tool that lets you grab bits of the web and create new posts with ease.",
+  "repository": "kraftbj/press-this",
+  "author": "WordPress Contributors",
+  "license": "GPL-2.0+",
+  "bugs": {
+    "url": "https://github.com/kraftbj/press-this/issues"
+  },
+  "homepage": "https://github.com/kraftbj/press-this#readme"
+}
