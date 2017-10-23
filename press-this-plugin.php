@@ -52,13 +52,13 @@ function wp_ajax_press_this_plugin_add_category() {
 function press_this_tool_box() {
 	if ( current_user_can('edit_posts') ) { ?>
 		<div class="card pressthis">
-			<h2><?php _e('Press This') ?></h2>
-			<p><?php _e( 'Press This is a little tool that lets you grab bits of the web and create new posts with ease.' ); ?>
-				<?php _e( 'It will even allow you to choose from images or videos included on the page and use them in your post.' ); ?>
-				<?php _e( 'Use Press This as a quick and lightweight way to highlight another page on the web.' ); ?></p>
+			<h2><?php _e('Press This', 'press-this') ?></h2>
+			<p><?php _e( 'Press This is a little tool that lets you grab bits of the web and create new posts with ease.', 'press-this' ); ?>
+				<?php _e( 'It will even allow you to choose from images or videos included on the page and use them in your post.', 'press-this' ); ?>
+				<?php _e( 'Use Press This as a quick and lightweight way to highlight another page on the web.', 'press-this' ); ?></p>
 
-			<p><a href="<?php echo htmlspecialchars( admin_url( 'press-this.php' ) ); ?>"><?php _e( 'Open Press This' ); ?></a>
-				<?php _e( 'then add it to your device&#8217;s bookmarks or home screen.' ); ?></p>
+			<p><a href="<?php echo htmlspecialchars( admin_url( 'press-this.php' ) ); ?>"><?php _e( 'Open Press This', 'press-this' ); ?></a>
+				<?php _e( 'then add it to your device&#8217;s bookmarks or home screen.', 'press-this' ); ?></p>
 		</div>
 	<?php }
 }
