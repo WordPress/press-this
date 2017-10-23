@@ -50,4 +50,5 @@ module.exports = function( grunt ) {
 	});
 
 	grunt.loadNpmTasks( 'grunt-wp-i18n' );
+	grunt.loadNpmTasks( 'grunt-checktextdomain' );
 };

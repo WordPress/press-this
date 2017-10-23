@@ -13,6 +13,7 @@
   },
   "homepage": "https://github.com/WordPress/press-this#readme",
   "devDependencies": {
+    "grunt-checktextdomain": "^1.0.1",
     "grunt-wp-i18n": "^1.0.0"
   }
 }
