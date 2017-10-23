@@ -18,7 +18,7 @@ Use Press This as a quick and lightweight way to highlight another page on the w
 
 == Contributing ==
 
-Bugs and PRs can be submitted via https://github.com/kraftbj/press-this for now.
+Bugs and PRs can be submitted via https://github.com/WordPress/press-this .
 
 == Changelog ==
 
