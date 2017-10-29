@@ -1292,6 +1292,12 @@ class WP_Press_This_Plugin {
 		wp_enqueue_script( 'json2' );
 		wp_enqueue_script( 'editor' );
 
+		// Localize API plugin settings and schema.
+		$api_settings = array(
+			'url'          => esc_url_raw( get_rest_url() . 'wp/v2/' ),
+			'nonce'        => wp_create_nonce( 'wp_rest' ),
+		);
+		wp_localize_script( 'press-this', 'wpApi', $api_settings );
 		wp_localize_script( 'press-this', 'pressThisL10n', array(
 			'newPost' => __( 'Title' ),
 			'serverError' => __( 'Connection lost or the server is busy. Please try again later.' ),
