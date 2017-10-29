@@ -62,3 +62,56 @@ function press_this_tool_box() {
 		</div>
 	<?php }
 }
+
+/**
+* Filter Press This posts before returning from the API.
+*
+*
+* @param WP_REST_Response  $response   The response object.
+* @param WP_Post           $post       The original post.
+* @param WP_REST_Request   $request    Request used to generate the response.
+*/
+function press_this_prepare_press_this_response( $response, $post, $request ) {
+
+	$attributes = $request->get_attributes();
+	$params = $request->get_query_params();
+
+	// Only modify Quick Press responses.
+	if ( ! isset( $params['press-this-post-save'] ) ) {
+		return $response;
+	}
+
+	// Match the existing ajax handler logic.
+	$forceRedirect = false;
+
+	if ( 'publish' === get_post_status( $post->ID ) ) {
+		$redirect = get_post_permalink( $post->ID );
+	} elseif ( isset( $params['pt-force-redirect'] ) && $params['pt-force-redirect'] === 'true' ) {
+		$forceRedirect = true;
+		$redirect = get_edit_post_link( $post->ID, 'js' );
+	} else {
+		$redirect = false;
+	}
+
+	/**
+	 * Filters the URL to redirect to when Press This saves.
+	 *
+	 * @since 4.2.0
+	 *
+	 * @param string $url      Redirect URL. If `$status` is 'publish', this will be the post permalink.
+	 *                         Otherwise, the default is false resulting in no redirect.
+	 * @param int    $post->ID Post ID.
+	 * @param string $status   Post status.
+	 */
+	$redirect = apply_filters( 'press_this_save_redirect', $redirect, $post->ID, $post->post_status );
+
+	if ( $redirect ) {
+		$response->data['redirect'] = $redirect;
+		$response->data['force'] = $forceRedirect;
+	} else {
+		$response->data['postSaved'] = true;
+	}
+
+	return $response;
+}
+add_filter( 'rest_prepare_post', 'press_this_prepare_press_this_response', 10, 3 );
