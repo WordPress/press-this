@@ -115,3 +115,38 @@ function press_this_prepare_press_this_response( $response, $post, $request ) {
 	return $response;
 }
 add_filter( 'rest_prepare_post', 'press_this_prepare_press_this_response', 10, 3 );
+
+/**
+ * Filter Press This posts before they are inserted into the database.
+ *
+ * @param stdClass        $prepared_post An object representing a single post prepared
+ *                                       for inserting or updating the database.
+ * @param WP_REST_Request $request       Request object.
+ */
+function press_this_pre_insert_press_this_post( $prepared_post, $request ) {
+
+	// Only modify Quick Press posts.
+	if ( ! isset( $request->data['press-this-post-save'] ) ) {
+		return $prepared_post;
+	}
+
+	$post_data = $prepared_post->to_array();
+	$press_this = new WP_Press_This_Plugin();
+
+	// Side load images for this post.
+	$post_data['post_content'] = $press_this->side_load_images( $post_id, $post_data['post_content'] );
+
+	/**
+	 * Filters the post data of a Press This post before saving/updating.
+	 *
+	 * The {@see 'side_load_images'} action has already run at this point.
+	 *
+	 * @since 4.5.0
+	 *
+	 * @param array $post_data The post data.
+	 */
+	$post_data = apply_filters( 'press_this_save_post', $post_data );
+
+	return $post_data;
+ }
+ add_filter( 'rest_pre_insert_post', 'press_this_pre_insert_press_this_post', 10, 2 );
