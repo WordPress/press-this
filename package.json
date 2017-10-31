@@ -2,11 +2,18 @@
   "name": "press-this",
   "version": "1.0.0",
   "description": "A little tool that lets you grab bits of the web and create new posts with ease.",
-  "repository": "kraftbj/press-this",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WordPress/press-this.git"
+  },
   "author": "WordPress Contributors",
   "license": "GPL-2.0+",
   "bugs": {
-    "url": "https://github.com/kraftbj/press-this/issues"
+    "url": "https://github.com/WordPress/press-this/issues"
   },
-  "homepage": "https://github.com/kraftbj/press-this#readme"
+  "homepage": "https://github.com/WordPress/press-this#readme",
+  "devDependencies": {
+    "grunt-checktextdomain": "^1.0.1",
+    "grunt-wp-i18n": "^1.0.0"
+  }
 }
