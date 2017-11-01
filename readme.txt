@@ -1,10 +1,10 @@
 === Press This ===
-Contributors: kraftbj
+Contributors: kraftbj, wordpressdotorg
 Donate link: http://wordpressfoundation.org/donate/
 Tags: post, quick-post, photo-post
 Requires at least: 4.9
 Tested up to: 4.9
-Stable tag: 0.2.1
+Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -23,4 +23,4 @@ Bugs and PRs can be submitted via https://github.com/WordPress/press-this .
 == Changelog ==
 
 = 1.0 =
-* When Tagged: Initial release
+* Initial release, extracted from Core.
