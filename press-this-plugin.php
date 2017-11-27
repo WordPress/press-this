@@ -62,3 +62,59 @@ function press_this_tool_box() {
 		</div>
 	<?php }
 }
+
+/**
+ * Retrieves the Press This bookmarklet link.
+ *
+ * @since Core/2.6.0
+ *
+ * @global bool $is_IE Whether the browser matches an Internet Explorer user agent.
+ */
+function press_this_get_shortcut_link() {
+	global $is_IE;
+
+	include( plugin_dir_path( __FILE__ ) . 'class-wp-press-this-plugin.php' );
+
+	$link = '';
+
+	if ( $is_IE ) {
+		/*
+		 * Return the old/shorter bookmarklet code for MSIE 8 and lower,
+		 * since they only support a max length of ~2000 characters for
+		 * bookmark[let] URLs, which is way to small for our smarter one.
+		 * Do update the version number so users do not get the "upgrade your
+		 * bookmarklet" notice when using PT in those browsers.
+		 */
+		$ua = $_SERVER['HTTP_USER_AGENT'];
+
+		if ( ! empty( $ua ) && preg_match( '/\bMSIE (\d)/', $ua, $matches ) && (int) $matches[1] <= 8 ) {
+			$url = wp_json_encode( admin_url( 'press-this.php' ) );
+
+			$link = 'javascript:var d=document,w=window,e=w.getSelection,k=d.getSelection,x=d.selection,' .
+				's=(e?e():(k)?k():(x?x.createRange().text:0)),f=' . $url . ',l=d.location,e=encodeURIComponent,' .
+				'u=f+"?u="+e(l.href)+"&t="+e(d.title)+"&s="+e(s)+"&v=' . WP_Press_This_Plugin::VERSION . '";' .
+				'a=function(){if(!w.open(u,"t","toolbar=0,resizable=1,scrollbars=1,status=1,width=600,height=700"))l.href=u;};' .
+				'if(/Firefox/.test(navigator.userAgent))setTimeout(a,0);else a();void(0)';
+		}
+	}
+
+	if ( empty( $link ) ) {
+		$src = @file_get_contents( plugin_dir_path( __FILE__ ) . 'assets/bookmarklet.min.js' );
+
+		if ( $src ) {
+			$url = wp_json_encode( admin_url( 'press-this.php' ) . '?v=' . WP_Press_This_Plugin::VERSION );
+			$link = 'javascript:' . str_replace( 'window.pt_url', $url, $src );
+		}
+	}
+
+	$link = str_replace( array( "\r", "\n", "\t" ),  '', $link );
+
+	/**
+	 * Filters the Press This bookmarklet link.
+	 *
+	 * @since 2.6.0
+	 *
+	 * @param string $link The Press This bookmarklet link.
+	 */
+	return apply_filters( 'shortcut_link', $link );
+}
