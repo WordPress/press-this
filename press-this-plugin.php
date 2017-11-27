@@ -59,26 +59,26 @@ function press_this_tool_box() {
 			</p>
 
 			<form>
-				<h3><?php _e( 'Install Press This' ); ?></h3>
-				<h4><?php _e( 'Direct link (best for mobile)' ); ?></h4>
+				<h3><?php _e( 'Install Press This', 'press-this' ); ?></h3>
+				<h4><?php _e( 'Direct link (best for mobile)', 'press-this' ); ?></h4>
 				<p><a href="<?php echo htmlspecialchars( admin_url( 'press-this.php' ) ); ?>"><?php _e( 'Open Press This', 'press-this' ); ?></a>
 					<?php _e( 'then add it to your device&#8217;s bookmarks or home screen.', 'press-this' ); ?>
 				</p>
 
-				<h4><?php _e( 'Bookmarklet' ); ?></h4>
-				<p><?php _e( 'Drag the bookmarklet below to your bookmarks bar. Then, when you&#8217;re on a page you want to share, simply &#8220;press&#8221; it.' ); ?></p>
+				<h4><?php _e( 'Bookmarklet', 'press-this' ); ?></h4>
+				<p><?php _e( 'Drag the bookmarklet below to your bookmarks bar. Then, when you&#8217;re on a page you want to share, simply &#8220;press&#8221; it.', 'press-this' ); ?></p>
 
 				<p class="pressthis-bookmarklet-wrapper">
-					<a class="pressthis-bookmarklet" onclick="return false;" href="<?php echo htmlspecialchars( press_this_get_shortcut_link() ); ?>"><span><?php _e( 'Press This' ); ?></span></a>
+					<a class="pressthis-bookmarklet" onclick="return false;" href="<?php echo htmlspecialchars( press_this_get_shortcut_link() ); ?>"><span><?php _e( 'Press This', 'press-this' ); ?></span></a>
 					<button type="button" class="button pressthis-js-toggle js-show-pressthis-code-wrap" aria-expanded="false" aria-controls="pressthis-code-wrap">
 						<span class="dashicons dashicons-clipboard"></span>
-						<span class="screen-reader-text"><?php _e( 'Copy &#8220;Press This&#8221; bookmarklet code' ) ?></span>
+						<span class="screen-reader-text"><?php _e( 'Copy &#8220;Press This&#8221; bookmarklet code', 'press-this' ) ?></span>
 					</button>
 				</p>
 
 				<div class="hidden js-pressthis-code-wrap clear" id="pressthis-code-wrap">
 					<p id="pressthis-code-desc">
-						<?php _e( 'If you can&#8217;t drag the bookmarklet to your bookmarks, copy the following code and create a new bookmark. Paste the code into the new bookmark&#8217;s URL field.' ) ?>
+						<?php _e( 'If you can&#8217;t drag the bookmarklet to your bookmarks, copy the following code and create a new bookmark. Paste the code into the new bookmark&#8217;s URL field.', 'press-this' ) ?>
 					</p>
 
 					<p>
