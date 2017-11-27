@@ -14,8 +14,8 @@
  */
 class WP_Press_This_Plugin {
 	// Used to trigger the bookmarklet update notice.
-	const VERSION = 8;
-	public $version = 8;
+	const VERSION = 9;
+	public $version = 9;
 
 	private $images = array();
 
@@ -671,9 +671,7 @@ class WP_Press_This_Plugin {
 
 		// Only instantiate the keys we want. Sanity check and sanitize each one.
 		foreach ( array( 'u', 's', 't', 'v' ) as $key ) {
-			if ( ! empty( $_POST[ $key ] ) ) {
-				$value = wp_unslash( $_POST[ $key ] );
-			} else if ( ! empty( $_GET[ $key ] ) ) {
+			if ( ! empty( $_GET[ $key ] ) ) {
 				$value = wp_unslash( $_GET[ $key ] );
 			} else {
 				continue;
@@ -706,61 +704,8 @@ class WP_Press_This_Plugin {
 			 * If no title, _images, _embed, and _meta was passed via $_POST, fetch data from source as fallback,
 			 * making PT fully backward compatible with the older bookmarklet.
 			 */
-			if ( empty( $_POST ) && ! empty( $data['u'] ) ) {
-				if ( isset( $_GET['_wpnonce'] ) && wp_verify_nonce( $_GET['_wpnonce'], 'scan-site' ) ) {
-					$data = $this->source_data_fetch_fallback( $data['u'], $data );
-				} else {
-					$data['errors'] = 'missing nonce';
-				}
-			} else {
-				foreach ( array( '_images', '_embeds' ) as $type ) {
-					if ( empty( $_POST[ $type ] ) ) {
-						continue;
-					}
-
-					$data[ $type ] = array();
-					$items = $this->_limit_array( $_POST[ $type ] );
-
-					foreach ( $items as $key => $value ) {
-						if ( $type === '_images' ) {
-							$value = $this->_limit_img( wp_unslash( $value ) );
-						} else {
-							$value = $this->_limit_embed( wp_unslash( $value ) );
-						}
-
-						if ( ! empty( $value ) ) {
-							$data[ $type ][] = $value;
-						}
-					}
-				}
-
-				foreach ( array( '_meta', '_links' ) as $type ) {
-					if ( empty( $_POST[ $type ] ) ) {
-						continue;
-					}
-
-					$data[ $type ] = array();
-					$items = $this->_limit_array( $_POST[ $type ] );
-
-					foreach ( $items as $key => $value ) {
-						// Sanity check. These are associative arrays, $key is usually things like 'title', 'description', 'keywords', etc.
-						if ( empty( $key ) || strlen( $key ) > 100 ) {
-							continue;
-						}
-
-						if ( $type === '_meta' ) {
-							$value = $this->_limit_string( wp_unslash( $value ) );
-
-							if ( ! empty( $value ) ) {
-								$data = $this->_process_meta_entry( $key, $value, $data );
-							}
-						} else {
-							if ( in_array( $key, array( 'canonical', 'shortlink', 'icon' ), true ) ) {
-								$data[ $type ][ $key ] = $this->_limit_url( wp_unslash( $value ) );
-							}
-						}
-					}
-				}
+			if ( ! empty( $data['u'] ) ) {
+				$data = $this->source_data_fetch_fallback( $data['u'], $data );
 			}
 
 			// Support passing a single image src as `i`
@@ -1214,7 +1159,7 @@ class WP_Press_This_Plugin {
 
 		$wp_version = get_bloginfo( 'version' );
 
-		// Get data, new (POST) and old (GET).
+		// Get data
 		$data = $this->merge_or_fetch_data();
 
 		$post_title = $this->get_suggested_title( $data );
@@ -1399,6 +1344,17 @@ class WP_Press_This_Plugin {
 
 	<div class="wrapper">
 		<div class="editor-wrapper">
+			<div class="alerts" role="alert" aria-live="assertive" aria-relevant="all" aria-atomic="true">
+				<?php
+				if ( isset( $data['v'] ) && $this->version > $data['v'] ) {
+					?>
+					<p class="alert is-notice">
+						<?php printf( __( 'You should upgrade <a href="%s" target="_blank">your bookmarklet</a> to the latest version!' ), admin_url( 'tools.php' ) ); ?>
+					</p>
+					<?php
+				}
+				?>
+			</div>
 			<div id="app-container" class="editor">
 				<span id="title-container-label" class="post-title-placeholder" aria-hidden="true"><?php _e( 'Post title', 'press-this' ); ?></span>
 				<h2 id="title-container" class="post-title" contenteditable="true" spellcheck="true" aria-label="<?php esc_attr_e( 'Post title', 'press-this' ); ?>" tabindex="0"><?php echo esc_html( $post_title ); ?></h2>

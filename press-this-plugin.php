@@ -98,7 +98,7 @@ function press_this_tool_box() {
 						$this.attr( 'aria-expanded', $this.attr( 'aria-expanded' ) === 'false' ? 'true' : 'false' );
 					});
 
-					// Select Press This code when focusing (tabbing) or clicking the textarea. 
+					// Select Press This code when focusing (tabbing) or clicking the textarea.
 					$pressthisCode.on( 'click focus', function() {
 						var self = this;
 						setTimeout( function() { self.select(); }, 50 );
@@ -114,45 +114,20 @@ function press_this_tool_box() {
  * Retrieves the Press This bookmarklet link.
  *
  * @since Core/2.6.0
+ * @since  1.1.0 Bookmarklet code directly in this function.
  *
- * @global bool $is_IE Whether the browser matches an Internet Explorer user agent.
  */
 function press_this_get_shortcut_link() {
-	global $is_IE;
-
 	include( plugin_dir_path( __FILE__ ) . 'class-wp-press-this-plugin.php' );
 
-	$link = '';
+	$url = wp_json_encode( admin_url( 'press-this.php' ) . '?v=' . WP_Press_This_Plugin::VERSION );
 
-	if ( $is_IE ) {
-		/*
-		 * Return the old/shorter bookmarklet code for MSIE 8 and lower,
-		 * since they only support a max length of ~2000 characters for
-		 * bookmark[let] URLs, which is way to small for our smarter one.
-		 * Do update the version number so users do not get the "upgrade your
-		 * bookmarklet" notice when using PT in those browsers.
-		 */
-		$ua = $_SERVER['HTTP_USER_AGENT'];
-
-		if ( ! empty( $ua ) && preg_match( '/\bMSIE (\d)/', $ua, $matches ) && (int) $matches[1] <= 8 ) {
-			$url = wp_json_encode( admin_url( 'press-this.php' ) );
-
-			$link = 'javascript:var d=document,w=window,e=w.getSelection,k=d.getSelection,x=d.selection,' .
-				's=(e?e():(k)?k():(x?x.createRange().text:0)),f=' . $url . ',l=d.location,e=encodeURIComponent,' .
-				'u=f+"?u="+e(l.href)+"&t="+e(d.title)+"&s="+e(s)+"&v=' . WP_Press_This_Plugin::VERSION . '";' .
-				'a=function(){if(!w.open(u,"t","toolbar=0,resizable=1,scrollbars=1,status=1,width=600,height=700"))l.href=u;};' .
-				'if(/Firefox/.test(navigator.userAgent))setTimeout(a,0);else a();void(0)';
-		}
-	}
-
-	if ( empty( $link ) ) {
-		$src = @file_get_contents( plugin_dir_path( __FILE__ ) . 'assets/bookmarklet.min.js' );
-
-		if ( $src ) {
-			$url = wp_json_encode( admin_url( 'press-this.php' ) . '?v=' . WP_Press_This_Plugin::VERSION );
-			$link = 'javascript:' . str_replace( 'window.pt_url', $url, $src );
-		}
-	}
+	// Source can be found in assets/bookmarket.js
+	$link = 'javascript:(function(a,b,c,d){var e,f=a.encodeURIComponent;d&&(/^https?:/.test(c)&&
+		(d+="&u="+f(c)),a.getSelection?e=a.getSelection()+"":b.getSelection?e=b.getSelection()+"":
+		b.selection&&(e=b.selection.createRange().text||""),b.title&&(d+="&t="+f(b.title.substr(0,256))),
+		e&&(d+="&s="+f(e.substr(0,512))),top.location.href=d+"&"+(new Date).getTime())})
+		(window,document,top.location.href,' . $url . ');';
 
 	$link = str_replace( array( "\r", "\n", "\t" ),  '', $link );
 
