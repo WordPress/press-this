@@ -33,7 +33,7 @@ add_action( 'tool_box', 'press_this_tool_box' );
  * @since 1.0.0
  */
 function wp_ajax_press_this_plugin_save_post() {
-	include( plugin_dir_path( __FILE__ ) . 'class-wp-press-this-plugin.php' );
+	include_once( plugin_dir_path( __FILE__ ) . 'class-wp-press-this-plugin.php' );
 	$wp_press_this = new WP_Press_This_Plugin();
 	$wp_press_this->save_post();
 }
@@ -44,7 +44,7 @@ function wp_ajax_press_this_plugin_save_post() {
  * @since 1.0.0
  */
 function wp_ajax_press_this_plugin_add_category() {
-	include( plugin_dir_path( __FILE__ ) . 'class-wp-press-this-plugin.php' );
+	include_once( plugin_dir_path( __FILE__ ) . 'class-wp-press-this-plugin.php' );
 	$wp_press_this = new WP_Press_This_Plugin();
 	$wp_press_this->add_category();
 }
@@ -120,7 +120,7 @@ function press_this_tool_box() {
 function press_this_get_shortcut_link() {
 	global $is_IE;
 
-	include( plugin_dir_path( __FILE__ ) . 'class-wp-press-this-plugin.php' );
+	include_once( plugin_dir_path( __FILE__ ) . 'class-wp-press-this-plugin.php' );
 
 	$link = '';
 
