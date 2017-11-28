@@ -13,6 +13,10 @@
  * @since 1.0.0
  */
 class WP_Press_This_Plugin {
+	// Used to trigger the bookmarklet update notice.
+	const VERSION = 8;
+	public $version = 8;
+
 	private $images = array();
 
 	private $embeds = array();
@@ -1194,7 +1198,7 @@ class WP_Press_This_Plugin {
 	public function html() {
 		global $wp_locale;
 
-		if ( empty( $_GET['_wpnonce'] ) || ! wp_verify_nonce( $_GET['_wpnonce'], 'scan-site' ) ) {
+		/*if ( empty( $_GET['_wpnonce'] ) || ! wp_verify_nonce( $_GET['_wpnonce'], 'scan-site' ) ) {
 			foreach ( array( 'u', 's', 't', 'v', '_meta', '_links', '_images', '_embeds' ) as $key ) {
 				if ( ! empty( $_REQUEST[ $key ] ) ) {
 					?>
@@ -1206,7 +1210,7 @@ class WP_Press_This_Plugin {
 					return;
 				}
 			}
-		}
+		}*/
 
 		$wp_version = get_bloginfo( 'version' );
 

@@ -34,7 +34,7 @@ module.exports = function( grunt ) {
 		},
 
 		addtextdomain: {
-			press-this: {
+			pressthis: {
 				options: {
 					textdomain: 'press-this'
 				},
