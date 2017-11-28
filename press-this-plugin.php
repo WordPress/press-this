@@ -5,7 +5,7 @@
  * Plugin Name: Press This
  * Plugin URI:  https://wordpress.org
  * Description: A little tool that lets you grab bits of the web and create new posts with ease.
- * Version:     1.0.0
+ * Version:     1.1.0
  * Author:      WordPress Contributors
  * Author URI:  https://wordpress.org
  * License:     GPL-2.0+
@@ -49,6 +49,11 @@ function wp_ajax_press_this_plugin_add_category() {
 	$wp_press_this->add_category();
 }
 
+/**
+ * Adds metabox on wp-admin/tools.php
+ *
+ * @since 1.0.0
+ */
 function press_this_tool_box() {
 	if ( current_user_can('edit_posts') ) { ?>
 		<div class="card pressthis">
@@ -114,6 +119,7 @@ function press_this_tool_box() {
  * Retrieves the Press This bookmarklet link.
  *
  * @since Core/2.6.0
+ * @since  1.1.0 Added to Press This plugin
  *
  * @global bool $is_IE Whether the browser matches an Internet Explorer user agent.
  */

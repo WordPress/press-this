@@ -3,8 +3,8 @@ Contributors: kraftbj, wordpressdotorg
 Donate link: http://wordpressfoundation.org/donate/
 Tags: post, quick-post, photo-post
 Requires at least: 4.9
-Tested up to: 4.9
-Stable tag: 1.0.0
+Tested up to: 4.9.1
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -22,5 +22,21 @@ Bugs and PRs can be submitted via https://github.com/WordPress/press-this .
 
 == Changelog ==
 
+= 1.1.0 =
+* Restores the bookmarklet functionality previously found in WordPress 4.8 and prior verions.
+
 = 1.0 =
-* Initial release, extracted from Core.
+* Initial release as a plugin. Previously part of WordPress itself.
+
+== Upgrade Notice ==
+
+= 1.1.0 =
+Restores bookmarklet functionality.
+
+== History ==
+
+WordPress, from the earliest days, included some way to bring in snippets from other websites for you to post on your own.
+
+The original "Press It" was removed from WordPress 2.5 and a new "Press This" added in 2.6. It existed pretty much unchanged until WordPress 4.2, which completely refreshed Press This.
+
+In WordPress 4.9, Press This was spun out to a "canonical plugin" -- an official plugin from WordPress.org so sites who wanted to use it could, but streamline more niche functionality out of Core. This was previously done with the Importers.
