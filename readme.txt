@@ -20,6 +20,11 @@ Use Press This as a quick and lightweight way to highlight another page on the w
 
 Bugs and PRs can be submitted via https://github.com/WordPress/press-this .
 
+== Installation ==
+
+1. Install the plugin via your wp-admin dashboard via Plugins->Add New as normal.
+2. Visit the Tools page of wp-admin for additional installation steps.
+
 == Changelog ==
 
 = 1.1.1 =
