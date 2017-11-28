@@ -4,7 +4,7 @@ Donate link: http://wordpressfoundation.org/donate/
 Tags: post, quick-post, photo-post
 Requires at least: 4.9
 Tested up to: 4.9.1
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -22,6 +22,9 @@ Bugs and PRs can be submitted via https://github.com/WordPress/press-this .
 
 == Changelog ==
 
+= 1.1.1 =
+* Corrects an issue with the packaging of the plugin for SVN.
+
 = 1.1.0 =
 * Restores the bookmarklet functionality previously found in WordPress 4.8 and prior verions.
 
@@ -30,7 +33,7 @@ Bugs and PRs can be submitted via https://github.com/WordPress/press-this .
 
 == Upgrade Notice ==
 
-= 1.1.0 =
+= 1.1.1 =
 Restores bookmarklet functionality.
 
 == History ==

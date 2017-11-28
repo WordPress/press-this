@@ -5,7 +5,7 @@
  * Plugin Name: Press This
  * Plugin URI:  https://wordpress.org
  * Description: A little tool that lets you grab bits of the web and create new posts with ease.
- * Version:     1.1.0
+ * Version:     1.1.1
  * Author:      WordPress Contributors
  * Author URI:  https://wordpress.org
  * License:     GPL-2.0+
