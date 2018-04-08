@@ -600,7 +600,7 @@ class WP_Press_This_Plugin {
 		
 		if ( preg_match_all('/<title>(.*?)<\/title>/', $source_content, $matches) ) {
 			// this probably needs to be a bit more robust
-			$data['_title'] = $matches[1][0];
+			$data['_title'] = $this->_limit_string( $matches[1][0] );
 		}
 
 		// Fetch and gather <img> data.
