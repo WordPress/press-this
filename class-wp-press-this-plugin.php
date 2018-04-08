@@ -311,12 +311,13 @@ class WP_Press_This_Plugin {
 				'property' => true,
 				'name'     => true,
 				'content'  => true,
-			)
+			),
+			'title' => array()
 		);
 
 		$source_content = wp_remote_retrieve_body( $remote_url );
 		$source_content = wp_kses( $source_content, $allowed_elements );
-
+		
 		return $source_content;
 	}
 
@@ -568,7 +569,7 @@ class WP_Press_This_Plugin {
 		if ( is_wp_error( $source_content ) ) {
 			return array( 'errors' => $source_content->get_error_messages() );
 		}
-
+		
 		// Fetch and gather <meta> data first, so discovered media is offered 1st to user.
 		if ( empty( $data['_meta'] ) ) {
 			$data['_meta'] = array();
@@ -590,6 +591,16 @@ class WP_Press_This_Plugin {
 					$data = $this->_process_meta_entry( $meta_name, $meta_value, $data );
 				}
 			}
+		}
+		
+		// Fetch and gather <title> data, if title is not in the meta data hopefully we can find it here
+		if ( empty( $data['_title'] ) ) {
+			$data['_title'] = array();
+		}
+		
+		if ( preg_match_all('/<title>(.*?)<\/title>/', $source_content, $matches) ) {
+			// this probably needs to be a bit more robust
+        	$data['_title'] = $matches[1][0];
 		}
 
 		// Fetch and gather <img> data.
@@ -1070,6 +1081,8 @@ class WP_Press_This_Plugin {
 			} else if ( ! empty( $data['_meta']['application-name'] ) ) {
 				$name = $data['_meta']['application-name'];
 			}
+		} elseif ( ! empty( $data['_title'] ) ) {
+			$name = $data['_title'];
 		}
 
 		return $name;
