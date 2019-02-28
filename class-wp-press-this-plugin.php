@@ -1141,9 +1141,9 @@ class WP_Press_This_Plugin {
 				$default_html['quote'] = '<blockquote>%1$s</blockquote>';
 			}
 		} else {
-			$default_html['quote'] = '<blockquote>%1$s</blockquote>';
-			$default_html['link'] = '<p>' . _x( 'Source:', 'Used in Press This to indicate where the content comes from.', 'press-this' ) .
-				' <em><a href="%1$s">%2$s</a></em></p>';
+			$default_html['quote'] = '<blockquote>%1$s<p>';
+			$default_html['link'] = '<p><cite>' . _x( 'Source:', 'Used in Press This to indicate where the content comes from.', 'press-this' ) .
+				' <em><a href="%1$s">%2$s</a></em></cite></p></blockquote>';
 		}
 
 		/**
