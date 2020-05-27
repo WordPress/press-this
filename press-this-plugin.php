@@ -23,17 +23,17 @@
  *
  */
 
-add_action( 'wp_ajax_press-this-plugin-save-post', 'wp_ajax_press_this_plugin_save_post');
+add_action( 'wp_ajax_press-this-plugin-save-post', 'wp_ajax_press_this_plugin_save_post' );
 add_action( 'wp_ajax_press-this-plugin-add-category', 'wp_ajax_press_this_plugin_add_category' );
 add_action( 'tool_box', 'press_this_tool_box' );
 
  /**
- * Ajax handler for saving a post from Press This.
- *
- * @since 1.0.0
- */
+  * Ajax handler for saving a post from Press This.
+  *
+  * @since 1.0.0
+  */
 function wp_ajax_press_this_plugin_save_post() {
-	include_once( plugin_dir_path( __FILE__ ) . 'class-wp-press-this-plugin.php' );
+	include_once plugin_dir_path( __FILE__ ) . 'class-wp-press-this-plugin.php';
 	$wp_press_this = new WP_Press_This_Plugin();
 	$wp_press_this->save_post();
 }
@@ -44,7 +44,7 @@ function wp_ajax_press_this_plugin_save_post() {
  * @since 1.0.0
  */
 function wp_ajax_press_this_plugin_add_category() {
-	include_once( plugin_dir_path( __FILE__ ) . 'class-wp-press-this-plugin.php' );
+	include_once plugin_dir_path( __FILE__ ) . 'class-wp-press-this-plugin.php';
 	$wp_press_this = new WP_Press_This_Plugin();
 	$wp_press_this->add_category();
 }
@@ -55,9 +55,9 @@ function wp_ajax_press_this_plugin_add_category() {
  * @since 1.0.0
  */
 function press_this_tool_box() {
-	if ( current_user_can('edit_posts') ) { ?>
+	if ( current_user_can( 'edit_posts' ) ) { ?>
 		<div class="card pressthis">
-			<h2><?php _e('Press This', 'press-this') ?></h2>
+			<h2><?php _e( 'Press This', 'press-this' ); ?></h2>
 			<p><?php _e( 'Press This is a little tool that lets you grab bits of the web and create new posts with ease.', 'press-this' ); ?>
 				<?php _e( 'It will even allow you to choose from images or videos included on the page and use them in your post.', 'press-this' ); ?>
 				<?php _e( 'Use Press This as a quick and lightweight way to highlight another page on the web.', 'press-this' ); ?>
@@ -77,13 +77,13 @@ function press_this_tool_box() {
 					<a class="pressthis-bookmarklet" onclick="return false;" href="<?php echo htmlspecialchars( press_this_get_shortcut_link() ); ?>"><span><?php _e( 'Press This', 'press-this' ); ?></span></a>
 					<button type="button" class="button pressthis-js-toggle js-show-pressthis-code-wrap" aria-expanded="false" aria-controls="pressthis-code-wrap">
 						<span class="dashicons dashicons-clipboard"></span>
-						<span class="screen-reader-text"><?php _e( 'Copy &#8220;Press This&#8221; bookmarklet code', 'press-this' ) ?></span>
+						<span class="screen-reader-text"><?php _e( 'Copy &#8220;Press This&#8221; bookmarklet code', 'press-this' ); ?></span>
 					</button>
 				</p>
 
 				<div class="hidden js-pressthis-code-wrap clear" id="pressthis-code-wrap">
 					<p id="pressthis-code-desc">
-						<?php _e( 'If you can&#8217;t drag the bookmarklet to your bookmarks, copy the following code and create a new bookmark. Paste the code into the new bookmark&#8217;s URL field.', 'press-this' ) ?>
+						<?php _e( 'If you can&#8217;t drag the bookmarklet to your bookmarks, copy the following code and create a new bookmark. Paste the code into the new bookmark&#8217;s URL field.', 'press-this' ); ?>
 					</p>
 
 					<p>
@@ -112,7 +112,8 @@ function press_this_tool_box() {
 				</script>
 			</form>
 		</div>
-	<?php }
+		<?php
+	}
 }
 
 /**
@@ -126,7 +127,7 @@ function press_this_tool_box() {
 function press_this_get_shortcut_link() {
 	global $is_IE;
 
-	include_once( plugin_dir_path( __FILE__ ) . 'class-wp-press-this-plugin.php' );
+	include_once plugin_dir_path( __FILE__ ) . 'class-wp-press-this-plugin.php';
 
 	$link = '';
 
@@ -155,12 +156,12 @@ function press_this_get_shortcut_link() {
 		$src = @file_get_contents( plugin_dir_path( __FILE__ ) . 'assets/bookmarklet.min.js' );
 
 		if ( $src ) {
-			$url = wp_json_encode( admin_url( 'press-this.php' ) . '?v=' . WP_Press_This_Plugin::VERSION );
+			$url  = wp_json_encode( admin_url( 'press-this.php' ) . '?v=' . WP_Press_This_Plugin::VERSION );
 			$link = 'javascript:' . str_replace( 'window.pt_url', $url, $src );
 		}
 	}
 
-	$link = str_replace( array( "\r", "\n", "\t" ),  '', $link );
+	$link = str_replace( array( "\r", "\n", "\t" ), '', $link );
 
 	/**
 	 * Filters the Press This bookmarklet link.
