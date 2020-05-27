@@ -553,7 +553,7 @@ class WP_Press_This_Plugin {
 						$data['_embeds'] = array();
 					}
 
-					if ( ! empty( $meta_value ) && ! in_array( $meta_value, $data['_embeds'] ) ) {
+					if ( ! empty( $meta_value ) && ! in_array( $meta_value, $data['_embeds'], true ) ) {
 						$data['_embeds'][] = $meta_value;
 					}
 
@@ -570,7 +570,7 @@ class WP_Press_This_Plugin {
 						$data['_images'] = array();
 					}
 
-					if ( ! empty( $meta_value ) && ! in_array( $meta_value, $data['_images'] ) ) {
+					if ( ! empty( $meta_value ) && ! in_array( $meta_value, $data['_images'], true ) ) {
 						$data['_images'][] = $meta_value;
 					}
 
@@ -641,7 +641,7 @@ class WP_Press_This_Plugin {
 
 				if ( preg_match( '/src=(\'|")([^\'"]+)\\1/i', $value, $new_matches ) ) {
 					$src = $this->limit_img( $new_matches[2] );
-					if ( ! empty( $src ) && ! in_array( $src, $data['_images'] ) ) {
+					if ( ! empty( $src ) && ! in_array( $src, $data['_images'], true ) ) {
 						$data['_images'][] = $src;
 					}
 				}
@@ -660,7 +660,7 @@ class WP_Press_This_Plugin {
 				if ( preg_match( '/src=(\'|")([^\'"]+)\\1/', $value, $new_matches ) ) {
 					$src = $this->limit_embed( $new_matches[2] );
 
-					if ( ! empty( $src ) && ! in_array( $src, $data['_embeds'] ) ) {
+					if ( ! empty( $src ) && ! in_array( $src, $data['_embeds'], true ) ) {
 						$data['_embeds'][] = $src;
 					}
 				}
@@ -855,7 +855,7 @@ class WP_Press_This_Plugin {
 				}
 
 				// Add in the current one if it isn't there yet, in case the current theme doesn't support it.
-				if ( $post_format && ! in_array( $post_format, $post_formats[0] ) ) {
+				if ( $post_format && ! in_array( $post_format, $post_formats[0], true ) ) {
 					$post_formats[0][] = $post_format;
 				}
 
@@ -1020,7 +1020,7 @@ class WP_Press_This_Plugin {
 			foreach ( $data['_embeds'] as $src ) {
 				$prot_relative_src = preg_replace( '/^https?:/', '', $src );
 
-				if ( in_array( $prot_relative_src, $this->embeds ) ) {
+				if ( in_array( $prot_relative_src, $this->embeds, true ) ) {
 					continue;
 				}
 
@@ -1051,7 +1051,7 @@ class WP_Press_This_Plugin {
 
 				$prot_relative_src = preg_replace( '/^https?:/', '', $src );
 
-				if ( in_array( $prot_relative_src, $this->images ) ||
+				if ( in_array( $prot_relative_src, $this->images, true ) ||
 					( false !== strpos( $src, 'avatar' ) && count( $this->images ) > 15 ) ) {
 					// Skip: already selected or some type of avatar and we've already gathered more than 15 images.
 					continue;
