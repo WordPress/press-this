@@ -194,12 +194,12 @@ class WP_Press_This_Plugin {
 				}
 			}
 
-			$forceRedirect = false;
+			$force_redirect = false;
 
 			if ( 'publish' === get_post_status( $post_id ) ) {
 				$redirect = get_post_permalink( $post_id );
 			} elseif ( isset( $_POST['pt-force-redirect'] ) && $_POST['pt-force-redirect'] === 'true' ) {
-				$forceRedirect = true;
+				$force_redirect = true;
 				$redirect      = get_edit_post_link( $post_id, 'js' );
 			} else {
 				$redirect = false;
@@ -221,7 +221,7 @@ class WP_Press_This_Plugin {
 				wp_send_json_success(
 					array(
 						'redirect' => $redirect,
-						'force'    => $forceRedirect,
+						'force'    => $force_redirect,
 					)
 				);
 			} else {
@@ -360,7 +360,7 @@ class WP_Press_This_Plugin {
 	 * @param array $value Array to limit.
 	 * @return array Original array if fewer than 50 values, limited array, empty array otherwise.
 	 */
-	private function _limit_array( $value ) {
+	private function limit_array( $value ) {
 		if ( is_array( $value ) ) {
 			if ( count( $value ) > 50 ) {
 				return array_slice( $value, 0, 50 );
@@ -383,7 +383,7 @@ class WP_Press_This_Plugin {
 	 *                         if fewer than 5,000 characters, a truncated version, otherwise an
 	 *                         empty string.
 	 */
-	private function _limit_string( $value ) {
+	private function limit_string( $value ) {
 		$return = '';
 
 		if ( is_numeric( $value ) || is_bool( $value ) ) {
@@ -411,7 +411,7 @@ class WP_Press_This_Plugin {
 	 * @param string $url URL to check for length and validity.
 	 * @return string Escaped URL if of valid length (< 2048) and makeup. Empty string otherwise.
 	 */
-	private function _limit_url( $url ) {
+	private function limit_url( $url ) {
 		if ( ! is_string( $url ) ) {
 			return '';
 		}
@@ -451,8 +451,8 @@ class WP_Press_This_Plugin {
 	 * @param string $src Image source URL.
 	 * @return string If not matched an excluded URL type, the original URL, empty string otherwise.
 	 */
-	private function _limit_img( $src ) {
-		$src = $this->_limit_url( $src );
+	private function limit_img( $src ) {
+		$src = $this->limit_url( $src );
 
 		if ( preg_match( '!/ad[sx]?/!i', $src ) ) {
 			// Ads.
@@ -498,8 +498,8 @@ class WP_Press_This_Plugin {
 	 * @param string $src Embed source URL.
 	 * @return string If not from a supported provider, an empty string. Otherwise, a reformatted embed URL.
 	 */
-	private function _limit_embed( $src ) {
-		$src = $this->_limit_url( $src );
+	private function limit_embed( $src ) {
+		$src = $this->limit_url( $src );
 
 		if ( empty( $src ) ) {
 			return '';
@@ -539,7 +539,7 @@ class WP_Press_This_Plugin {
 	 * @param array  $data       Associative array of source data.
 	 * @return array Processed data array.
 	 */
-	private function _process_meta_entry( $meta_name, $meta_value, $data ) {
+	private function process_meta_entry( $meta_name, $meta_value, $data ) {
 		if ( preg_match( '/:?(title|description|keywords|site_name)$/', $meta_name ) ) {
 			$data['_meta'][ $meta_name ] = $meta_value;
 		} else {
@@ -547,7 +547,7 @@ class WP_Press_This_Plugin {
 				case 'og:url':
 				case 'og:video':
 				case 'og:video:secure_url':
-					$meta_value = $this->_limit_embed( $meta_value );
+					$meta_value = $this->limit_embed( $meta_value );
 
 					if ( ! isset( $data['_embeds'] ) ) {
 						$data['_embeds'] = array();
@@ -564,7 +564,7 @@ class WP_Press_This_Plugin {
 				case 'twitter:image0':
 				case 'twitter:image:src':
 				case 'twitter:image':
-					$meta_value = $this->_limit_img( $meta_value );
+					$meta_value = $this->limit_img( $meta_value );
 
 					if ( ! isset( $data['_images'] ) ) {
 						$data['_images'] = array();
@@ -607,19 +607,19 @@ class WP_Press_This_Plugin {
 		}
 
 		if ( preg_match_all( '/<meta [^>]+>/', $source_content, $matches ) ) {
-			$items = $this->_limit_array( $matches[0] );
+			$items = $this->limit_array( $matches[0] );
 
 			foreach ( $items as $value ) {
 				if ( preg_match( '/(property|name)="([^"]+)"[^>]+content="([^"]+)"/', $value, $new_matches ) ) {
-					$meta_name  = $this->_limit_string( $new_matches[2] );
-					$meta_value = $this->_limit_string( $new_matches[3] );
+					$meta_name  = $this->limit_string( $new_matches[2] );
+					$meta_value = $this->limit_string( $new_matches[3] );
 
 					// Sanity check. $key is usually things like 'title', 'description', 'keywords', etc.
 					if ( strlen( $meta_name ) > 100 ) {
 						continue;
 					}
 
-					$data = $this->_process_meta_entry( $meta_name, $meta_value, $data );
+					$data = $this->process_meta_entry( $meta_name, $meta_value, $data );
 				}
 			}
 		}
@@ -630,7 +630,7 @@ class WP_Press_This_Plugin {
 		}
 
 		if ( preg_match_all( '/<img [^>]+>/', $source_content, $matches ) ) {
-			$items = $this->_limit_array( $matches[0] );
+			$items = $this->limit_array( $matches[0] );
 
 			foreach ( $items as $value ) {
 				if ( ( preg_match( '/width=(\'|")(\d+)\\1/i', $value, $new_matches ) && $new_matches[2] < 256 ) ||
@@ -640,7 +640,7 @@ class WP_Press_This_Plugin {
 				}
 
 				if ( preg_match( '/src=(\'|")([^\'"]+)\\1/i', $value, $new_matches ) ) {
-					$src = $this->_limit_img( $new_matches[2] );
+					$src = $this->limit_img( $new_matches[2] );
 					if ( ! empty( $src ) && ! in_array( $src, $data['_images'] ) ) {
 						$data['_images'][] = $src;
 					}
@@ -654,11 +654,11 @@ class WP_Press_This_Plugin {
 		}
 
 		if ( preg_match_all( '/<iframe [^>]+>/', $source_content, $matches ) ) {
-			$items = $this->_limit_array( $matches[0] );
+			$items = $this->limit_array( $matches[0] );
 
 			foreach ( $items as $value ) {
 				if ( preg_match( '/src=(\'|")([^\'"]+)\\1/', $value, $new_matches ) ) {
-					$src = $this->_limit_embed( $new_matches[2] );
+					$src = $this->limit_embed( $new_matches[2] );
 
 					if ( ! empty( $src ) && ! in_array( $src, $data['_embeds'] ) ) {
 						$data['_embeds'][] = $src;
@@ -673,12 +673,12 @@ class WP_Press_This_Plugin {
 		}
 
 		if ( preg_match_all( '/<link [^>]+>/', $source_content, $matches ) ) {
-			$items = $this->_limit_array( $matches[0] );
+			$items = $this->limit_array( $matches[0] );
 
 			foreach ( $items as $value ) {
 				if ( preg_match( '/rel=["\'](canonical|shortlink|icon)["\']/i', $value, $matches_rel ) && preg_match( '/href=[\'"]([^\'" ]+)[\'"]/i', $value, $matches_url ) ) {
 					$rel = $matches_rel[1];
-					$url = $this->_limit_url( $matches_url[1] );
+					$url = $this->limit_url( $matches_url[1] );
 
 					if ( ! empty( $url ) && empty( $data['_links'][ $rel ] ) ) {
 						$data['_links'][ $rel ] = $url;
@@ -712,13 +712,13 @@ class WP_Press_This_Plugin {
 			}
 
 			if ( 'u' === $key ) {
-				$value = $this->_limit_url( $value );
+				$value = $this->limit_url( $value );
 
 				if ( preg_match( '%^(?:https?:)?//[^/]+%i', $value, $domain_match ) ) {
 					$this->domain = $domain_match[0];
 				}
 			} else {
-				$value = $this->_limit_string( $value );
+				$value = $this->limit_string( $value );
 			}
 
 			if ( ! empty( $value ) ) {
@@ -751,13 +751,13 @@ class WP_Press_This_Plugin {
 					}
 
 					$data[ $type ] = array();
-					$items         = $this->_limit_array( $_POST[ $type ] );
+					$items         = $this->limit_array( $_POST[ $type ] );
 
 					foreach ( $items as $key => $value ) {
 						if ( $type === '_images' ) {
-							$value = $this->_limit_img( wp_unslash( $value ) );
+							$value = $this->limit_img( wp_unslash( $value ) );
 						} else {
-							$value = $this->_limit_embed( wp_unslash( $value ) );
+							$value = $this->limit_embed( wp_unslash( $value ) );
 						}
 
 						if ( ! empty( $value ) ) {
@@ -772,7 +772,7 @@ class WP_Press_This_Plugin {
 					}
 
 					$data[ $type ] = array();
-					$items         = $this->_limit_array( $_POST[ $type ] );
+					$items         = $this->limit_array( $_POST[ $type ] );
 
 					foreach ( $items as $key => $value ) {
 						// Sanity check. These are associative arrays, $key is usually things like 'title', 'description', 'keywords', etc.
@@ -781,14 +781,14 @@ class WP_Press_This_Plugin {
 						}
 
 						if ( $type === '_meta' ) {
-							$value = $this->_limit_string( wp_unslash( $value ) );
+							$value = $this->limit_string( wp_unslash( $value ) );
 
 							if ( ! empty( $value ) ) {
-								$data = $this->_process_meta_entry( $key, $value, $data );
+								$data = $this->process_meta_entry( $key, $value, $data );
 							}
 						} else {
 							if ( in_array( $key, array( 'canonical', 'shortlink', 'icon' ), true ) ) {
-								$data[ $type ][ $key ] = $this->_limit_url( wp_unslash( $value ) );
+								$data[ $type ][ $key ] = $this->limit_url( wp_unslash( $value ) );
 							}
 						}
 					}
@@ -796,7 +796,7 @@ class WP_Press_This_Plugin {
 			}
 
 			// Support passing a single image src as `i`.
-			if ( ! empty( $_REQUEST['i'] ) && ( $img_src = $this->_limit_img( wp_unslash( $_REQUEST['i'] ) ) ) ) {
+			if ( ! empty( $_REQUEST['i'] ) && ( $img_src = $this->limit_img( wp_unslash( $_REQUEST['i'] ) ) ) ) {
 				if ( empty( $data['_images'] ) ) {
 					$data['_images'] = array( $img_src );
 				} elseif ( ! in_array( $img_src, $data['_images'], true ) ) {
@@ -1012,7 +1012,7 @@ class WP_Press_This_Plugin {
 		$selected_embeds = array();
 
 		// Make sure to add the Pressed page if it's a valid oembed itself.
-		if ( ! empty( $data['u'] ) && $this->_limit_embed( $data['u'] ) ) {
+		if ( ! empty( $data['u'] ) && $this->limit_embed( $data['u'] ) ) {
 			$data['_embeds'][] = $data['u'];
 		}
 
@@ -1179,7 +1179,7 @@ class WP_Press_This_Plugin {
 			'embed' => '',
 		);
 
-		if ( ! empty( $data['u'] ) && $this->_limit_embed( $data['u'] ) ) {
+		if ( ! empty( $data['u'] ) && $this->limit_embed( $data['u'] ) ) {
 			$default_html['embed'] = '<p>[embed]' . $data['u'] . '[/embed]</p>';
 
 			if ( ! empty( $data['s'] ) ) {
@@ -1379,19 +1379,19 @@ class WP_Press_This_Plugin {
 		do_action( 'admin_enqueue_scripts', 'press-this.php' );
 
 		/** This action is documented in wp-admin/admin-header.php */
-		do_action( 'admin_print_styles-press-this.php' );
+		do_action( 'admin_print_styles-press-this.php' ); // phpcs:ignore WordPress.NamingConventions.ValidHookName.UseUnderscores
 
 		/** This action is documented in wp-admin/admin-header.php */
 		do_action( 'admin_print_styles' );
 
 		/** This action is documented in wp-admin/admin-header.php */
-		do_action( 'admin_print_scripts-press-this.php' );
+		do_action( 'admin_print_scripts-press-this.php' ); // phpcs:ignore WordPress.NamingConventions.ValidHookName.UseUnderscores
 
 		/** This action is documented in wp-admin/admin-header.php */
 		do_action( 'admin_print_scripts' );
 
 		/** This action is documented in wp-admin/admin-header.php */
-		do_action( 'admin_head-press-this.php' );
+		do_action( 'admin_head-press-this.php' ); // phpcs:ignore WordPress.NamingConventions.ValidHookName.UseUnderscores
 
 		/** This action is documented in wp-admin/admin-header.php */
 		do_action( 'admin_head' );
@@ -1592,13 +1592,13 @@ class WP_Press_This_Plugin {
 		do_action( 'admin_footer', '' );
 
 		/** This action is documented in wp-admin/admin-footer.php */
-		do_action( 'admin_print_footer_scripts-press-this.php' );
+		do_action( 'admin_print_footer_scripts-press-this.php' ); // phpcs:ignore WordPress.NamingConventions.ValidHookName.UseUnderscores
 
 		/** This action is documented in wp-admin/admin-footer.php */
 		do_action( 'admin_print_footer_scripts' );
 
 		/** This action is documented in wp-admin/admin-footer.php */
-		do_action( 'admin_footer-press-this.php' );
+		do_action( 'admin_footer-press-this.php' ); // phpcs:ignore WordPress.NamingConventions.ValidHookName.UseUnderscores
 		?>
 </body>
 </html>
