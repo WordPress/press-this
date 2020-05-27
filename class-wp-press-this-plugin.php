@@ -200,7 +200,7 @@ class WP_Press_This_Plugin {
 				$redirect = get_post_permalink( $post_id );
 			} elseif ( isset( $_POST['pt-force-redirect'] ) && $_POST['pt-force-redirect'] === 'true' ) {
 				$force_redirect = true;
-				$redirect      = get_edit_post_link( $post_id, 'js' );
+				$redirect       = get_edit_post_link( $post_id, 'js' );
 			} else {
 				$redirect = false;
 			}
@@ -1295,11 +1295,13 @@ class WP_Press_This_Plugin {
 
 		add_filter( 'mce_css', array( $this, 'add_editor_style' ) );
 
-		if ( ! empty( $GLOBALS['is_IE'] ) ) {
-			@header( 'X-UA-Compatible: IE=edge' );
-		}
+		if ( ! headers_sent() ) {
+			if ( ! empty( $GLOBALS['is_IE'] ) ) {
+				header( 'X-UA-Compatible: IE=edge' );
+			}
 
-		@header( 'Content-Type: ' . get_option( 'html_type' ) . '; charset=' . get_option( 'blog_charset' ) );
+			header( 'Content-Type: ' . get_option( 'html_type' ) . '; charset=' . get_option( 'blog_charset' ) );
+		}
 
 		?>
 <!DOCTYPE html>
