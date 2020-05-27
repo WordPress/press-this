@@ -13,14 +13,37 @@
  * @since 1.0.0
  */
 class WP_Press_This_Plugin {
-	// Used to trigger the bookmarklet update notice.
-	const VERSION   = 8;
+	/**
+	 * Used to trigger the bookmarklet update notice.
+	 */
+	const VERSION = 8;
+
+	/**
+	 * Bookmarklet version number.
+	 *
+	 * @var int
+	 */
 	public $version = 8;
 
+	/**
+	 * Images from the Pressed site.
+	 *
+	 * @var array
+	 */
 	private $images = array();
 
+	/**
+	 * Embeds from the Pressed site.
+	 *
+	 * @var array
+	 */
 	private $embeds = array();
 
+	/**
+	 * Domain of the Pressed site.
+	 *
+	 * @var string
+	 */
 	private $domain = '';
 
 	/**
@@ -88,7 +111,7 @@ class WP_Press_This_Plugin {
 			}
 		}
 
-		// Expected slashed
+		// Expected slashed.
 		return wp_slash( $content );
 	}
 
@@ -117,13 +140,13 @@ class WP_Press_This_Plugin {
 			'post_format'  => ( ! empty( $_POST['post_format'] ) ) ? sanitize_text_field( $_POST['post_format'] ) : '',
 		);
 
-		// Only accept categories if the user actually can assign
+		// Only accept categories if the user actually can assign.
 		$category_tax = get_taxonomy( 'category' );
 		if ( current_user_can( $category_tax->cap->assign_terms ) ) {
 			$post_data['post_category'] = ( ! empty( $_POST['post_category'] ) ) ? $_POST['post_category'] : array();
 		}
 
-		// Only accept taxonomies if the user can actually assign
+		// Only accept taxonomies if the user can actually assign.
 		if ( ! empty( $_POST['tax_input'] ) ) {
 			$tax_input = $_POST['tax_input'];
 			foreach ( $tax_input as $tax => $_ti ) {
@@ -136,7 +159,7 @@ class WP_Press_This_Plugin {
 			$post_data['tax_input'] = $tax_input;
 		}
 
-		// Toggle status to pending if user cannot actually publish
+		// Toggle status to pending if user cannot actually publish.
 		if ( ! empty( $_POST['post_status'] ) && 'publish' === $_POST['post_status'] ) {
 			if ( current_user_can( 'publish_posts' ) ) {
 				$post_data['post_status'] = 'publish';
@@ -292,7 +315,7 @@ class WP_Press_This_Plugin {
 			$url,
 			array(
 				'timeout'    => 30,
-				// Use an explicit user-agent for Press This
+				// Use an explicit user-agent for Press This.
 				'user-agent' => 'Press This (WordPress/' . get_bloginfo( 'version' ) . '); ' . get_bloginfo( 'url' ),
 			)
 		);
@@ -395,7 +418,7 @@ class WP_Press_This_Plugin {
 
 		// HTTP 1.1 allows 8000 chars but the "de-facto" standard supported in all current browsers is 2048.
 		if ( strlen( $url ) > 2048 ) {
-			return ''; // Return empty rather than a truncated/invalid URL
+			return ''; // Return empty rather than a truncated/invalid URL.
 		}
 
 		// Does not look like a URL.
@@ -403,7 +426,7 @@ class WP_Press_This_Plugin {
 			return '';
 		}
 
-		// If the URL is root-relative, prepend the protocol and domain name
+		// If the URL is root-relative, prepend the protocol and domain name.
 		if ( $url && $this->domain && preg_match( '%^/[^/]+%', $url ) ) {
 			$url = $this->domain . $url;
 		}
@@ -432,31 +455,31 @@ class WP_Press_This_Plugin {
 		$src = $this->_limit_url( $src );
 
 		if ( preg_match( '!/ad[sx]?/!i', $src ) ) {
-			// Ads
+			// Ads.
 			return '';
 		} elseif ( preg_match( '!(/share-?this[^.]+?\.[a-z0-9]{3,4})(\?.*)?$!i', $src ) ) {
-			// Share-this type button
+			// Share-this type button.
 			return '';
 		} elseif ( preg_match( '!/(spinner|loading|spacer|blank|rss)\.(gif|jpg|png)!i', $src ) ) {
-			// Loaders, spinners, spacers
+			// Loaders, spinners, spacers.
 			return '';
 		} elseif ( preg_match( '!/([^./]+[-_])?(spinner|loading|spacer|blank)s?([-_][^./]+)?\.[a-z0-9]{3,4}!i', $src ) ) {
-			// Fancy loaders, spinners, spacers
+			// Fancy loaders, spinners, spacers.
 			return '';
 		} elseif ( preg_match( '!([^./]+[-_])?thumb[^.]*\.(gif|jpg|png)$!i', $src ) ) {
-			// Thumbnails, too small, usually irrelevant to context
+			// Thumbnails, too small, usually irrelevant to context.
 			return '';
 		} elseif ( false !== stripos( $src, '/wp-includes/' ) ) {
-			// Classic WordPress interface images
+			// Classic WordPress interface images.
 			return '';
 		} elseif ( preg_match( '![^\d]\d{1,2}x\d+\.(gif|jpg|png)$!i', $src ) ) {
-			// Most often tiny buttons/thumbs (< 100px wide)
+			// Most often tiny buttons/thumbs (< 100px wide).
 			return '';
 		} elseif ( preg_match( '!/pixel\.(mathtag|quantserve)\.com!i', $src ) ) {
-			// See mathtag.com and https://www.quantcast.com/how-we-do-it/iab-standard-measurement/how-we-collect-data/
+			// See https://www.quantcast.com/how-we-do-it/iab-standard-measurement/how-we-collect-data/ and mathtag.com.
 			return '';
 		} elseif ( preg_match( '!/[gb]\.gif(\?.+)?$!i', $src ) ) {
-			// WordPress.com stats gif
+			// WordPress.com stats gif.
 			return '';
 		}
 
@@ -483,16 +506,16 @@ class WP_Press_This_Plugin {
 		}
 
 		if ( preg_match( '!//(m|www)\.youtube\.com/(embed|v)/([^?]+)\?.+$!i', $src, $src_matches ) ) {
-			// Embedded Youtube videos (www or mobile)
+			// Embedded Youtube videos (www or mobile).
 			$src = 'https://www.youtube.com/watch?v=' . $src_matches[3];
 		} elseif ( preg_match( '!//player\.vimeo\.com/video/([\d]+)([?/].*)?$!i', $src, $src_matches ) ) {
-			// Embedded Vimeo iframe videos
+			// Embedded Vimeo iframe videos.
 			$src = 'https://vimeo.com/' . (int) $src_matches[1];
 		} elseif ( preg_match( '!//vimeo\.com/moogaloop\.swf\?clip_id=([\d]+)$!i', $src, $src_matches ) ) {
-			// Embedded Vimeo Flash videos
+			// Embedded Vimeo Flash videos.
 			$src = 'https://vimeo.com/' . (int) $src_matches[1];
 		} elseif ( preg_match( '!//(www\.)?dailymotion\.com/embed/video/([^/?]+)([/?].+)?!i', $src, $src_matches ) ) {
-			// Embedded Daily Motion videos
+			// Embedded Daily Motion videos.
 			$src = 'https://www.dailymotion.com/video/' . $src_matches[2];
 		} else {
 			$oembed = _wp_oembed_get_object();
@@ -772,7 +795,7 @@ class WP_Press_This_Plugin {
 				}
 			}
 
-			// Support passing a single image src as `i`
+			// Support passing a single image src as `i`.
 			if ( ! empty( $_REQUEST['i'] ) && ( $img_src = $this->_limit_img( wp_unslash( $_REQUEST['i'] ) ) ) ) {
 				if ( empty( $data['_images'] ) ) {
 					$data['_images'] = array( $img_src );
@@ -870,12 +893,12 @@ class WP_Press_This_Plugin {
 	public function categories_html( $post ) {
 		$taxonomy = get_taxonomy( 'category' );
 
-		// Bail if user cannot assign terms
+		// Bail if user cannot assign terms.
 		if ( ! current_user_can( $taxonomy->cap->assign_terms ) ) {
 			return;
 		}
 
-		// Only show "add" if user can edit terms
+		// Only show "add" if user can edit terms.
 		if ( current_user_can( $taxonomy->cap->edit_terms ) ) {
 			?>
 			<button type="button" class="add-cat-toggle button-link" aria-expanded="false">
@@ -946,7 +969,7 @@ class WP_Press_This_Plugin {
 		?>
 		<div class="tagsdiv" id="post_tag">
 			<div class="jaxtag">
-			<input type="hidden" name="tax_input[post_tag]" class="the-tags" value="<?php echo $esc_tags; // escaped in get_terms_to_edit() ?>">
+			<input type="hidden" name="tax_input[post_tag]" class="the-tags" value="<?php echo $esc_tags; // escaped in get_terms_to_edit(). ?>">
 			<?php
 
 			if ( $user_can_assign_terms ) {
@@ -988,7 +1011,7 @@ class WP_Press_This_Plugin {
 	public function get_embeds( $data ) {
 		$selected_embeds = array();
 
-		// Make sure to add the Pressed page if it's a valid oembed itself
+		// Make sure to add the Pressed page if it's a valid oembed itself.
 		if ( ! empty( $data['u'] ) && $this->_limit_embed( $data['u'] ) ) {
 			$data['_embeds'][] = $data['u'];
 		}
@@ -1234,7 +1257,8 @@ class WP_Press_This_Plugin {
 					return;
 				}
 			}
-		}*/
+		}
+		*/
 
 		$wp_version = get_bloginfo( 'version' );
 
@@ -1248,7 +1272,7 @@ class WP_Press_This_Plugin {
 		// Get site settings array/data.
 		$site_settings = $this->site_settings();
 
-		// Pass the images and embeds
+		// Pass the images and embeds.
 		$images = $this->get_images( $data );
 		$embeds = $this->get_embeds( $data );
 

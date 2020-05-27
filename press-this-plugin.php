@@ -12,8 +12,11 @@
  * License URI: http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  * Text Domain: press-this
  * Domain Path: /languages
+ *
+ * @package wordpress/press-this
  */
- /*
+
+/*
  * This program is free software; you can redistribute it and/or modify it under the terms of the GNU
  * General Public License version 2, as published by the Free Software Foundation.  You may NOT assume
  * that you can use any other version of the GPL.
@@ -27,11 +30,11 @@ add_action( 'wp_ajax_press-this-plugin-save-post', 'wp_ajax_press_this_plugin_sa
 add_action( 'wp_ajax_press-this-plugin-add-category', 'wp_ajax_press_this_plugin_add_category' );
 add_action( 'tool_box', 'press_this_tool_box' );
 
- /**
-  * Ajax handler for saving a post from Press This.
-  *
-  * @since 1.0.0
-  */
+/**
+ * Ajax handler for saving a post from Press This.
+ *
+ * @since 1.0.0
+ */
 function wp_ajax_press_this_plugin_save_post() {
 	include_once plugin_dir_path( __FILE__ ) . 'class-wp-press-this-plugin.php';
 	$wp_press_this = new WP_Press_This_Plugin();
@@ -103,7 +106,7 @@ function press_this_tool_box() {
 						$this.attr( 'aria-expanded', $this.attr( 'aria-expanded' ) === 'false' ? 'true' : 'false' );
 					});
 
-					// Select Press This code when focusing (tabbing) or clicking the textarea. 
+					// Select Press This code when focusing (tabbing) or clicking the textarea.
 					$pressthisCode.on( 'click focus', function() {
 						var self = this;
 						setTimeout( function() { self.select(); }, 50 );
