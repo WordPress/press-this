@@ -198,7 +198,7 @@ class WP_Press_This_Plugin {
 
 			if ( 'publish' === get_post_status( $post_id ) ) {
 				$redirect = get_post_permalink( $post_id );
-			} elseif ( isset( $_POST['pt-force-redirect'] ) && $_POST['pt-force-redirect'] === 'true' ) {
+			} elseif ( isset( $_POST['pt-force-redirect'] ) && 'true' === $_POST['pt-force-redirect'] ) {
 				$force_redirect = true;
 				$redirect       = get_edit_post_link( $post_id, 'js' );
 			} else {
@@ -754,7 +754,7 @@ class WP_Press_This_Plugin {
 					$items         = $this->limit_array( $_POST[ $type ] );
 
 					foreach ( $items as $key => $value ) {
-						if ( $type === '_images' ) {
+						if ( '_images' === $type ) {
 							$value = $this->limit_img( wp_unslash( $value ) );
 						} else {
 							$value = $this->limit_embed( wp_unslash( $value ) );
@@ -780,7 +780,7 @@ class WP_Press_This_Plugin {
 							continue;
 						}
 
-						if ( $type === '_meta' ) {
+						if ( '_meta' === $type ) {
 							$value = $this->limit_string( wp_unslash( $value ) );
 
 							if ( ! empty( $value ) ) {
