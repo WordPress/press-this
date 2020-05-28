@@ -158,7 +158,7 @@ function press_this_get_shortcut_link() {
 	}
 
 	if ( empty( $link ) ) {
-		$src = @file_get_contents( plugin_dir_path( __FILE__ ) . 'assets/bookmarklet.min.js' );
+		$src = @file_get_contents( plugin_dir_path( __FILE__ ) . 'assets/bookmarklet.min.js' ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 
 		if ( $src ) {
 			$url  = wp_json_encode( admin_url( 'press-this.php' ) . '?v=' . WP_Press_This_Plugin::VERSION );
