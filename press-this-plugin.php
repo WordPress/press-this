@@ -26,6 +26,8 @@
  *
  */
 
+define( 'PRESS_THIS__VERSION', '2.0.0-alpha' );
+
 add_action( 'wp_ajax_press-this-plugin-save-post', 'wp_ajax_press_this_plugin_save_post' );
 add_action( 'wp_ajax_press-this-plugin-add-category', 'wp_ajax_press_this_plugin_add_category' );
 add_action( 'tool_box', 'press_this_tool_box' );

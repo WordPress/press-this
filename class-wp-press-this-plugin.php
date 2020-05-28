@@ -1338,11 +1338,11 @@ class WP_Press_This_Plugin {
 
 		wp_enqueue_media( array( 'post' => $post_ID ) );
 		if ( is_rtl() ) {
-			wp_enqueue_style( 'press-this-rtl', plugins_url( 'assets/press-this-rtl.css', __FILE__ ), array( 'buttons' ) );
+			wp_enqueue_style( 'press-this-rtl', plugins_url( 'assets/press-this-rtl.css', __FILE__ ), array( 'buttons' ), PRESS_THIS__VERSION );
 		} else {
-			wp_enqueue_style( 'press-this', plugins_url( 'assets/press-this.css', __FILE__ ), array( 'buttons' ) );
+			wp_enqueue_style( 'press-this', plugins_url( 'assets/press-this.css', __FILE__ ), array( 'buttons' ), PRESS_THIS__VERSION );
 		}
-		wp_enqueue_script( 'press-this', plugins_url( 'assets/press-this.js', __FILE__ ), array( 'jquery', 'tags-box', 'wp-sanitize' ) );
+		wp_enqueue_script( 'press-this', plugins_url( 'assets/press-this.js', __FILE__ ), array( 'jquery', 'tags-box', 'wp-sanitize' ), PRESS_THIS__VERSION );
 		wp_enqueue_script( 'json2' );
 		wp_enqueue_script( 'editor' );
 
