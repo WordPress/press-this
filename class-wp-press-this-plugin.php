@@ -121,7 +121,10 @@ class WP_Press_This_Plugin {
 	 * @since 1.0.0
 	 */
 	public function save_post() {
-		if ( empty( $_POST['post_ID'] ) || ! $post_id = (int) $_POST['post_ID'] ) {
+		// Verify a post ID is set first, then process the nonce since it uses the post ID.
+		$post_id = ( ! empty( $_POST['post_ID'] ) ? (int) $_POST['post_ID'] : null ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+
+		if ( ! $post_id ) {
 			wp_send_json_error( array( 'errorMessage' => __( 'Missing post ID.', 'press-this' ) ) );
 		}
 
@@ -248,7 +251,8 @@ class WP_Press_This_Plugin {
 
 		$parent = isset( $_POST['parent'] ) && (int) $_POST['parent'] > 0 ? (int) $_POST['parent'] : 0;
 		$names  = explode( ',', $_POST['name'] );
-		$added  = $data = array();
+		$added  = array();
+		$data   = array();
 
 		foreach ( $names as $cat_name ) {
 			$cat_name     = trim( $cat_name );
@@ -796,7 +800,8 @@ class WP_Press_This_Plugin {
 			}
 
 			// Support passing a single image src as `i`.
-			if ( ! empty( $_REQUEST['i'] ) && ( $img_src = $this->limit_img( wp_unslash( $_REQUEST['i'] ) ) ) ) {
+			$img_src = $this->limit_img( wp_unslash( $_REQUEST['i'] ) );
+			if ( ! empty( $_REQUEST['i'] ) && ( $img_src ) ) {
 				if ( empty( $data['_images'] ) ) {
 					$data['_images'] = array( $img_src );
 				} elseif ( ! in_array( $img_src, $data['_images'], true ) ) {
@@ -1153,7 +1158,8 @@ class WP_Press_This_Plugin {
 	 * @return string Discovered content, or empty
 	 */
 	public function get_suggested_content( $data ) {
-		$content = $text = '';
+		$content = '';
+		$text    = '';
 
 		if ( ! empty( $data['s'] ) ) {
 			$text = $data['s'];
@@ -1371,9 +1377,8 @@ class WP_Press_This_Plugin {
 		if ( current_theme_supports( 'post-formats' ) && post_type_supports( $post->post_type, 'post-formats' ) ) {
 			$supports_formats = true;
 
-			if ( ! ( $post_format = get_post_format( $post_ID ) ) ) {
-				$post_format = 0;
-			}
+			$post_format = get_post_format( $post_ID );
+			$post_format = ( $post_format ) ? $post_format : 0;
 		}
 
 		/** This action is documented in wp-admin/admin-header.php */
