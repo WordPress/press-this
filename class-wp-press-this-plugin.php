@@ -861,17 +861,16 @@ class WP_Press_This_Plugin {
 
 				?>
 				<div id="post-formats-select">
-				<fieldset><legend class="screen-reader-text"><?php _e( 'Post Formats', 'press-this' ); ?></legend>
+				<fieldset><legend class="screen-reader-text"><?php _eesc_html_e( 'Post Formats', 'press-this' ); ?></legend>
 					<input type="radio" name="post_format" class="post-format" id="post-format-0" value="0" <?php checked( $post_format, '0' ); ?> />
-					<label for="post-format-0" class="post-format-icon post-format-standard"><?php echo get_post_format_string( 'standard' ); ?></label>
+					<label for="post-format-0" class="post-format-icon post-format-standard"><?php echo esc_html( get_post_format_string( 'standard' ) ); ?></label>
 					<?php
 
 					foreach ( $post_formats[0] as $format ) {
-						$attr_format = esc_attr( $format );
 						?>
 						<br />
-						<input type="radio" name="post_format" class="post-format" id="post-format-<?php echo $attr_format; ?>" value="<?php echo $attr_format; ?>" <?php checked( $post_format, $format ); ?> />
-						<label for="post-format-<?php echo $attr_format; ?>" class="post-format-icon post-format-<?php echo $attr_format; ?>"><?php echo esc_html( get_post_format_string( $format ) ); ?></label>
+						<input type="radio" name="post_format" class="post-format" id="post-format-<?php echo esc_attr( $format ); ?>" value="<?php echo esc_attr( $format ); ?>" <?php checked( $post_format, $format ); ?> />
+						<label for="post-format-<?php echo esc_attr( $format ); ?>" class="post-format-icon post-format-<?php echo esc_attr( $format ); ?>"><?php echo esc_html( get_post_format_string( $format ) ); ?></label>
 						<?php
 					}
 
@@ -902,12 +901,12 @@ class WP_Press_This_Plugin {
 		if ( current_user_can( $taxonomy->cap->edit_terms ) ) {
 			?>
 			<button type="button" class="add-cat-toggle button-link" aria-expanded="false">
-				<span class="dashicons dashicons-plus"></span><span class="screen-reader-text"><?php _e( 'Toggle add category', 'press-this' ); ?></span>
+				<span class="dashicons dashicons-plus"></span><span class="screen-reader-text"><?php esc_html_e( 'Toggle add category', 'press-this' ); ?></span>
 			</button>
 			<div class="add-category is-hidden">
-				<label class="screen-reader-text" for="new-category"><?php echo $taxonomy->labels->add_new_item; ?></label>
+				<label class="screen-reader-text" for="new-category"><?php echo esc_html( $taxonomy->labels->add_new_item ); ?></label>
 				<input type="text" id="new-category" class="add-category-name" placeholder="<?php echo esc_attr( $taxonomy->labels->new_item_name ); ?>" value="" aria-required="true">
-				<label class="screen-reader-text" for="new-category-parent"><?php echo $taxonomy->labels->parent_item_colon; ?></label>
+				<label class="screen-reader-text" for="new-category-parent"><?php echo esc_html( $taxonomy->labels->parent_item_colon ); ?></label>
 				<div class="postform-wrapper">
 					<?php
 					wp_dropdown_categories(
@@ -922,7 +921,7 @@ class WP_Press_This_Plugin {
 					);
 					?>
 				</div>
-				<button type="button" class="add-cat-submit"><?php _e( 'Add', 'press-this' ); ?></button>
+				<button type="button" class="add-cat-submit"><?php esc_html_e( 'Add', 'press-this' ); ?></button>
 			</div>
 			<?php
 
@@ -931,7 +930,7 @@ class WP_Press_This_Plugin {
 		<div class="categories-search-wrapper">
 			<input id="categories-search" type="search" class="categories-search" placeholder="<?php esc_attr_e( 'Search categories by name', 'press-this' ); ?>">
 			<label for="categories-search">
-				<span class="dashicons dashicons-search"></span><span class="screen-reader-text"><?php _e( 'Search categories', 'press-this' ); ?></span>
+				<span class="dashicons dashicons-search"></span><span class="screen-reader-text"><?php esc_html_e( 'Search categories', 'press-this' ); ?></span>
 			</label>
 		</div>
 		<div aria-label="<?php esc_attr_e( 'Categories', 'press-this' ); ?>">
@@ -969,20 +968,20 @@ class WP_Press_This_Plugin {
 		?>
 		<div class="tagsdiv" id="post_tag">
 			<div class="jaxtag">
-			<input type="hidden" name="tax_input[post_tag]" class="the-tags" value="<?php echo $esc_tags; // escaped in get_terms_to_edit(). ?>">
+			<input type="hidden" name="tax_input[post_tag]" class="the-tags" value="<?php echo esc_attr( $esc_tags ); ?>">
 			<?php
 
 			if ( $user_can_assign_terms ) {
 				?>
 				<div class="ajaxtag hide-if-no-js">
-					<label class="screen-reader-text" for="new-tag-post_tag"><?php _e( 'Tags', 'press-this' ); ?></label>
+					<label class="screen-reader-text" for="new-tag-post_tag"><?php esc_html_e( 'Tags', 'press-this' ); ?></label>
 					<p>
 						<input type="text" id="new-tag-post_tag" name="newtag[post_tag]" class="newtag form-input-tip" size="16" autocomplete="off" value="" aria-describedby="new-tag-desc" />
-						<button type="button" class="tagadd"><?php _e( 'Add', 'press-this' ); ?></button>
+						<button type="button" class="tagadd"><?php esc_html_e( 'Add', 'press-this' ); ?></button>
 					</p>
 				</div>
 				<p class="howto" id="new-tag-desc">
-					<?php echo $taxonomy->labels->separate_items_with_commas; ?>
+					<?php echo esc_html( $taxonomy->labels->separate_items_with_commas ); ?>
 				</p>
 				<?php
 			}
@@ -995,7 +994,7 @@ class WP_Press_This_Plugin {
 
 		if ( $user_can_assign_terms ) {
 			?>
-			<button type="button" class="button-link tagcloud-link" id="link-post_tag" aria-expanded="false"><?php echo $taxonomy->labels->choose_from_most_used; ?></button>
+			<button type="button" class="button-link tagcloud-link" id="link-post_tag" aria-expanded="false"><?php echo esc_html( $taxonomy->labels->choose_from_most_used ); ?></button>
 			<?php
 		}
 	}
@@ -1323,8 +1322,8 @@ class WP_Press_This_Plugin {
 			pagenow = 'press-this',
 			typenow = 'post',
 			adminpage = 'press-this-php',
-			thousandsSeparator = '<?php echo addslashes( $wp_locale->number_format['thousands_sep'] ); ?>',
-			decimalPoint = '<?php echo addslashes( $wp_locale->number_format['decimal_point'] ); ?>',
+			thousandsSeparator = '<?php echo esc_js( addslashes( $wp_locale->number_format['thousands_sep'] ) ); ?>',
+			decimalPoint = '<?php echo esc_js( addslashes( $wp_locale->number_format['decimal_point'] ) ); ?>',
 			isRtl = <?php echo (int) is_rtl(); ?>;
 	</script>
 
@@ -1412,25 +1411,25 @@ class WP_Press_This_Plugin {
 		$admin_body_classes = apply_filters( 'admin_body_class', '' );
 
 		?>
-<body class="wp-admin wp-core-ui <?php echo $admin_body_classes . ' ' . $admin_body_class; ?>">
+<body class="wp-admin wp-core-ui <?php echo esc_attr( $admin_body_classes . ' ' . $admin_body_class ); ?>">
 	<div id="adminbar" class="adminbar">
 		<h1 id="current-site" class="current-site">
 			<a class="current-site-link" href="<?php echo esc_url( home_url( '/' ) ); ?>" target="_blank" rel="home">
 				<span class="dashicons dashicons-wordpress"></span>
-				<span class="current-site-name"><?php bloginfo( 'name' ); ?></span>
+				<span class="current-site-name"><?php esc_html( get_bloginfo( 'name', 'display' ) ); ?></span>
 			</a>
 		</h1>
 		<button type="button" class="options button-link closed">
 			<span class="dashicons dashicons-tag on-closed"></span>
-			<span class="screen-reader-text on-closed"><?php _e( 'Show post options', 'press-this' ); ?></span>
-			<span aria-hidden="true" class="on-open"><?php _e( 'Done', 'press-this' ); ?></span>
-			<span class="screen-reader-text on-open"><?php _e( 'Hide post options', 'press-this' ); ?></span>
+			<span class="screen-reader-text on-closed"><?php esc_html_e( 'Show post options', 'press-this' ); ?></span>
+			<span aria-hidden="true" class="on-open"><?php esc_html_e( 'Done', 'press-this' ); ?></span>
+			<span class="screen-reader-text on-open"><?php esc_html_e( 'Hide post options', 'press-this' ); ?></span>
 		</button>
 	</div>
 
 	<div id="scanbar" class="scan">
 		<form method="GET">
-			<label for="url-scan" class="screen-reader-text"><?php _e( 'Scan site for content', 'press-this' ); ?></label>
+			<label for="url-scan" class="screen-reader-text"><?php esc_html_e( 'Scan site for content', 'press-this' ); ?></label>
 			<input type="url" name="u" id="url-scan" class="scan-url" value="<?php echo esc_attr( $site_data['u'] ); ?>" placeholder="<?php esc_attr_e( 'Enter a URL to scan', 'press-this' ); ?>" />
 			<input type="submit" name="url-scan-submit" id="url-scan-submit" class="scan-submit" value="<?php esc_attr_e( 'Scan', 'press-this' ); ?>" />
 			<?php wp_nonce_field( 'scan-site' ); ?>
@@ -1438,7 +1437,7 @@ class WP_Press_This_Plugin {
 	</div>
 
 	<form id="pressthis-form" method="post" action="post.php" autocomplete="off">
-		<input type="hidden" name="post_ID" id="post_ID" value="<?php echo $post_ID; ?>" />
+		<input type="hidden" name="post_ID" id="post_ID" value="<?php echo esc_attr( $post_ID ); ?>" />
 		<input type="hidden" name="action" value="press-this-save-post" />
 		<input type="hidden" name="post_status" id="post_status" value="draft" />
 		<input type="hidden" name="wp-preview" id="wp-preview" value="" />
@@ -1454,12 +1453,12 @@ class WP_Press_This_Plugin {
 	<div class="wrapper">
 		<div class="editor-wrapper">
 			<div id="app-container" class="editor">
-				<span id="title-container-label" class="post-title-placeholder" aria-hidden="true"><?php _e( 'Post title', 'press-this' ); ?></span>
+				<span id="title-container-label" class="post-title-placeholder" aria-hidden="true"><?php esc_html_e( 'Post title', 'press-this' ); ?></span>
 				<h2 id="title-container" class="post-title" contenteditable="true" spellcheck="true" aria-label="<?php esc_attr_e( 'Post title', 'press-this' ); ?>" tabindex="0"><?php echo esc_html( $post_title ); ?></h2>
 
 				<div class="media-list-container">
 					<div class="media-list-inner-container">
-						<h2 class="screen-reader-text"><?php _e( 'Suggested media', 'press-this' ); ?></h2>
+						<h2 class="screen-reader-text"><?php esc_html_e( 'Suggested media', 'press-this' ); ?></h2>
 						<ul class="media-list"></ul>
 					</div>
 				</div>
@@ -1502,7 +1501,7 @@ class WP_Press_This_Plugin {
 				<?php if ( $supports_formats ) : ?>
 					<button type="button" class="post-option">
 						<span class="dashicons dashicons-admin-post"></span>
-						<span class="post-option-title"><?php _ex( 'Format', 'post format', 'press-this' ); ?></span>
+						<span class="post-option-title"><?php echo esc_html_x( 'Format', 'post format', 'press-this' ); ?></span>
 						<span class="post-option-contents" id="post-option-post-format"><?php echo esc_html( get_post_format_string( $post_format ) ); ?></span>
 						<span class="dashicons post-option-forward"></span>
 					</button>
@@ -1511,7 +1510,7 @@ class WP_Press_This_Plugin {
 				<?php if ( $show_categories ) : ?>
 					<button type="button" class="post-option">
 						<span class="dashicons dashicons-category"></span>
-						<span class="post-option-title"><?php _e( 'Categories', 'press-this' ); ?></span>
+						<span class="post-option-title"><?php esc_html_e( 'Categories', 'press-this' ); ?></span>
 						<span class="dashicons post-option-forward"></span>
 					</button>
 				<?php endif; ?>
@@ -1519,7 +1518,7 @@ class WP_Press_This_Plugin {
 				<?php if ( $show_tags ) : ?>
 					<button type="button" class="post-option">
 						<span class="dashicons dashicons-tag"></span>
-						<span class="post-option-title"><?php _e( 'Tags', 'press-this' ); ?></span>
+						<span class="post-option-title"><?php esc_html_e( 'Tags', 'press-this' ); ?></span>
 						<span class="dashicons post-option-forward"></span>
 					</button>
 				<?php endif; ?>
@@ -1529,8 +1528,8 @@ class WP_Press_This_Plugin {
 				<div class="setting-modal is-off-screen is-hidden">
 					<button type="button" class="modal-close">
 						<span class="dashicons post-option-back"></span>
-						<span class="setting-title" aria-hidden="true"><?php _ex( 'Format', 'post format', 'press-this' ); ?></span>
-						<span class="screen-reader-text"><?php _e( 'Back to post options', 'press-this' ); ?></span>
+						<span class="setting-title" aria-hidden="true"><?php echo esc_html_x( 'Format', 'post format', 'press-this' ); ?></span>
+						<span class="screen-reader-text"><?php esc_html_e( 'Back to post options', 'press-this' ); ?></span>
 					</button>
 					<?php $this->post_formats_html( $post ); ?>
 				</div>
@@ -1540,8 +1539,8 @@ class WP_Press_This_Plugin {
 				<div class="setting-modal is-off-screen is-hidden">
 					<button type="button" class="modal-close">
 						<span class="dashicons post-option-back"></span>
-						<span class="setting-title" aria-hidden="true"><?php _e( 'Categories', 'press-this' ); ?></span>
-						<span class="screen-reader-text"><?php _e( 'Back to post options', 'press-this' ); ?></span>
+						<span class="setting-title" aria-hidden="true"><?php esc_html_e( 'Categories', 'press-this' ); ?></span>
+						<span class="screen-reader-text"><?php esc_html_e( 'Back to post options', 'press-this' ); ?></span>
 					</button>
 					<?php $this->categories_html( $post ); ?>
 				</div>
@@ -1551,8 +1550,8 @@ class WP_Press_This_Plugin {
 				<div class="setting-modal tags is-off-screen is-hidden">
 					<button type="button" class="modal-close">
 						<span class="dashicons post-option-back"></span>
-						<span class="setting-title" aria-hidden="true"><?php _e( 'Tags', 'press-this' ); ?></span>
-						<span class="screen-reader-text"><?php _e( 'Back to post options', 'press-this' ); ?></span>
+						<span class="setting-title" aria-hidden="true"><?php esc_html_e( 'Tags', 'press-this' ); ?></span>
+						<span class="screen-reader-text"><?php esc_html_e( 'Back to post options', 'press-this' ); ?></span>
 					</button>
 					<?php $this->tags_html( $post ); ?>
 				</div>
@@ -1564,7 +1563,7 @@ class WP_Press_This_Plugin {
 		<div class="pressthis-media-buttons">
 			<button type="button" class="insert-media" data-editor="pressthis">
 				<span class="dashicons dashicons-admin-media"></span>
-				<span class="screen-reader-text"><?php _e( 'Add Media', 'press-this' ); ?></span>
+				<span class="screen-reader-text"><?php esc_html_e( 'Add Media', 'press-this' ); ?></span>
 			</button>
 		</div>
 		<div class="post-actions">
@@ -1572,17 +1571,17 @@ class WP_Press_This_Plugin {
 			<div class="split-button">
 				<div class="split-button-head">
 					<button type="button" class="publish-button split-button-primary" aria-live="polite">
-						<span class="publish"><?php echo ( current_user_can( 'publish_posts' ) ) ? __( 'Publish', 'press-this' ) : __( 'Submit for Review', 'press-this' ); ?></span>
-						<span class="saving-draft"><?php _e( 'Saving&hellip;', 'press-this' ); ?></span>
+						<span class="publish"><?php echo esc_html( ( current_user_can( 'publish_posts' ) ) ? __( 'Publish', 'press-this' ) : __( 'Submit for Review', 'press-this' ) ); ?></span>
+						<span class="saving-draft"><?php esc_html_e( 'Saving&hellip;', 'press-this' ); ?></span>
 					</button><button type="button" class="split-button-toggle" aria-haspopup="true" aria-expanded="false">
 						<i class="dashicons dashicons-arrow-down-alt2"></i>
-						<span class="screen-reader-text"><?php _e( 'More actions', 'press-this' ); ?></span>
+						<span class="screen-reader-text"><?php esc_html_e( 'More actions', 'press-this' ); ?></span>
 					</button>
 				</div>
 				<ul class="split-button-body">
-					<li><button type="button" class="button-link draft-button split-button-option"><?php _e( 'Save Draft', 'press-this' ); ?></button></li>
-					<li><button type="button" class="button-link standard-editor-button split-button-option"><?php _e( 'Standard Editor', 'press-this' ); ?></button></li>
-					<li><button type="button" class="button-link preview-button split-button-option"><?php _e( 'Preview', 'press-this' ); ?></button></li>
+					<li><button type="button" class="button-link draft-button split-button-option"><?php esc_html_e( 'Save Draft', 'press-this' ); ?></button></li>
+					<li><button type="button" class="button-link standard-editor-button split-button-option"><?php esc_html_e( 'Standard Editor', 'press-this' ); ?></button></li>
+					<li><button type="button" class="button-link preview-button split-button-option"><?php esc_html_e( 'Preview', 'press-this' ); ?></button></li>
 				</ul>
 			</div>
 		</div>
