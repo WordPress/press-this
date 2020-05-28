@@ -1331,7 +1331,7 @@ class WP_Press_This_Plugin {
 		} else {
 			wp_enqueue_style( 'press-this', plugins_url( 'assets/press-this.css', __FILE__ ), array( 'buttons' ), PRESS_THIS__VERSION );
 		}
-		wp_enqueue_script( 'press-this', plugins_url( 'assets/press-this.js', __FILE__ ), array( 'jquery', 'tags-box', 'wp-sanitize' ), PRESS_THIS__VERSION );
+		wp_enqueue_script( 'press-this', plugins_url( 'assets/press-this.js', __FILE__ ), array( 'jquery', 'tags-box', 'wp-sanitize' ), PRESS_THIS__VERSION, false );
 		wp_enqueue_script( 'json2' );
 		wp_enqueue_script( 'editor' );
 
