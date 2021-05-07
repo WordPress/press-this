@@ -1,6 +1,6 @@
 {
   "name": "press-this",
-  "version": "1.0.0",
+  "version": "2.0.0-alpha",
   "description": "A little tool that lets you grab bits of the web and create new posts with ease.",
   "repository": {
     "type": "git",
