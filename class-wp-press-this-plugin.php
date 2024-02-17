@@ -790,10 +790,8 @@ class WP_Press_This_Plugin {
 							if ( ! empty( $value ) ) {
 								$data = $this->process_meta_entry( $key, $value, $data );
 							}
-						} else {
-							if ( in_array( $key, array( 'canonical', 'shortlink', 'icon' ), true ) ) {
+						} elseif ( in_array( $key, array( 'canonical', 'shortlink', 'icon' ), true ) ) {
 								$data[ $type ][ $key ] = $this->limit_url( wp_unslash( $value ) );
-							}
 						}
 					}
 				}
