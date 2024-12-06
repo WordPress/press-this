@@ -3,8 +3,8 @@ Contributors: kraftbj, wordpressdotorg
 Donate link: http://wordpressfoundation.org/donate/
 Tags: post, quick-post, photo-post
 Requires at least: 4.9
-Tested up to: 5.7
-Stable tag: 1.1.1
+Tested up to: 6.7.1
+Stable tag: 1.1.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -26,6 +26,10 @@ Bugs and PRs can be submitted via https://github.com/WordPress/press-this .
 2. Visit the Tools page of wp-admin for additional installation steps.
 
 == Changelog ==
+
+= 1.1.2 =
+* Fixes the styling of the .press-this .modal-close class (props https://github.com/crishnakh)
+* Bumps the Tested up to version to 6.7.1
 
 = 1.1.1 =
 * Corrects an issue with the packaging of the plugin for SVN.
