@@ -1403,7 +1403,7 @@ class WP_Press_This_Plugin {
 		<h1 id="current-site" class="current-site">
 			<a class="current-site-link" href="<?php echo esc_url( home_url( '/' ) ); ?>" target="_blank" rel="home">
 				<span class="dashicons dashicons-wordpress"></span>
-				<span class="current-site-name"><?php esc_html( get_bloginfo( 'name', 'display' ) ); ?></span>
+				<span class="current-site-name"><?php echo esc_html( get_bloginfo( 'name', 'display' ) ); ?></span>
 			</a>
 		</h1>
 		<button type="button" class="options button-link closed">
