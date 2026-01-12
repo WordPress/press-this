@@ -40,6 +40,13 @@ export default function App() {
 	// State for pending scraped content to append.
 	const [ pendingScrape, setPendingScrape ] = useState( null );
 
+	// State for save handler from editor.
+	const [ saveState, setSaveState ] = useState( {
+		handleSave: null,
+		isSaving: false,
+		publishLabel: __( 'Publish', 'press-this' ),
+	} );
+
 	// Bookmarklet confirmation state - show prompt before loading external content.
 	const [ showConfirmation, setShowConfirmation ] = useState( false );
 	const [ confirmed, setConfirmed ] = useState( false );
@@ -125,6 +132,15 @@ export default function App() {
 	}, [] );
 
 	/**
+	 * Handle save state updates from PressThisEditor.
+	 *
+	 * @param {Object} state Save state with handleSave, isSaving, publishLabel.
+	 */
+	const handleSaveReady = useCallback( ( state ) => {
+		setSaveState( state );
+	}, [] );
+
+	/**
 	 * Handle confirmation to proceed with external content.
 	 */
 	const handleConfirm = useCallback( () => {
@@ -175,6 +191,9 @@ export default function App() {
 				restUrl={ data.restUrl }
 				restNonce={ data.restNonce }
 				onScrapeComplete={ handleScrapeComplete }
+				onSave={ saveState.handleSave }
+				isSaving={ saveState.isSaving }
+				publishLabel={ saveState.publishLabel }
 			/>
 
 			<div className="press-this-app__body">
@@ -190,6 +209,7 @@ export default function App() {
 					sourceUrl={ sourceUrl }
 					pendingScrape={ pendingScrape }
 					onScrapeProcessed={ handleScrapeProcessed }
+					onSaveReady={ handleSaveReady }
 					categoryNonce={ data.categoryNonce || '' }
 					ajaxUrl={ data.ajaxUrl || '' }
 				/>

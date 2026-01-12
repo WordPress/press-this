@@ -1,7 +1,7 @@
 /**
  * Header Component
  *
- * Main header for Press This with site info and URL scanner.
+ * Main header for Press This with site info, undo/redo toolbar, URL scanner, and publish controls.
  *
  * @package
  */
@@ -10,13 +10,25 @@
  * WordPress dependencies
  */
 import { useState, useCallback, useEffect, useRef } from '@wordpress/element';
-import { Button, TextControl, Notice } from '@wordpress/components';
+import { useSelect, useDispatch } from '@wordpress/data';
+import { Button, TextControl, Notice, Tooltip, DropdownMenu, MenuGroup, MenuItem } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
+import { undo as undoIcon, redo as redoIcon, moreVertical } from '@wordpress/icons';
+import { store as blockEditorStore } from '@wordpress/block-editor';
 
 /**
  * Internal dependencies
  */
 import { buildSuggestedContentFromMetadata } from '../utils';
+
+/**
+ * Detect if running on macOS for keyboard shortcut hints.
+ *
+ * @return {boolean} True if macOS, false otherwise.
+ */
+function isMacOS() {
+	return typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test( navigator.platform );
+}
 
 /**
  * Header component.
@@ -32,6 +44,9 @@ import { buildSuggestedContentFromMetadata } from '../utils';
  * @param {string}   props.restUrl               REST API base URL.
  * @param {string}   props.restNonce             REST API nonce.
  * @param {Function} props.onScrapeComplete      Callback when scraping completes.
+ * @param {Function} props.onSave                Callback for save operations (status, options).
+ * @param {boolean}  props.isSaving              Whether a save operation is in progress.
+ * @param {string}   props.publishLabel          Label for the publish button.
  * @return {JSX.Element} Header component.
  */
 export default function Header( {
@@ -45,6 +60,9 @@ export default function Header( {
 	restUrl,
 	restNonce,
 	onScrapeComplete,
+	onSave,
+	isSaving = false,
+	publishLabel = __( 'Publish', 'press-this' ),
 } ) {
 	const [ scanUrl, setScanUrl ] = useState( sourceUrl || '' );
 	const [ isScanning, setIsScanning ] = useState( false );
@@ -53,6 +71,27 @@ export default function Header( {
 
 	// Track if initial auto-scan has been performed.
 	const hasAutoScanned = useRef( false );
+
+	// Undo/Redo state from block editor store.
+	// Note: These selectors require BlockEditorProvider context.
+	// If called outside context, they will return false/noop.
+	const { hasUndo, hasRedo } = useSelect( ( select ) => {
+		const store = select( blockEditorStore );
+		// Check if hasUndo/hasRedo exist (they might not if outside BlockEditorProvider context).
+		const canUndo = typeof store.hasUndo === 'function' ? store.hasUndo() : false;
+		const canRedo = typeof store.hasRedo === 'function' ? store.hasRedo() : false;
+		return {
+			hasUndo: canUndo,
+			hasRedo: canRedo,
+		};
+	}, [] );
+
+	// Undo/Redo actions from block editor store.
+	const { undo, redo } = useDispatch( blockEditorStore );
+
+	// Keyboard shortcut hints based on platform.
+	const undoShortcut = isMacOS() ? '\u2318Z' : 'Ctrl+Z';
+	const redoShortcut = isMacOS() ? '\u21E7\u2318Z' : 'Ctrl+Shift+Z';
 
 	/**
 	 * Handle URL scan via proxy API.
@@ -188,8 +227,38 @@ export default function Header( {
 		handleScan();
 	}, [ handleScan ] );
 
+	/**
+	 * Handle Save Draft button click.
+	 */
+	const handleSaveDraft = useCallback( () => {
+		if ( onSave ) {
+			onSave( 'draft' );
+		}
+	}, [ onSave ] );
+
+	/**
+	 * Handle Publish button click.
+	 */
+	const handlePublish = useCallback( () => {
+		if ( onSave ) {
+			onSave( 'publish' );
+		}
+	}, [ onSave ] );
+
+	/**
+	 * Handle Continue in Standard Editor.
+	 */
+	const handleContinueInEditor = useCallback( () => {
+		if ( onSave ) {
+			onSave( 'draft', { forceRedirect: true } );
+		}
+	}, [ onSave ] );
+
 	// Only show scanner if proxy is enabled or we're in bookmarklet mode.
 	const showScanner = proxyEnabled || sourceUrl;
+
+	// Only show publish controls if onSave callback is provided.
+	const showPublishControls = typeof onSave === 'function';
 
 	return (
 		<header className="press-this-header">
@@ -209,6 +278,28 @@ export default function Header( {
 							{ siteName }
 						</span>
 					</a>
+				</div>
+
+				{ /* Undo/Redo Toolbar */ }
+				<div className="press-this-header__toolbar">
+					<Tooltip text={ `${ __( 'Undo', 'press-this' ) } (${ undoShortcut })` }>
+						<Button
+							className="press-this-header__toolbar-button"
+							icon={ undoIcon }
+							onClick={ undo }
+							disabled={ ! hasUndo }
+							aria-label={ __( 'Undo', 'press-this' ) }
+						/>
+					</Tooltip>
+					<Tooltip text={ `${ __( 'Redo', 'press-this' ) } (${ redoShortcut })` }>
+						<Button
+							className="press-this-header__toolbar-button"
+							icon={ redoIcon }
+							onClick={ redo }
+							disabled={ ! hasRedo }
+							aria-label={ __( 'Redo', 'press-this' ) }
+						/>
+					</Tooltip>
 				</div>
 
 				{ showScanner && (
@@ -236,6 +327,46 @@ export default function Header( {
 							{ __( 'Scan', 'press-this' ) }
 						</Button>
 					</form>
+				) }
+
+				{ showPublishControls && (
+					<div className="press-this-header__actions">
+						<Button
+							variant="tertiary"
+							onClick={ handleSaveDraft }
+							disabled={ isSaving }
+							className="press-this-header__save-draft"
+						>
+							{ __( 'Save Draft', 'press-this' ) }
+						</Button>
+						<Button
+							variant="primary"
+							onClick={ handlePublish }
+							disabled={ isSaving }
+							isBusy={ isSaving }
+							className="press-this-header__publish"
+						>
+							{ publishLabel }
+						</Button>
+						<DropdownMenu
+							icon={ moreVertical }
+							label={ __( 'More actions', 'press-this' ) }
+							className="press-this-header__more-menu"
+						>
+							{ ( { onClose } ) => (
+								<MenuGroup>
+									<MenuItem
+										onClick={ () => {
+											handleContinueInEditor();
+											onClose();
+										} }
+									>
+										{ __( 'Continue in Standard Editor', 'press-this' ) }
+									</MenuItem>
+								</MenuGroup>
+							) }
+						</DropdownMenu>
+					</div>
 				) }
 			</div>
 

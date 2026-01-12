@@ -36,12 +36,13 @@
 }
 
 // ==========================================================================
-// Header
+// Header - Light Theme (matches Gutenberg editor)
 // ==========================================================================
 
 .press-this-header {
-	background: #1d2327;
-	color: #fff;
+	background: #fff;
+	color: #1e1e1e;
+	border-bottom: 1px solid #e0e0e0;
 	padding: 0 16px;
 	position: sticky;
 	top: 0;
@@ -63,21 +64,71 @@
 	display: flex;
 	align-items: center;
 	gap: 8px;
-	color: #fff;
+	color: #1e1e1e;
 	text-decoration: none;
 	font-size: 14px;
 	font-weight: 600;
 
 	&:hover,
 	&:focus {
-		color: #72aee6;
+		color: #007cba;
 		text-decoration: none;
 	}
 }
 
 .press-this-header__wp-icon {
 	font-size: 20px;
+	color: #1e1e1e;
 }
+
+// ==========================================================================
+// Header Toolbar - Document Tools (Undo/Redo)
+// ==========================================================================
+
+.press-this-header__toolbar {
+	display: flex;
+	align-items: center;
+	gap: 0;
+	margin-left: 8px;
+	padding-left: 8px;
+	border-left: 1px solid #e0e0e0;
+}
+
+.press-this-header__toolbar-button {
+	min-width: 36px;
+	min-height: 36px;
+	padding: 6px;
+	border-radius: 4px;
+	color: #1e1e1e;
+	background: transparent;
+	border: none;
+	cursor: pointer;
+
+	&:hover:not(:disabled) {
+		background: #f0f0f1;
+		color: #007cba;
+	}
+
+	&:focus {
+		box-shadow: 0 0 0 2px #007cba;
+		outline: none;
+	}
+
+	&:disabled {
+		opacity: 0.3;
+		cursor: default;
+	}
+
+	svg {
+		width: 24px;
+		height: 24px;
+		fill: currentColor;
+	}
+}
+
+// ==========================================================================
+// Header Scanner
+// ==========================================================================
 
 .press-this-header__scanner {
 	display: flex;
@@ -92,18 +143,72 @@
 	}
 
 	.components-text-control__input {
-		background: rgba(255, 255, 255, 0.1);
-		border-color: rgba(255, 255, 255, 0.2);
-		color: #fff;
+		background: #fff;
+		border-color: #ddd;
+		color: #1e1e1e;
 
 		&::placeholder {
-			color: rgba(255, 255, 255, 0.6);
+			color: #757575;
 		}
 
 		&:focus {
 			background: #fff;
-			color: #1d2327;
-			border-color: #72aee6;
+			color: #1e1e1e;
+			border-color: #007cba;
+			box-shadow: 0 0 0 1px #007cba;
+			outline: none;
+		}
+	}
+}
+
+// ==========================================================================
+// Header Actions - Publish Controls
+// ==========================================================================
+
+.press-this-header__actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-left: auto;
+}
+
+.press-this-header__save-draft {
+	color: #1e1e1e;
+	font-size: 13px;
+
+	&:hover:not(:disabled) {
+		color: #007cba;
+	}
+
+	&:disabled {
+		opacity: 0.5;
+	}
+}
+
+.press-this-header__publish {
+	// Primary button styling is handled by WordPress components.
+	// Additional adjustments if needed.
+	&:disabled {
+		opacity: 0.7;
+	}
+}
+
+.press-this-header__more-menu {
+	// Dropdown menu button styling.
+	.components-button {
+		min-width: 36px;
+		min-height: 36px;
+		padding: 6px;
+		color: #1e1e1e;
+
+		&:hover {
+			background: #f0f0f1;
+			color: #007cba;
+		}
+
+		svg {
+			width: 24px;
+			height: 24px;
 		}
 	}
 }
@@ -112,18 +217,22 @@
 	margin-left: auto;
 
 	.dashicons {
-		color: #fff;
+		color: #1e1e1e;
 	}
 
 	&:hover,
 	&:focus {
 		.dashicons {
-			color: #72aee6;
+			color: #007cba;
 		}
 	}
 
 	&.is-pressed {
-		background: rgba(255, 255, 255, 0.1);
+		background: #f0f0f1;
+
+		.dashicons {
+			color: #007cba;
+		}
 	}
 }
 

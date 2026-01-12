@@ -30,9 +30,6 @@ import {
 	Popover,
 	Button,
 	Spinner,
-	DropdownMenu,
-	MenuGroup,
-	MenuItem,
 	Snackbar,
 	Panel,
 	PanelBody,
@@ -208,6 +205,7 @@ function getWpRestBaseUrl( pressThisRestUrl ) {
  * @param {string}   props.sourceUrl          Source URL being clipped.
  * @param {Object}   props.pendingScrape      Pending scraped content to append.
  * @param {Function} props.onScrapeProcessed  Callback after scrape is processed.
+ * @param {Function} props.onSaveReady        Callback when save handler is ready (receives { handleSave, isSaving, publishLabel }).
  * @return {JSX.Element} Press This Editor component.
  */
 export default function PressThisEditor( {
@@ -222,6 +220,7 @@ export default function PressThisEditor( {
 	sourceUrl = '',
 	pendingScrape = null,
 	onScrapeProcessed = () => {},
+	onSaveReady = () => {},
 	categoryNonce = '',
 	ajaxUrl = '',
 } ) {
@@ -370,6 +369,20 @@ export default function PressThisEditor( {
 			setIsSaving( false );
 		}
 	}, [ blocks, title, postFormat, selectedCategories, tags, featuredImageId, post.id, restConfig ] );
+
+	// Publish button label.
+	const publishLabel = capabilities.canPublish
+		? __( 'Publish', 'press-this' )
+		: __( 'Submit for Review', 'press-this' );
+
+	// Expose save handler to parent component via callback.
+	useEffect( () => {
+		onSaveReady( {
+			handleSave,
+			isSaving,
+			publishLabel,
+		} );
+	}, [ handleSave, isSaving, publishLabel, onSaveReady ] );
 
 	/**
 	 * Handle title change.
@@ -552,11 +565,6 @@ export default function PressThisEditor( {
 		} : undefined,
 	} ), [ settings, capabilities.canUploadFiles ] );
 
-	// Publish button label.
-	const publishLabel = capabilities.canPublish
-		? __( 'Publish', 'press-this' )
-		: __( 'Submit for Review', 'press-this' );
-
 	if ( ! isReady ) {
 		return (
 			<div className="press-this-loading">
@@ -607,7 +615,15 @@ export default function PressThisEditor( {
 									</WritingFlow>
 								</BlockTools>
 
-								{ /* Inserter button */ }
+								{/*
+								 * Block Inserter - Simplified Popover Design
+								 *
+								 * The bottom popover inserter is intentional for Press This.
+								 * This simplified inserter reduces complexity for quick-post workflows
+								 * where users primarily clip content from external sources rather than
+								 * building complex layouts. This differs from the full Gutenberg sidebar
+								 * inserter by design to match Press This's focused use case.
+								 */}
 								<div
 									className="press-this-editor__inserter"
 									onClickCapture={ ( e ) => {
@@ -648,46 +664,6 @@ export default function PressThisEditor( {
 						{ /* Sidebar */ }
 						<div className="press-this-editor__sidebar">
 							<div className="press-this-editor__sidebar-content">
-								{ /* Publish actions */ }
-								<div className="press-this-editor__publish-section">
-									<div className="press-this-editor__publish-actions">
-										<Button
-											variant="primary"
-											onClick={ () => handleSave( 'publish' ) }
-											disabled={ isSaving }
-											isBusy={ isSaving }
-										>
-											{ publishLabel }
-										</Button>
-
-										<DropdownMenu
-											icon="arrow-down-alt2"
-											label={ __( 'More actions', 'press-this' ) }
-										>
-											{ ( { onClose } ) => (
-												<MenuGroup>
-													<MenuItem
-														onClick={ () => {
-															handleSave( 'draft' );
-															onClose();
-														} }
-													>
-														{ __( 'Save Draft', 'press-this' ) }
-													</MenuItem>
-													<MenuItem
-														onClick={ () => {
-															handleSave( 'draft', { forceRedirect: true } );
-															onClose();
-														} }
-													>
-														{ __( 'Continue in Standard Editor', 'press-this' ) }
-													</MenuItem>
-												</MenuGroup>
-											) }
-										</DropdownMenu>
-									</div>
-								</div>
-
 								<Panel>
 									{ /* Block Inspector - shows when block is selected */ }
 									<SidebarBlockInspector />
@@ -817,6 +793,7 @@ export default function PressThisEditor( {
 											initialOpen={ false }
 										>
 											<FormTokenField
+												label={ __( 'Add tags', 'press-this' ) }
 												value={ tags }
 												suggestions={ tagSuggestions }
 												onChange={ handleTagsChange }
@@ -827,6 +804,9 @@ export default function PressThisEditor( {
 												__next40pxDefaultSize
 												__nextHasNoMarginBottom
 											/>
+											<p className="press-this-tags-panel__help">
+												{ __( 'Separate with commas or the Enter key.', 'press-this' ) }
+											</p>
 											{ isLoadingTags && (
 												<div className="press-this-editor__tags-loading">
 													<Spinner />

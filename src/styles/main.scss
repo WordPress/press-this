@@ -168,23 +168,19 @@
 // ==========================================================================
 
 .press-this-editor__sidebar {
-	width: 300px;
+	width: 280px;
 	background: #fff;
 	border-left: 1px solid #e0e0e0;
 	display: flex;
 	flex-direction: column;
 	overflow-y: auto;
 
-	@media (max-width: 960px) {
-		width: 280px;
-	}
-
 	@media (max-width: 782px) {
 		position: fixed;
 		top: 46px;
 		right: 0;
 		bottom: 0;
-		width: 300px;
+		width: 280px;
 		z-index: 100;
 		transform: translateX(100%);
 		transition: transform 0.2s;
@@ -214,28 +210,6 @@
 .press-this-editor__sidebar-content {
 	flex: 1;
 	overflow-y: auto;
-}
-
-// ==========================================================================
-// Publish Section
-// ==========================================================================
-
-.press-this-editor__publish-section {
-	padding: 16px;
-	border-bottom: 1px solid #e0e0e0;
-}
-
-.press-this-editor__publish-actions {
-	display: flex;
-	gap: 8px;
-
-	.components-button.is-primary {
-		flex: 1;
-	}
-
-	.components-dropdown-menu__toggle {
-		padding: 0 8px;
-	}
 }
 
 // ==========================================================================
