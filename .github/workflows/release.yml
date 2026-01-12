@@ -32,21 +32,22 @@ jobs:
 
       - name: Create plugin directory
         run: |
-          mkdir -p press-this
+          # Create nested structure so artifact preserves folder name
+          mkdir -p dist/press-this
 
           # Copy production files
-          cp press-this-plugin.php press-this/
-          cp class-wp-press-this-plugin.php press-this/
-          cp readme.txt press-this/
-          cp UPGRADE.md press-this/
+          cp press-this-plugin.php dist/press-this/
+          cp class-wp-press-this-plugin.php dist/press-this/
+          cp readme.txt dist/press-this/
+          cp UPGRADE.md dist/press-this/
 
           # Copy directories
-          cp -r includes press-this/
-          cp -r build press-this/
-          cp -r assets press-this/
+          cp -r includes dist/press-this/
+          cp -r build dist/press-this/
+          cp -r assets dist/press-this/
 
       - name: Create ZIP archive
-        run: zip -r press-this.zip press-this/
+        run: cd dist && zip -r ../press-this.zip press-this/
 
       - name: Upload release asset
         if: github.event_name == 'release'
@@ -60,5 +61,5 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
-          name: press-this
-          path: press-this.zip
+          name: press-this-plugin
+          path: dist/
