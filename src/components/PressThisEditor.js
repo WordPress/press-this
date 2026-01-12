@@ -608,7 +608,25 @@ export default function PressThisEditor( {
 								</BlockTools>
 
 								{ /* Inserter button */ }
-								<div className="press-this-editor__inserter">
+								<div
+									className="press-this-editor__inserter"
+									onClickCapture={ ( e ) => {
+										// Handle close button click in capture phase to prevent
+										// the internal error. The WordPress Inserter's close button
+										// throws an error because onClose isn't provided.
+										// We intercept in capture phase, stop propagation, and
+										// use the toggle instead.
+										const closeButton = e.target.closest( '[aria-label="Close Block Inserter"]' );
+										if ( closeButton ) {
+											e.stopPropagation();
+											e.preventDefault();
+											const toggleButton = document.querySelector( '.press-this-editor__inserter-button' );
+											if ( toggleButton ) {
+												toggleButton.click();
+											}
+										}
+									} }
+								>
 									<Inserter
 										position="bottom center"
 										showInserterHelpPanel={ false }
