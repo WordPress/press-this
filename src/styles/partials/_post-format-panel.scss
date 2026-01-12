@@ -1,0 +1,168 @@
+/**
+ * PostFormatPanel Component Styles
+ *
+ * Styles for the post format selection panel.
+ *
+ * @package press-this
+ */
+
+// ==========================================================================
+// Container
+// ==========================================================================
+
+.press-this-post-format-panel {
+	// Empty state.
+	.press-this-post-format-panel__empty {
+		padding: $spacing-xl $spacing-lg;
+		text-align: center;
+		color: $color-text-light;
+
+		p {
+			margin: 0;
+		}
+	}
+}
+
+// ==========================================================================
+// Suggestion Notice
+// ==========================================================================
+
+.press-this-post-format-panel__suggestion {
+	display: flex;
+	align-items: center;
+	gap: $spacing-sm;
+	padding: $spacing-md $spacing-lg;
+	background: $color-suggestion-bg;
+	border-bottom: 1px solid $color-suggestion-border;
+	color: $color-accent-hover;
+	font-size: $font-size-small;
+
+	.dashicons-lightbulb {
+		color: $color-accent;
+	}
+}
+
+.press-this-post-format-panel__suggestion-link {
+	background: none;
+	border: none;
+	padding: 0;
+	color: $color-accent;
+	font-weight: 500;
+	cursor: pointer;
+	text-decoration: underline;
+
+	&:hover,
+	&:focus {
+		color: $color-accent-hover;
+	}
+}
+
+// ==========================================================================
+// Format List
+// ==========================================================================
+
+.press-this-post-format-panel__fieldset {
+	border: none;
+	margin: 0;
+	padding: 0;
+	flex: 1 1 auto;
+	overflow-y: auto;
+}
+
+.press-this-post-format-panel__list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.press-this-post-format-panel__item {
+	border-bottom: 1px solid $color-border-light;
+
+	&.is-selected {
+		background: $color-bg-light;
+	}
+
+	&.is-suggested:not(.is-selected) {
+		.press-this-post-format-panel__format-label {
+			color: $color-accent;
+		}
+	}
+}
+
+// ==========================================================================
+// Format Label
+// ==========================================================================
+
+.press-this-post-format-panel__label {
+	display: flex;
+	align-items: center;
+	gap: $spacing-md;
+	padding: $spacing-md $spacing-lg;
+	cursor: pointer;
+	transition: background-color $transition-speed-fast ease;
+
+	&:hover {
+		background: $color-bg-light;
+	}
+
+	.dashicons {
+		color: $color-text-light;
+	}
+}
+
+// ==========================================================================
+// Radio Button
+// ==========================================================================
+
+.press-this-post-format-panel__radio {
+	position: absolute;
+	opacity: 0;
+	width: 0;
+	height: 0;
+
+	&:checked + .dashicons {
+		color: $color-accent;
+	}
+
+	&:focus + .dashicons {
+		outline: 2px solid $color-accent;
+		outline-offset: 2px;
+		border-radius: 2px;
+	}
+}
+
+.press-this-post-format-panel__format-label {
+	flex: 1 1 auto;
+	font-size: $font-size-base;
+	color: $color-text;
+}
+
+// ==========================================================================
+// Suggested Badge
+// ==========================================================================
+
+.press-this-post-format-panel__suggested-badge {
+	font-size: 10px;
+	text-transform: uppercase;
+	color: $color-accent;
+	background: $color-suggestion-bg;
+	padding: 2px 6px;
+	border-radius: 2px;
+	letter-spacing: 0.5px;
+}
+
+// ==========================================================================
+// Help Text
+// ==========================================================================
+
+.press-this-post-format-panel__help {
+	padding: $spacing-md $spacing-lg;
+	border-top: 1px solid $color-border-light;
+	background: $color-bg-light;
+
+	.description {
+		margin: 0;
+		font-size: $font-size-xs;
+		color: $color-text-light;
+	}
+}

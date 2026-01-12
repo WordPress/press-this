@@ -1,0 +1,107 @@
+/**
+ * SCSS Variables
+ *
+ * Design tokens for Press This plugin.
+ * Defines colors, spacing, breakpoints, and animation values.
+ *
+ * @package press-this
+ */
+
+// ==========================================================================
+// Colors - Matching existing Press This design
+// ==========================================================================
+
+// Header and navigation.
+$color-header-bg: #23282d;
+$color-header-icon: #a0a5aa;
+
+// Accent colors.
+$color-accent: #0073aa;
+$color-accent-hover: #006799;
+$color-accent-light: #00a0d2;
+
+// Neutral colors.
+$color-white: #fff;
+$color-border: #ddd;
+$color-border-light: #e5e5e5;
+$color-text: #32373c;
+$color-text-light: #72777c;
+$color-bg-light: #f7f7f7;
+
+// Warning/notice colors.
+$color-warning-bg: #fff8e5;
+$color-warning-border: #ffb900;
+$color-warning-text: #826200;
+
+// Featured image.
+$color-featured-bg: #0073aa;
+
+// Overlays.
+$color-overlay-bg: rgba(0, 0, 0, 0.6);
+
+// Suggestions.
+$color-suggestion-bg: #e5f5fa;
+$color-suggestion-border: #00a0d2;
+
+// Error/delete.
+$color-error: #dc3232;
+
+// ==========================================================================
+// Breakpoints
+// ==========================================================================
+
+// Mobile: 320px - 600px
+// Tablet: 600px - 900px
+// Desktop: 900px+
+$breakpoint-mobile: 600px;
+$breakpoint-tablet: 900px;
+$breakpoint-small: 320px;
+
+// ==========================================================================
+// Spacing
+// ==========================================================================
+
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 12px;
+$spacing-lg: 16px;
+$spacing-xl: 24px;
+
+// ==========================================================================
+// Animation
+// ==========================================================================
+
+$transition-speed: 0.3s;
+$transition-speed-fast: 0.15s;
+$transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
+
+// ==========================================================================
+// Typography
+// ==========================================================================
+
+$font-family-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+$font-size-base: 14px;
+$font-size-small: 13px;
+$font-size-xs: 12px;
+$font-size-lg: 16px;
+$font-size-xl: 20px;
+$font-size-xxl: 24px;
+$line-height-base: 1.6;
+
+// ==========================================================================
+// Z-index layers
+// ==========================================================================
+
+$z-index-action-bar: 9998;
+$z-index-admin-bar: 9999;
+$z-index-panel-backdrop: 99998;
+$z-index-panel: 99999;
+$z-index-popover: 100001;
+
+// ==========================================================================
+// Component sizes
+// ==========================================================================
+
+$admin-bar-height: 3.2em;
+$options-panel-width: 320px;
+$touch-target-min: 44px;

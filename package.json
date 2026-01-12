@@ -12,8 +12,51 @@
     "url": "https://github.com/WordPress/press-this/issues"
   },
   "homepage": "https://github.com/WordPress/press-this#readme",
+  "scripts": {
+    "build": "wp-scripts build && npm run build:bookmarklet",
+    "build:bookmarklet": "terser assets/bookmarklet.js --compress --mangle -o assets/bookmarklet.min.js",
+    "start": "wp-scripts start",
+    "lint": "wp-scripts lint-js src/",
+    "lint:css": "wp-scripts lint-style src/",
+    "test:unit": "wp-scripts test-unit-js",
+    "test:build": "node tests/build/build-output.test.js",
+    "test:bookmarklet": "node tests/bookmarklet/bookmarklet.test.js",
+    "test:editor": "node tests/editor/block-editor.test.js",
+    "test:header": "node tests/components/header.test.js",
+    "test:title-media": "node tests/components/title-media/title-media.test.js",
+    "test:sidebar": "node tests/components/sidebar/sidebar.test.js",
+    "test:action-bar": "node tests/components/action-bar/action-bar.test.js",
+    "test:responsive": "node tests/styles/responsive.test.js",
+    "test:integration": "node tests/integration/integration.test.js",
+    "test:e2e": "node tests/e2e/workflow.test.js",
+    "test:js": "npm run test:build && npm run test:bookmarklet && npm run test:editor && npm run test:header && npm run test:title-media && npm run test:sidebar && npm run test:action-bar && npm run test:responsive && npm run test:integration && npm run test:e2e",
+    "wp-env": "wp-env",
+    "env:start": "wp-env start",
+    "env:stop": "wp-env stop",
+    "env:destroy": "wp-env destroy",
+    "env:cli": "wp-env run cli"
+  },
   "devDependencies": {
+    "@wordpress/env": "^10.0.0",
+    "@wordpress/scripts": "^28.0.0",
     "grunt-checktextdomain": "^1.0.1",
-    "grunt-wp-i18n": "^1.0.0"
+    "grunt-wp-i18n": "^1.0.0",
+    "terser": "^5.44.1"
+  },
+  "dependencies": {
+    "@wordpress/block-editor": "^14.0.0",
+    "@wordpress/block-library": "^9.37.0",
+    "@wordpress/blocks": "^13.0.0",
+    "@wordpress/components": "^28.0.0",
+    "@wordpress/compose": "^7.0.0",
+    "@wordpress/core-data": "^7.0.0",
+    "@wordpress/data": "^10.0.0",
+    "@wordpress/dom-ready": "^4.0.0",
+    "@wordpress/edit-post": "^8.0.0",
+    "@wordpress/editor": "^14.0.0",
+    "@wordpress/element": "^6.0.0",
+    "@wordpress/i18n": "^5.0.0",
+    "@wordpress/icons": "^10.0.0",
+    "@wordpress/rich-text": "^7.0.0"
   }
 }

@@ -1,0 +1,96 @@
+/**
+ * PostTitle Component Styles
+ *
+ * Styles for the editable post title heading.
+ *
+ * @package press-this
+ */
+
+// ==========================================================================
+// PostTitle Container
+// ==========================================================================
+
+.press-this-post-title {
+	position: relative;
+	padding: $spacing-lg;
+	border-bottom: 1px solid $color-border-light;
+	background: $color-white;
+}
+
+// ==========================================================================
+// Placeholder
+// ==========================================================================
+
+.press-this-post-title__placeholder {
+	position: absolute;
+	top: $spacing-lg;
+	left: $spacing-lg;
+	right: $spacing-lg;
+	pointer-events: none;
+	color: $color-text-light;
+	font-size: $font-size-xxl;
+	font-weight: 600;
+	line-height: 1.4;
+
+	&.is-hidden {
+		display: none;
+	}
+}
+
+// ==========================================================================
+// Editor (Contenteditable)
+// ==========================================================================
+
+.press-this-post-title__editor {
+	position: relative;
+	min-height: 1.4em;
+	margin: 0;
+	padding: 0;
+	border: none;
+	outline: none;
+	font-size: $font-size-xxl;
+	font-weight: 600;
+	line-height: 1.4;
+	color: $color-text;
+	background: transparent;
+	width: 100%;
+	word-wrap: break-word;
+	overflow-wrap: break-word;
+
+	&:focus {
+		outline: none;
+	}
+
+	// Ensure empty state doesn't collapse.
+	&:empty::before {
+		content: "\200b"; // Zero-width space.
+	}
+}
+
+// ==========================================================================
+// Responsive Adjustments
+// ==========================================================================
+
+@media (max-width: $breakpoint-mobile) {
+	.press-this-post-title {
+		padding: $spacing-md;
+	}
+
+	.press-this-post-title__placeholder,
+	.press-this-post-title__editor {
+		font-size: $font-size-xl;
+	}
+
+	.press-this-post-title__placeholder {
+		top: $spacing-md;
+		left: $spacing-md;
+		right: $spacing-md;
+	}
+}
+
+@media (max-width: $breakpoint-small) {
+	.press-this-post-title__placeholder,
+	.press-this-post-title__editor {
+		font-size: 18px;
+	}
+}

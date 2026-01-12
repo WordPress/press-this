@@ -1,0 +1,433 @@
+/**
+ * App Layout
+ *
+ * Main layout structure for the Press This application.
+ */
+
+// ==========================================================================
+// App Container
+// ==========================================================================
+
+.press-this-app {
+	display: flex;
+	flex-direction: column;
+	min-height: 100vh;
+	background: #f0f0f1;
+}
+
+// ==========================================================================
+// App Body (editor + sidebar)
+// ==========================================================================
+
+.press-this-app__body {
+	display: flex;
+	flex: 1;
+	overflow: hidden;
+	position: relative;
+}
+
+.press-this-app__main {
+	flex: 1;
+	padding: 20px;
+	overflow-y: auto;
+	max-width: 840px;
+	margin: 0 auto;
+	width: 100%;
+}
+
+// ==========================================================================
+// Header
+// ==========================================================================
+
+.press-this-header {
+	background: #1d2327;
+	color: #fff;
+	padding: 0 16px;
+	position: sticky;
+	top: 0;
+	z-index: 100;
+}
+
+.press-this-header__bar {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	height: 46px;
+}
+
+.press-this-header__site {
+	flex-shrink: 0;
+}
+
+.press-this-header__site-link {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	color: #fff;
+	text-decoration: none;
+	font-size: 14px;
+	font-weight: 600;
+
+	&:hover,
+	&:focus {
+		color: #72aee6;
+		text-decoration: none;
+	}
+}
+
+.press-this-header__wp-icon {
+	font-size: 20px;
+}
+
+.press-this-header__scanner {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex: 1;
+	max-width: 500px;
+
+	.components-base-control {
+		margin: 0;
+		flex: 1;
+	}
+
+	.components-text-control__input {
+		background: rgba(255, 255, 255, 0.1);
+		border-color: rgba(255, 255, 255, 0.2);
+		color: #fff;
+
+		&::placeholder {
+			color: rgba(255, 255, 255, 0.6);
+		}
+
+		&:focus {
+			background: #fff;
+			color: #1d2327;
+			border-color: #72aee6;
+		}
+	}
+}
+
+.press-this-header__sidebar-toggle {
+	margin-left: auto;
+
+	.dashicons {
+		color: #fff;
+	}
+
+	&:hover,
+	&:focus {
+		.dashicons {
+			color: #72aee6;
+		}
+	}
+
+	&.is-pressed {
+		background: rgba(255, 255, 255, 0.1);
+	}
+}
+
+.press-this-header__notice {
+	margin: 8px 0;
+}
+
+// ==========================================================================
+// Sidebar
+// ==========================================================================
+
+.press-this-sidebar {
+	position: fixed;
+	top: 46px;
+	right: -320px;
+	width: 320px;
+	height: calc(100vh - 46px - 60px); // Minus header and action bar
+	background: #fff;
+	border-left: 1px solid #ddd;
+	transition: right 0.2s ease;
+	overflow-y: auto;
+	z-index: 99;
+	box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+
+	&.is-open {
+		right: 0;
+	}
+}
+
+.press-this-sidebar__panel {
+	.components-panel__body {
+		border-bottom: 1px solid #e0e0e0;
+	}
+}
+
+.press-this-sidebar__categories {
+	max-height: 200px;
+	overflow-y: auto;
+}
+
+.press-this-sidebar__category {
+	padding: 2px 0;
+}
+
+// ==========================================================================
+// Action Bar
+// ==========================================================================
+
+.press-this-action-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 16px;
+	background: #fff;
+	border-top: 1px solid #ddd;
+	position: sticky;
+	bottom: 0;
+	z-index: 100;
+}
+
+.press-this-action-bar__media {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.press-this-action-bar__actions {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.press-this-action-bar__publish-group {
+	display: flex;
+	align-items: center;
+
+	.components-button.is-primary:first-child {
+		border-top-right-radius: 0;
+		border-bottom-right-radius: 0;
+	}
+
+	.components-button.is-primary:last-child {
+		border-top-left-radius: 0;
+		border-bottom-left-radius: 0;
+		border-left: 1px solid rgba(255, 255, 255, 0.3);
+		padding: 6px 8px;
+	}
+}
+
+.press-this-action-bar__spinner {
+	margin-right: 8px;
+}
+
+.press-this-action-bar__dropdown-content {
+	min-width: 160px;
+}
+
+// ==========================================================================
+// Block Editor Wrapper
+// ==========================================================================
+
+.press-this-block-editor {
+	background: #fff;
+	border-radius: 4px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	padding: 20px;
+}
+
+.press-this-block-editor__title-wrapper {
+	margin-bottom: 16px;
+}
+
+.press-this-block-editor__title {
+	width: 100%;
+	font-size: 24px;
+	font-weight: 600;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	padding: 8px 12px;
+	background: #fff;
+
+	&:focus {
+		border-color: #007cba;
+		outline: none;
+		box-shadow: 0 0 0 1px #007cba;
+	}
+}
+
+.press-this-block-editor__content {
+	min-height: 300px;
+	position: relative;
+
+	.block-editor-writing-flow {
+		padding: 8px 0;
+	}
+
+	.block-editor-block-list__layout {
+		padding: 0;
+	}
+}
+
+.press-this-block-editor__inserter {
+	margin-bottom: 12px;
+
+	// Fix the inserter button sizing
+	.components-button {
+		min-width: 32px;
+		min-height: 32px;
+		padding: 6px;
+
+		svg {
+			width: 24px;
+			height: 24px;
+		}
+	}
+}
+
+// ==========================================================================
+// Block Inserter Fixes
+// ==========================================================================
+
+// Fix the inline inserter button that appears next to blocks
+.block-editor-inserter {
+	.components-button {
+		min-width: 24px;
+		min-height: 24px;
+
+		svg {
+			width: 24px;
+			height: 24px;
+			fill: currentColor;
+		}
+	}
+}
+
+// Fix the quick inserter popover
+.block-editor-inserter__quick-inserter {
+	min-width: 300px;
+
+	// Fix icon clipping in quick inserter
+	.block-editor-block-types-list__list-item {
+		.block-editor-block-types-list__item {
+			padding: 8px;
+			min-height: 60px;
+
+			.block-editor-block-types-list__item-icon {
+				width: 48px;
+				height: 48px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+
+				svg,
+				.block-editor-block-icon {
+					width: 24px;
+					height: 24px;
+				}
+			}
+		}
+	}
+}
+
+// Fix block icon sizing in inserter
+.block-editor-block-icon {
+	width: 24px;
+	height: 24px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+
+	svg {
+		width: 24px;
+		height: 24px;
+		max-width: 100%;
+		max-height: 100%;
+	}
+}
+
+// Fix block types list in inserter
+.block-editor-block-types-list {
+	.block-editor-block-types-list__item {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		padding: 8px;
+		min-width: 72px;
+
+		.block-editor-block-types-list__item-icon {
+			margin-bottom: 4px;
+
+			.block-editor-block-icon {
+				width: 24px;
+				height: 24px;
+
+				svg {
+					width: 24px;
+					height: 24px;
+				}
+			}
+		}
+
+		.block-editor-block-types-list__item-title {
+			font-size: 12px;
+			text-align: center;
+			word-break: break-word;
+		}
+	}
+}
+
+// Ensure SVGs in buttons are properly sized
+.press-this-app {
+	.components-button svg {
+		width: 24px;
+		height: 24px;
+		fill: currentColor;
+	}
+
+	// Fix the appender button
+	.block-list-appender {
+		.block-editor-inserter {
+			.components-button {
+				width: 32px;
+				height: 32px;
+				padding: 4px;
+
+				svg {
+					width: 24px;
+					height: 24px;
+				}
+			}
+		}
+	}
+
+	// Fix inline appender
+	.block-editor-default-block-appender {
+		.block-editor-inserter {
+			.components-button {
+				width: 24px;
+				height: 24px;
+				padding: 0;
+
+				svg {
+					width: 24px;
+					height: 24px;
+				}
+			}
+		}
+	}
+}
+
+// ==========================================================================
+// Loading State
+// ==========================================================================
+
+.press-this-loading {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 12px;
+	height: 100vh;
+	font-size: 14px;
+	color: #666;
+
+	.spinner {
+		float: none;
+	}
+}

@@ -1,0 +1,107 @@
+/**
+ * ActionBar Component Styles
+ *
+ * Styles for the fixed footer action bar with media and publish buttons.
+ *
+ * @package press-this
+ */
+
+// ==========================================================================
+// ActionBar Container
+// ==========================================================================
+
+.press-this-action-bar {
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	width: 100%;
+	background: $color-bg-light;
+	background: rgba(241, 241, 241, 0.9);
+	border-top: 1px solid $color-border-light;
+	z-index: $z-index-action-bar;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0;
+
+	// Hidden state with slide animation.
+	&.is-hidden {
+		transform: translateY(100%);
+	}
+
+	// Saving state.
+	&.is-saving {
+		pointer-events: none;
+		opacity: 0.8;
+	}
+}
+
+// ==========================================================================
+// Mobile Transition
+// ==========================================================================
+
+@media (max-width: $breakpoint-tablet) {
+	.press-this-action-bar {
+		transform: translateY(0);
+		transition: transform $transition-speed $transition-easing;
+	}
+}
+
+// ==========================================================================
+// Media Section (Left)
+// ==========================================================================
+
+.press-this-action-bar__media {
+	float: left;
+	margin: 14px 0 14px 30px;
+	font-size: 0;
+}
+
+@media (max-width: $breakpoint-small) {
+	.press-this-action-bar__media {
+		margin: 10px 0 10px 10px;
+	}
+}
+
+// ==========================================================================
+// Actions Section (Right)
+// ==========================================================================
+
+.press-this-action-bar__actions {
+	float: right;
+	margin: 14px 30px 14px 0;
+	font-size: $font-size-small;
+	display: flex;
+	align-items: center;
+	gap: $spacing-md;
+}
+
+@media (max-width: $breakpoint-small) {
+	.press-this-action-bar__actions {
+		margin: 10px 10px 10px 0;
+	}
+}
+
+// ==========================================================================
+// Spinner
+// ==========================================================================
+
+.press-this-action-bar__spinner {
+	margin: 0;
+}
+
+// ==========================================================================
+// Legacy Class Support
+// ==========================================================================
+
+.press-this-actions {
+	.spinner.is-active {
+		display: inline-block;
+		visibility: visible;
+	}
+
+	.publish-button.is-saving {
+		opacity: 0.7;
+		cursor: not-allowed;
+	}
+}

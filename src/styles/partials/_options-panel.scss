@@ -1,0 +1,252 @@
+/**
+ * OptionsPanel Component Styles
+ *
+ * Styles for the slide-out sidebar panel.
+ *
+ * @package press-this
+ */
+
+// ==========================================================================
+// Backdrop Overlay
+// ==========================================================================
+
+.press-this-options-panel__backdrop {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.4);
+	opacity: 0;
+	visibility: hidden;
+	transition: opacity $transition-speed $transition-easing,
+		visibility $transition-speed $transition-easing;
+	z-index: $z-index-panel-backdrop;
+
+	&.is-visible {
+		opacity: 1;
+		visibility: visible;
+	}
+}
+
+// ==========================================================================
+// Panel Container
+// ==========================================================================
+
+.press-this-options-panel {
+	position: fixed;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	width: $options-panel-width;
+	max-width: 100%;
+	background: $color-white;
+	box-shadow: -2px 0 10px rgba(0, 0, 0, 0.15);
+	z-index: $z-index-panel;
+	display: flex;
+	flex-direction: column;
+	transform: translateX(100%);
+	transition: transform $transition-speed $transition-easing;
+	overflow: hidden;
+
+	&.is-open {
+		transform: translateX(0);
+	}
+
+	&.is-closing {
+		transform: translateX(100%);
+	}
+}
+
+// ==========================================================================
+// Panel Header
+// ==========================================================================
+
+.press-this-options-panel__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: $spacing-md $spacing-lg;
+	border-bottom: 1px solid $color-border-light;
+	background: $color-bg-light;
+	min-height: 48px;
+}
+
+.press-this-options-panel__title {
+	margin: 0;
+	font-size: $font-size-base;
+	font-weight: 600;
+	color: $color-text;
+}
+
+.press-this-options-panel__close {
+	padding: $spacing-xs;
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	color: $color-text-light;
+	border-radius: 4px;
+
+	&:hover,
+	&:focus {
+		color: $color-text;
+		background: $color-border-light;
+	}
+
+	&:focus {
+		outline: 2px solid $color-accent;
+		outline-offset: 2px;
+	}
+
+	svg {
+		width: 20px;
+		height: 20px;
+	}
+}
+
+// ==========================================================================
+// Main Options List
+// ==========================================================================
+
+.press-this-options-panel__main {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+}
+
+.press-this-options-panel__list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	flex: 1 1 auto;
+	overflow-y: auto;
+
+	li {
+		margin: 0;
+		border-bottom: 1px solid $color-border-light;
+	}
+}
+
+.press-this-options-panel__option {
+	display: flex;
+	align-items: center;
+	width: 100%;
+	padding: 14px $spacing-lg;
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	text-align: left;
+	color: $color-text;
+	font-size: $font-size-base;
+	gap: $spacing-md;
+	transition: background-color $transition-speed-fast ease;
+
+	&:hover,
+	&:focus {
+		background: $color-bg-light;
+		outline: none;
+	}
+
+	&:focus {
+		box-shadow: inset 0 0 0 2px $color-accent;
+	}
+
+	.dashicons {
+		color: $color-text-light;
+		flex: 0 0 auto;
+	}
+
+	.dashicons-arrow-right-alt2 {
+		margin-left: auto;
+		color: $color-border;
+	}
+}
+
+.press-this-options-panel__option-label {
+	flex: 1 1 auto;
+	font-weight: 500;
+}
+
+.press-this-options-panel__option-value {
+	color: $color-text-light;
+	font-size: $font-size-small;
+	margin-left: auto;
+	padding-right: $spacing-sm;
+}
+
+// ==========================================================================
+// Sub-panel Styles
+// ==========================================================================
+
+.press-this-options-panel__subpanel {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+}
+
+.press-this-options-panel__subpanel-header {
+	display: flex;
+	align-items: center;
+	padding: $spacing-md $spacing-lg;
+	border-bottom: 1px solid $color-border-light;
+	background: $color-bg-light;
+	gap: $spacing-sm;
+}
+
+.press-this-options-panel__back {
+	padding: $spacing-xs;
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	color: $color-text-light;
+	border-radius: 4px;
+
+	&:hover,
+	&:focus {
+		color: $color-text;
+		background: $color-border-light;
+	}
+
+	&:focus {
+		outline: 2px solid $color-accent;
+		outline-offset: 2px;
+	}
+
+	svg {
+		width: 20px;
+		height: 20px;
+	}
+}
+
+.press-this-options-panel__subpanel-title {
+	margin: 0;
+	font-size: $font-size-base;
+	font-weight: 600;
+	color: $color-text;
+}
+
+// ==========================================================================
+// Responsive Adjustments
+// ==========================================================================
+
+@media (max-width: $breakpoint-mobile) {
+	.press-this-options-panel {
+		width: 100%;
+	}
+
+	.press-this-options-panel__option {
+		padding: $spacing-lg;
+	}
+}
+
+@media (max-width: $breakpoint-small) {
+	.press-this-options-panel__header,
+	.press-this-options-panel__subpanel-header {
+		padding: 10px $spacing-md;
+	}
+
+	.press-this-options-panel__option {
+		padding: $spacing-md;
+		font-size: $font-size-small;
+	}
+}
