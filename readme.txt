@@ -2,7 +2,7 @@
 Contributors: kraftbj, wordpressdotorg
 Donate link: http://wordpressfoundation.org/donate/
 Tags: post, quick-post, photo-post, bookmarklet, gutenberg
-Requires at least: 6.0
+Requires at least: 6.9
 Tested up to: 6.7
 Stable tag: 2.0.0
 Requires PHP: 7.4
@@ -151,7 +151,7 @@ Restores bookmarklet functionality.
 * **Improved:** Description extraction now checks JSON-LD description
 * **Compatibility:** All 1.x hooks and filters preserved
 * **Compatibility:** Legacy bookmarklet URL format continues to work
-* **Requires:** WordPress 6.0 or higher
+* **Requires:** WordPress 6.9 or higher
 * **Requires:** PHP 7.4 or higher
 
 = 1.1.2 =

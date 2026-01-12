@@ -7,16 +7,19 @@
     "require-dev": {
         "dealerdirect/phpcodesniffer-composer-installer": "v1.0.0",
         "phpcompatibility/phpcompatibility-wp": "2.1.0",
+        "phpunit/phpunit": "^9.6",
         "sirbrillig/phpcs-changed": "^2.11",
         "sirbrillig/phpcs-variable-analysis": "^2",
-        "wp-coding-standards/wpcs": "3.0.1"
+        "wp-coding-standards/wpcs": "3.0.1",
+        "yoast/phpunit-polyfills": "^1.1"
     },
     "scripts": {
         "php:compatibility": "vendor/bin/phpcs -p -s --runtime-set testVersion '5.6-' --standard=PHPCompatibilityWP --ignore=docker,tools,tests,node_modules,vendor --extensions=php",
         "php:lint": "vendor/bin/phpcs -p -s",
         "php:changed": "vendor/sirbrillig/phpcs-changed/bin/phpcs-changed --git",
         "php:autofix": "vendor/bin/phpcbf",
-        "php:lint:errors": "vendor/bin/phpcs -p -s --runtime-set ignore_warnings_on_exit 1"
+        "php:lint:errors": "vendor/bin/phpcs -p -s --runtime-set ignore_warnings_on_exit 1",
+        "test:php": "vendor/bin/phpunit"
     },
     "config": {
         "allow-plugins": {

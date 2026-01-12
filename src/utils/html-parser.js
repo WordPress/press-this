@@ -7,6 +7,48 @@
  */
 
 /**
+ * Escape HTML special characters.
+ *
+ * Escapes dangerous HTML characters.
+ * Escapes: & < > " '
+ *
+ * @param {string} str String to escape.
+ * @return {string} Escaped string.
+ */
+export function escapeHtml( str ) {
+	if ( typeof str !== 'string' ) {
+		return '';
+	}
+
+	return str
+		.replace( /&/g, '&amp;' )
+		.replace( /</g, '&lt;' )
+		.replace( />/g, '&gt;' )
+		.replace( /"/g, '&quot;' )
+		.replace( /'/g, '&#039;' );
+}
+
+/**
+ * Escape attribute value special characters.
+ *
+ * Escapes values for use in HTML attributes.
+ * Escapes: & " '
+ *
+ * @param {string} str String to escape.
+ * @return {string} Escaped string.
+ */
+export function escapeAttr( str ) {
+	if ( typeof str !== 'string' ) {
+		return '';
+	}
+
+	return str
+		.replace( /&/g, '&amp;' )
+		.replace( /"/g, '&quot;' )
+		.replace( /'/g, '&#039;' );
+}
+
+/**
  * Parse HTML string and extract metadata.
  *
  * @param {string} html    The HTML content to parse.
@@ -389,23 +431,30 @@ function getCanonical( doc, meta ) {
 }
 
 /**
- * Build suggested content from scraped metadata.
+ * Build suggested content from server-returned metadata.
  *
- * @param {Object} metadata Parsed metadata.
+ * All dynamic content is escaped.
+ * Uses pre-sanitized server data instead of client-side parsing.
+ *
+ * @param {Object} data      Server-returned metadata object.
  * @param {string} sourceUrl Original source URL.
  * @return {string} Gutenberg block content.
  */
-export function buildSuggestedContent( metadata, sourceUrl ) {
+export function buildSuggestedContent( data, sourceUrl ) {
 	let content = '';
 
 	// Check if source URL is an embeddable video.
 	const isEmbed = isEmbeddableUrl( sourceUrl );
 
 	if ( isEmbed ) {
+		// Escape URL in JSON attribute.
+		const escapedUrl = escapeAttr( sourceUrl );
+		const provider = getEmbedProvider( sourceUrl );
+
 		// Add embed block.
-		content += `<!-- wp:embed {"url":"${ sourceUrl }","type":"video","providerNameSlug":"${ getEmbedProvider( sourceUrl ) }"} -->
-<figure class="wp-block-embed is-type-video is-provider-${ getEmbedProvider( sourceUrl ) }"><div class="wp-block-embed__wrapper">
-${ sourceUrl }
+		content += `<!-- wp:embed {"url":"${ escapedUrl }","type":"video","providerNameSlug":"${ provider }"} -->
+<figure class="wp-block-embed is-type-video is-provider-${ provider }"><div class="wp-block-embed__wrapper">
+${ escapeHtml( sourceUrl ) }
 </div></figure>
 <!-- /wp:embed -->
 
@@ -413,10 +462,11 @@ ${ sourceUrl }
 	}
 
 	// Add quote block with description if available.
-	if ( metadata.description ) {
+	// Escape description.
+	if ( data.description ) {
 		content += `<!-- wp:quote -->
 <blockquote class="wp-block-quote"><!-- wp:paragraph -->
-<p>${ escapeHtml( metadata.description ) }</p>
+<p>${ escapeHtml( data.description ) }</p>
 <!-- /wp:paragraph --></blockquote>
 <!-- /wp:quote -->
 
@@ -424,12 +474,27 @@ ${ sourceUrl }
 	}
 
 	// Add source attribution.
-	const linkText = metadata.title || metadata.siteName || sourceUrl;
+	// Escape link text.
+	const linkText = data.title || data.siteName || sourceUrl;
 	content += `<!-- wp:paragraph -->
-<p>Source: <em><a href="${ sourceUrl }">${ escapeHtml( linkText ) }</a></em></p>
+<p>Source: <em><a href="${ escapeAttr( sourceUrl ) }">${ escapeHtml( linkText ) }</a></em></p>
 <!-- /wp:paragraph -->`;
 
 	return content;
+}
+
+/**
+ * Build suggested content from server-returned metadata.
+ *
+ * This is the primary function for building content from the scrape endpoint.
+ * All dynamic content is escaped.
+ * Uses pre-sanitized server data.
+ *
+ * @param {Object} data Server metadata with title, description, images, embeds.
+ * @return {string} Gutenberg block content.
+ */
+export function buildSuggestedContentFromMetadata( data ) {
+	return buildSuggestedContent( data, data.canonical || data.url || '' );
 }
 
 /**
@@ -462,16 +527,4 @@ function getEmbedProvider( url ) {
 		return 'twitter';
 	}
 	return 'embed';
-}
-
-/**
- * Escape HTML special characters.
- *
- * @param {string} str String to escape.
- * @return {string} Escaped string.
- */
-function escapeHtml( str ) {
-	const div = document.createElement( 'div' );
-	div.textContent = str;
-	return div.innerHTML;
 }

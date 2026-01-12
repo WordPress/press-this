@@ -4,4 +4,10 @@
  * @package
  */
 
-export { parseHtmlMetadata, buildSuggestedContent } from './html-parser';
+export {
+	parseHtmlMetadata,
+	buildSuggestedContent,
+	buildSuggestedContentFromMetadata,
+	escapeHtml,
+	escapeAttr,
+} from './html-parser';

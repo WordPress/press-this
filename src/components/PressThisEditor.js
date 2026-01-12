@@ -10,7 +10,7 @@
 /**
  * WordPress dependencies
  */
-import { useMemo, useCallback, useState, useEffect } from '@wordpress/element';
+import { useMemo, useCallback, useState, useEffect, useRef } from '@wordpress/element';
 import { useSelect, useDispatch } from '@wordpress/data';
 import { parse } from '@wordpress/blocks';
 import {
@@ -36,6 +36,9 @@ import {
 	Snackbar,
 	Panel,
 	PanelBody,
+	TextControl,
+	SelectControl,
+	FormTokenField,
 } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import { registerCoreBlocks } from '@wordpress/block-library';
@@ -83,6 +86,114 @@ function ensureBlocksRegistered() {
 }
 
 /**
+ * Safe redirect function.
+ *
+ * Validates redirect URLs to ensure they point to expected destinations.
+ * Only allows redirects to the same host or relative URLs.
+ *
+ * @param {string} url      The URL to redirect to.
+ * @param {Object} options  Redirect options.
+ * @param {string} options.fallback Fallback URL if validation fails. Defaults to /wp-admin/.
+ * @return {string} Safe URL to use for redirection.
+ */
+function safeRedirect( url, options = {} ) {
+	const fallback = options.fallback || '/wp-admin/';
+
+	// Empty URL - use fallback.
+	if ( ! url ) {
+		return fallback;
+	}
+
+	try {
+		const redirectUrl = new URL( url, window.location.origin );
+		const currentHost = window.location.host;
+
+		// Check if redirect host matches current host.
+		if ( redirectUrl.host === currentHost ) {
+			return url;
+		}
+
+		// Relative URLs (no host) are safe.
+		if ( ! redirectUrl.host || redirectUrl.origin === window.location.origin ) {
+			return url;
+		}
+
+		// Block external redirects.
+		// Log blocked redirect for debugging (development only).
+		console.warn(
+			'Press This: Blocked external redirect to',
+			redirectUrl.host,
+			'- using fallback'
+		);
+
+		return fallback;
+	} catch ( e ) {
+		// If URL parsing fails, treat it as potentially malicious.
+		console.warn( 'Press This: Invalid redirect URL - using fallback' );
+		return fallback;
+	}
+}
+
+/**
+ * Perform a safe redirect.
+ *
+ * Uses safeRedirect to validate the URL before redirecting.
+ *
+ * @param {string}  url             URL to redirect to.
+ * @param {boolean} inParentWindow  Whether to redirect in parent window.
+ * @param {string}  expectedOrigin  Expected origin for parent window redirects.
+ */
+function performSafeRedirect( url, inParentWindow = false, expectedOrigin = '' ) {
+	const safeUrl = safeRedirect( url );
+
+	if ( inParentWindow && window.opener ) {
+		// For parent window redirects, use postMessage with origin check.
+		// This prevents cross-origin redirect attacks.
+		const targetOrigin = expectedOrigin || window.location.origin;
+
+		try {
+			// Attempt to check if opener is same origin.
+			// This will throw if cross-origin.
+			if ( window.opener.location.origin === window.location.origin ) {
+				window.opener.location.href = safeUrl;
+				window.close();
+				return;
+			}
+		} catch ( e ) {
+			// Cross-origin opener - don't redirect parent.
+			console.warn( 'Press This: Cannot redirect cross-origin parent window' );
+		}
+
+		// Fallback: redirect self.
+		window.location.href = safeUrl;
+	} else {
+		window.location.href = safeUrl;
+	}
+}
+
+/**
+ * Build the WordPress REST API base URL for core endpoints.
+ *
+ * Handles both pretty permalinks (/wp-json/) and index.php?rest_route= formats.
+ *
+ * @param {string} pressThisRestUrl The Press This REST URL (e.g., /wp-json/press-this/v1/ or index.php?rest_route=/press-this/v1/).
+ * @return {string} The base URL for WordPress core REST endpoints.
+ */
+function getWpRestBaseUrl( pressThisRestUrl ) {
+	// Check if using index.php?rest_route= format.
+	if ( pressThisRestUrl.includes( 'rest_route=' ) ) {
+		// Extract the base URL up to and including rest_route=.
+		const match = pressThisRestUrl.match( /^(.*[?&]rest_route=)/ );
+		if ( match ) {
+			return match[ 1 ] + '/';
+		}
+	}
+
+	// Pretty permalinks format - replace the namespace.
+	return pressThisRestUrl.replace( /press-this\/v1\/$/, '' );
+}
+
+/**
  * Press This Editor component.
  *
  * @param {Object}   props                    Component props.
@@ -104,13 +215,15 @@ export default function PressThisEditor( {
 	settings,
 	images = [],
 	embeds = [],
-	categories = [],
+	categories: initialCategories = [],
 	postFormats = [],
 	capabilities = {},
 	restConfig = {},
 	sourceUrl = '',
 	pendingScrape = null,
 	onScrapeProcessed = () => {},
+	categoryNonce = '',
+	ajaxUrl = '',
 } ) {
 	// Register blocks on mount.
 	useEffect( () => {
@@ -127,6 +240,21 @@ export default function PressThisEditor( {
 	const [ isSaving, setIsSaving ] = useState( false );
 	const [ isReady, setIsReady ] = useState( false );
 	const [ notice, setNotice ] = useState( null );
+
+	// State for dynamic categories list (can be updated when new categories are added).
+	const [ categories, setCategories ] = useState( initialCategories );
+
+	// State for Add New Category form.
+	const [ isAddCategoryOpen, setIsAddCategoryOpen ] = useState( false );
+	const [ newCategoryName, setNewCategoryName ] = useState( '' );
+	const [ newCategoryParent, setNewCategoryParent ] = useState( 0 );
+	const [ isCreatingCategory, setIsCreatingCategory ] = useState( false );
+	const [ categoryError, setCategoryError ] = useState( '' );
+
+	// State for tag suggestions (autocomplete).
+	const [ tagSuggestions, setTagSuggestions ] = useState( [] );
+	const [ isLoadingTags, setIsLoadingTags ] = useState( false );
+	const tagSearchTimeout = useRef( null );
 
 	// Parse initial content.
 	useEffect( () => {
@@ -212,13 +340,13 @@ export default function PressThisEditor( {
 
 			if ( response.ok && result.success ) {
 				if ( result.redirect ) {
+					// Use safe redirect to validate URL.
 					if ( result.force ) {
-						window.location.href = result.redirect;
+						performSafeRedirect( result.redirect, false );
 					} else if ( restConfig.redirInParent && window.opener ) {
-						window.opener.location.href = result.redirect;
-						window.close();
+						performSafeRedirect( result.redirect, true, window.location.origin );
 					} else {
-						window.location.href = result.redirect;
+						performSafeRedirect( result.redirect, false );
 					}
 				} else {
 					// No redirect - show success notice.
@@ -268,6 +396,147 @@ export default function PressThisEditor( {
 				}
 			}
 		}
+	}, [] );
+
+	/**
+	 * Handle creating a new category via AJAX.
+	 */
+	const handleAddCategory = useCallback( async () => {
+		if ( ! newCategoryName.trim() || ! categoryNonce || ! ajaxUrl ) {
+			return;
+		}
+
+		setIsCreatingCategory( true );
+		setCategoryError( '' );
+
+		try {
+			const params = new URLSearchParams();
+			params.append( 'action', 'press-this-plugin-add-category' );
+			params.append( 'new_cat_nonce', categoryNonce );
+			params.append( 'name', newCategoryName.trim() );
+			params.append( 'parent', newCategoryParent.toString() );
+
+			const response = await fetch( ajaxUrl, {
+				method: 'POST',
+				credentials: 'same-origin',
+				headers: {
+					'Content-Type': 'application/x-www-form-urlencoded',
+				},
+				body: params.toString(),
+			} );
+
+			const result = await response.json();
+
+			if ( result.success && result.data && result.data.length > 0 ) {
+				// Add new categories to the list.
+				const newCats = result.data.map( ( cat ) => ( {
+					id: cat.term_id,
+					name: cat.name,
+					parent: cat.parent,
+				} ) );
+
+				setCategories( ( prev ) => [ ...prev, ...newCats ] );
+
+				// Auto-select the newly created categories.
+				const newCatIds = newCats.map( ( cat ) => cat.id );
+				setSelectedCategories( ( prev ) => [ ...prev, ...newCatIds ] );
+
+				// Clear form and close.
+				setNewCategoryName( '' );
+				setNewCategoryParent( 0 );
+				setIsAddCategoryOpen( false );
+			} else {
+				setCategoryError( result.data?.errorMessage || __( 'Failed to create category.', 'press-this' ) );
+			}
+		} catch ( error ) {
+			setCategoryError( __( 'Failed to create category.', 'press-this' ) );
+		} finally {
+			setIsCreatingCategory( false );
+		}
+	}, [ newCategoryName, newCategoryParent, categoryNonce, ajaxUrl ] );
+
+	/**
+	 * Build parent category options for the dropdown.
+	 */
+	const parentCategoryOptions = useMemo( () => {
+		const options = [
+			{ value: 0, label: __( '— Parent Category —', 'press-this' ) },
+		];
+
+		// Build hierarchical options.
+		const buildOptions = ( items, parentId = 0, depth = 0 ) => {
+			items
+				.filter( ( cat ) => ( cat.parent || 0 ) === parentId )
+				.forEach( ( cat ) => {
+					const prefix = '\u00A0'.repeat( depth * 3 ); // Non-breaking spaces for indentation.
+					options.push( {
+						value: cat.id,
+						label: prefix + cat.name,
+					} );
+					buildOptions( items, cat.id, depth + 1 );
+				} );
+		};
+
+		buildOptions( categories );
+		return options;
+	}, [ categories ] );
+
+	/**
+	 * Search for tag suggestions via REST API.
+	 * Uses debouncing to avoid excessive API calls.
+	 *
+	 * @param {string} search Search string.
+	 */
+	const searchTags = useCallback( ( search ) => {
+		// Clear any pending search.
+		if ( tagSearchTimeout.current ) {
+			clearTimeout( tagSearchTimeout.current );
+		}
+
+		// If search is empty, clear suggestions.
+		if ( ! search || search.length < 2 ) {
+			setTagSuggestions( [] );
+			return;
+		}
+
+		// Debounce the search by 300ms.
+		tagSearchTimeout.current = setTimeout( async () => {
+			setIsLoadingTags( true );
+			try {
+				// Build the correct WordPress REST API URL for tags.
+				const wpRestBase = getWpRestBaseUrl( restConfig.restUrl );
+				const tagsUrl = wpRestBase.includes( 'rest_route=' )
+					? `${ wpRestBase }wp/v2/tags&search=${ encodeURIComponent( search ) }&per_page=10`
+					: `${ wpRestBase }wp/v2/tags?search=${ encodeURIComponent( search ) }&per_page=10`;
+
+				const response = await fetch( tagsUrl, {
+					headers: {
+						'X-WP-Nonce': restConfig.restNonce,
+					},
+				} );
+
+				if ( response.ok ) {
+					const results = await response.json();
+					// Extract tag names for suggestions.
+					const names = results.map( ( tag ) => tag.name );
+					setTagSuggestions( names );
+				}
+			} catch ( error ) {
+				// Silently fail - suggestions are optional.
+				setTagSuggestions( [] );
+			} finally {
+				setIsLoadingTags( false );
+			}
+		}, 300 );
+	}, [ restConfig.restUrl, restConfig.restNonce ] );
+
+	/**
+	 * Handle tag changes from FormTokenField.
+	 *
+	 * @param {Array} newTags New array of tags.
+	 */
+	const handleTagsChange = useCallback( ( newTags ) => {
+		setTags( newTags );
 	}, [] );
 
 	// Editor settings.
@@ -471,6 +740,55 @@ export default function PressThisEditor( {
 													</label>
 												) ) }
 											</div>
+
+											{ /* Add New Category - only show if user can edit categories */ }
+											{ capabilities.canEditCategories && categoryNonce && (
+												<div className="press-this-editor__add-category">
+													<Button
+														variant="link"
+														onClick={ () => setIsAddCategoryOpen( ! isAddCategoryOpen ) }
+														className="press-this-editor__add-category-toggle"
+													>
+														{ isAddCategoryOpen
+															? __( '— Close —', 'press-this' )
+															: __( '+ Add New Category', 'press-this' )
+														}
+													</Button>
+
+													{ isAddCategoryOpen && (
+														<div className="press-this-editor__add-category-form">
+															<TextControl
+																value={ newCategoryName }
+																onChange={ setNewCategoryName }
+																placeholder={ __( 'New Category Name', 'press-this' ) }
+																__nextHasNoMarginBottom
+																__next40pxDefaultSize
+															/>
+															<SelectControl
+																value={ newCategoryParent }
+																onChange={ ( value ) => setNewCategoryParent( parseInt( value, 10 ) ) }
+																options={ parentCategoryOptions }
+																__nextHasNoMarginBottom
+																__next40pxDefaultSize
+															/>
+															{ categoryError && (
+																<p className="press-this-editor__add-category-error">
+																	{ categoryError }
+																</p>
+															) }
+															<Button
+																variant="secondary"
+																onClick={ handleAddCategory }
+																disabled={ ! newCategoryName.trim() || isCreatingCategory }
+																isBusy={ isCreatingCategory }
+																className="press-this-editor__add-category-button"
+															>
+																{ __( 'Add New Category', 'press-this' ) }
+															</Button>
+														</div>
+													) }
+												</div>
+											) }
 										</PanelBody>
 									) }
 
@@ -480,35 +798,20 @@ export default function PressThisEditor( {
 											title={ __( 'Tags', 'press-this' ) }
 											initialOpen={ false }
 										>
-											<input
-												type="text"
-												className="press-this-editor__tags-input"
-												placeholder={ __( 'Add tags (comma separated)', 'press-this' ) }
-												onKeyDown={ ( e ) => {
-													if ( e.key === 'Enter' || e.key === ',' ) {
-														e.preventDefault();
-														const value = e.target.value.trim();
-														if ( value && ! tags.includes( value ) ) {
-															setTags( [ ...tags, value ] );
-															e.target.value = '';
-														}
-													}
-												} }
+											<FormTokenField
+												value={ tags }
+												suggestions={ tagSuggestions }
+												onChange={ handleTagsChange }
+												onInputChange={ searchTags }
+												placeholder={ __( 'Add tags', 'press-this' ) }
+												__experimentalExpandOnFocus
+												__experimentalShowHowTo={ false }
+												__next40pxDefaultSize
+												__nextHasNoMarginBottom
 											/>
-											{ tags.length > 0 && (
-												<div className="press-this-editor__tags-list">
-													{ tags.map( ( tag ) => (
-														<span key={ tag } className="press-this-editor__tag">
-															{ tag }
-															<button
-																type="button"
-																onClick={ () => setTags( tags.filter( ( t ) => t !== tag ) ) }
-																aria-label={ __( 'Remove tag', 'press-this' ) }
-															>
-																&times;
-															</button>
-														</span>
-													) ) }
+											{ isLoadingTags && (
+												<div className="press-this-editor__tags-loading">
+													<Spinner />
 												</div>
 											) }
 										</PanelBody>

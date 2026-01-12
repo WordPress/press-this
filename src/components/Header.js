@@ -16,7 +16,7 @@ import { __ } from '@wordpress/i18n';
 /**
  * Internal dependencies
  */
-import { parseHtmlMetadata, buildSuggestedContent } from '../utils';
+import { buildSuggestedContentFromMetadata } from '../utils';
 
 /**
  * Header component.
@@ -57,6 +57,9 @@ export default function Header( {
 	/**
 	 * Handle URL scan via proxy API.
 	 *
+	 * Server returns sanitized metadata instead of raw HTML.
+	 * We no longer parse HTML client-side - the server handles extraction and sanitization.
+	 *
 	 * @param {boolean} mediaOnly If true, only fetch media (images/embeds), not content.
 	 */
 	const handleProxyScan = useCallback( async ( mediaOnly = false ) => {
@@ -83,8 +86,9 @@ export default function Header( {
 				throw new Error( data.message || __( 'Failed to fetch URL', 'press-this' ) );
 			}
 
-			// Parse the HTML content client-side.
-			const metadata = parseHtmlMetadata( data.html, data.final_url || scanUrl );
+			// Server returns sanitized metadata object directly.
+			// No client-side HTML parsing needed - data.title, data.description,
+			// data.images, data.embeds are all pre-sanitized by the server.
 
 			// Callback with scraped data.
 			if ( onScrapeComplete ) {
@@ -93,19 +97,27 @@ export default function Header( {
 					onScrapeComplete( {
 						title: '',
 						content: '',
-						images: metadata.images,
-						embeds: metadata.embeds,
+						images: data.images || [],
+						embeds: data.embeds || [],
 						sourceUrl: scanUrl,
 						mediaOnly: true,
 					} );
 				} else {
-					// Build suggested content for full scan.
-					const suggestedContent = buildSuggestedContent( metadata, scanUrl );
+					// Build suggested content from server-sanitized metadata.
+					// buildSuggestedContentFromMetadata applies additional escaping.
+					const suggestedContent = buildSuggestedContentFromMetadata( {
+						title: data.title || '',
+						description: data.description || '',
+						siteName: '',
+						canonical: data.canonical || scanUrl,
+						url: data.final_url || scanUrl,
+					} );
+
 					onScrapeComplete( {
-						title: metadata.title,
+						title: data.title || '',
 						content: suggestedContent,
-						images: metadata.images,
-						embeds: metadata.embeds,
+						images: data.images || [],
+						embeds: data.embeds || [],
 						sourceUrl: scanUrl,
 					} );
 				}
@@ -212,6 +224,8 @@ export default function Header( {
 							type="url"
 							hideLabelFromVision
 							label={ __( 'URL to scan', 'press-this' ) }
+							__nextHasNoMarginBottom
+							__next40pxDefaultSize
 						/>
 						<Button
 							variant="secondary"

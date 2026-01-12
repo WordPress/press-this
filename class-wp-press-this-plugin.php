@@ -122,6 +122,7 @@ class WP_Press_This_Plugin {
 	 * Ajax handler for saving the post as draft or published.
 	 *
 	 * @since 1.0.0
+	 * @since 2.0.0 Added input sanitization for categories and taxonomies.
 	 */
 	public function save_post() {
 		// Verify a post ID is set first, then process the nonce since it uses the post ID.
@@ -146,23 +147,53 @@ class WP_Press_This_Plugin {
 			'post_format'  => ( ! empty( $_POST['post_format'] ) ) ? sanitize_text_field( $_POST['post_format'] ) : '',
 		);
 
-		// Only accept categories if the user actually can assign.
+		// Sanitize category IDs with absint and verify capability.
 		$category_tax = get_taxonomy( 'category' );
 		if ( current_user_can( $category_tax->cap->assign_terms ) ) {
-			$post_data['post_category'] = ( ! empty( $_POST['post_category'] ) ) ? $_POST['post_category'] : array();
+			if ( ! empty( $_POST['post_category'] ) ) {
+				// Convert all values to integers and filter out zeros (invalid IDs).
+				$categories = array_map( 'absint', (array) $_POST['post_category'] );
+				$categories = array_filter( $categories );
+				$post_data['post_category'] = $categories;
+			} else {
+				$post_data['post_category'] = array();
+			}
 		}
 
-		// Only accept taxonomies if the user can actually assign.
+		// Sanitize taxonomy inputs with proper type handling.
 		if ( ! empty( $_POST['tax_input'] ) ) {
-			$tax_input = $_POST['tax_input'];
-			foreach ( $tax_input as $tax => $_ti ) {
+			$tax_input = array();
+
+			foreach ( (array) $_POST['tax_input'] as $tax => $terms ) {
+				// Sanitize taxonomy key.
+				$tax = sanitize_key( $tax );
+
+				// Validate taxonomy exists.
 				$tax_object = get_taxonomy( $tax );
-				if ( ! $tax_object || ! current_user_can( $tax_object->cap->assign_terms ) ) {
-					unset( $tax_input[ $tax ] );
+				if ( ! $tax_object ) {
+					continue;
+				}
+
+				// Verify user has capability to assign terms.
+				if ( ! current_user_can( $tax_object->cap->assign_terms ) ) {
+					continue;
+				}
+
+				// Sanitize terms based on taxonomy type.
+				if ( is_taxonomy_hierarchical( $tax ) ) {
+					// Hierarchical taxonomies use term IDs (integers).
+					$tax_input[ $tax ] = array_map( 'absint', (array) $terms );
+					$tax_input[ $tax ] = array_filter( $tax_input[ $tax ] );
+				} else {
+					// Non-hierarchical taxonomies use term names (strings).
+					$tax_input[ $tax ] = array_map( 'sanitize_text_field', (array) $terms );
+					$tax_input[ $tax ] = array_filter( $tax_input[ $tax ] );
 				}
 			}
 
-			$post_data['tax_input'] = $tax_input;
+			if ( ! empty( $tax_input ) ) {
+				$post_data['tax_input'] = $tax_input;
+			}
 		}
 
 		// Toggle status to pending if user cannot actually publish.
@@ -357,40 +388,59 @@ class WP_Press_This_Plugin {
 	}
 
 	/**
-	 * Utility method to limit a given URL to 2,048 characters.
+	 * Utility method to limit and validate a given URL.
+	 *
+	 * Applies defense-in-depth validation including:
+	 * - String type check
+	 * - 2048 character length limit
+	 * - WordPress URL validation via wp_http_validate_url()
+	 * - Scheme restriction to http/https only
 	 *
 	 * @ignore
 	 * @since 1.0.0
+	 * @since 2.0.0 Enhanced validation with wp_http_validate_url() and strict scheme checking.
 	 *
 	 * @param string $url URL to check for length and validity.
-	 * @return string Escaped URL if of valid length (< 2048) and makeup. Empty string otherwise.
+	 * @return string Escaped URL if valid. Empty string otherwise.
 	 */
 	private function limit_url( $url ) {
+		// Type check.
 		if ( ! is_string( $url ) ) {
 			return '';
 		}
 
-		// HTTP 1.1 allows 8000 chars but the "de-facto" standard supported in all current browsers is 2048.
+		// Length limit (2048 characters is de-facto browser standard).
 		if ( strlen( $url ) > 2048 ) {
-			return ''; // Return empty rather than a truncated/invalid URL.
-		}
-
-		// Does not look like a URL.
-		if ( ! preg_match( '/^([!#$&-;=?-\[\]_a-z~]|%[0-9a-fA-F]{2})+$/', $url ) ) {
 			return '';
 		}
+
+		// Decode URL-encoded characters for validation.
+		$decoded_url = urldecode( $url );
 
 		// If the URL is root-relative, prepend the protocol and domain name.
-		if ( $url && $this->domain && preg_match( '%^/[^/]+%', $url ) ) {
-			$url = $this->domain . $url;
+		if ( $decoded_url && $this->domain && preg_match( '%^/[^/]+%', $decoded_url ) ) {
+			$decoded_url = $this->domain . $decoded_url;
 		}
 
-		// Not absolute or protocol-relative URL.
-		if ( ! preg_match( '%^(?:https?:)?//[^/]+%', $url ) ) {
+		// Use WordPress URL validation for comprehensive checks.
+		$validated = wp_http_validate_url( $decoded_url );
+
+		if ( ! $validated ) {
+			// Fall back to esc_url_raw with scheme restriction.
+			$validated = esc_url_raw( $decoded_url, array( 'http', 'https' ) );
+		}
+
+		// Empty after validation means invalid.
+		if ( empty( $validated ) ) {
 			return '';
 		}
 
-		return esc_url_raw( $url, array( 'http', 'https' ) );
+		// Final scheme check - must be http or https.
+		if ( ! preg_match( '#^https?://#i', $validated ) ) {
+			return '';
+		}
+
+		return $validated;
 	}
 
 	/**
@@ -1062,8 +1112,13 @@ class WP_Press_This_Plugin {
 	 * Features a blockquoted excerpt, as well as content attribution, if any.
 	 * Enhanced in v2.0.0 to also check JSON-LD structured data for description.
 	 *
+	 * All dynamic values are properly escaped:
+	 * - URLs use esc_url()
+	 * - Text content uses esc_html()
+	 *
 	 * @since 1.0.0
 	 * @since 2.0.0 Added JSON-LD description support.
+	 * @since 2.0.0 Added escaping for all dynamic content.
 	 *
 	 * @param array $data The site's data.
 	 * @return string Discovered content, or empty
@@ -1099,10 +1154,14 @@ class WP_Press_This_Plugin {
 		);
 
 		if ( ! empty( $data['u'] ) && $this->limit_embed( $data['u'] ) ) {
+			// Use esc_url() for URL in embed block and esc_attr() for JSON attribute.
+			$escaped_url = esc_url( $data['u'] );
+			$attr_url    = esc_attr( $escaped_url );
+
 			// Use Gutenberg embed block format.
-			$default_html['embed'] = '<!-- wp:embed {"url":"' . esc_url( $data['u'] ) . '"} -->' . "\n" .
+			$default_html['embed'] = '<!-- wp:embed {"url":"' . $attr_url . '"} -->' . "\n" .
 				'<figure class="wp-block-embed"><div class="wp-block-embed__wrapper">' . "\n" .
-				esc_url( $data['u'] ) . "\n" .
+				$escaped_url . "\n" .
 				'</div></figure>' . "\n" .
 				'<!-- /wp:embed -->';
 
@@ -1146,12 +1205,13 @@ class WP_Press_This_Plugin {
 			$content .= $default_html['embed'];
 		}
 
-		// Wrap suggested content in the specified HTML.
+		// Wrap suggested content in the specified HTML with proper escaping.
 		if ( ! empty( $default_html['quote'] ) && $text ) {
-			$content .= sprintf( $default_html['quote'], $text );
+			// Escape text content.
+			$content .= sprintf( $default_html['quote'], esc_html( $text ) );
 		}
 
-		// Add source attribution if there is one available.
+		// Add source attribution with proper escaping.
 		if ( ! empty( $default_html['link'] ) ) {
 			$title = $this->get_suggested_title( $data );
 			$url   = $this->get_canonical_link( $data );
@@ -1161,7 +1221,8 @@ class WP_Press_This_Plugin {
 			}
 
 			if ( $url && $title ) {
-				$content .= sprintf( $default_html['link'], $url, $title );
+				// Escape URL and title.
+				$content .= sprintf( $default_html['link'], esc_url( $url ), esc_html( $title ) );
 			}
 		}
 
@@ -1200,15 +1261,47 @@ class WP_Press_This_Plugin {
 	/**
 	 * Suggest a post format based on content type.
 	 *
+	 * Automatically detects the most appropriate post format based on the
+	 * bookmarklet data. The detection follows this priority order:
+	 *
+	 * 1. **Video format**: Suggested when embedded videos are detected from
+	 *    YouTube, Vimeo, or Dailymotion, or when the source URL itself is
+	 *    from one of these video platforms.
+	 *
+	 * 2. **Quote format**: Suggested when the user has selected text that is
+	 *    longer than 50 characters and does not contain URLs. This indicates
+	 *    the user likely wants to quote the selected passage.
+	 *
+	 * 3. **Link format**: Suggested when only a URL is provided with no
+	 *    selected text, images, or embeds. This indicates a simple link share.
+	 *
+	 * 4. **Standard format**: Used when none of the above conditions are met.
+	 *
+	 * To customize the suggested format, use the `press_this_post_format_suggestion`
+	 * filter. Example:
+	 *
+	 *     add_filter( 'press_this_post_format_suggestion', function( $format, $data ) {
+	 *         // Force image format when images are present
+	 *         if ( ! empty( $data['_images'] ) ) {
+	 *             return 'image';
+	 *         }
+	 *         return $format;
+	 *     }, 10, 2 );
+	 *
 	 * @since 2.0.0
 	 *
-	 * @param array $data The site's data.
-	 * @return string Suggested post format or empty string for standard.
+	 * @param array $data The site's data including:
+	 *                    - 'u'       (string) Source URL.
+	 *                    - 's'       (string) Selected text from the page.
+	 *                    - '_images' (array)  Scraped image URLs.
+	 *                    - '_embeds' (array)  Scraped embed URLs.
+	 * @return string Suggested post format ('video', 'quote', 'link') or empty string for standard.
 	 */
 	public function get_suggested_post_format( $data ) {
 		$suggested_format = '';
 
-		// Check for video embeds.
+		// Priority 1: Check for video embeds from major video platforms.
+		// Detects YouTube, Vimeo, and Dailymotion URLs in scraped embeds.
 		if ( ! empty( $data['_embeds'] ) ) {
 			foreach ( $data['_embeds'] as $embed ) {
 				if ( preg_match( '/(youtube\.com|vimeo\.com|dailymotion\.com)/i', $embed ) ) {
@@ -1218,22 +1311,24 @@ class WP_Press_This_Plugin {
 			}
 		}
 
-		// Check if the source URL itself is an embeddable video.
+		// Priority 1b: Check if the source URL itself is from a video platform.
+		// Handles cases where user bookmarks a video page directly.
 		if ( empty( $suggested_format ) && ! empty( $data['u'] ) ) {
 			if ( preg_match( '/(youtube\.com|youtu\.be|vimeo\.com|dailymotion\.com)/i', $data['u'] ) ) {
 				$suggested_format = 'video';
 			}
 		}
 
-		// Check for quote-heavy content (if selected text looks like a quote).
+		// Priority 2: Check for quote-worthy selected text.
+		// Text selections over 50 characters without URLs suggest the user wants to quote.
 		if ( empty( $suggested_format ) && ! empty( $data['s'] ) ) {
-			// If the selection is more than 50 characters and doesn't contain links, suggest quote format.
 			if ( strlen( $data['s'] ) > 50 && strpos( $data['s'], 'http' ) === false ) {
 				$suggested_format = 'quote';
 			}
 		}
 
-		// Check for link-focused content (URL provided but minimal other content).
+		// Priority 3: Check for link-only content.
+		// When only a URL is provided with no other content, suggest link format.
 		if ( empty( $suggested_format ) && ! empty( $data['u'] ) && empty( $data['s'] ) && empty( $data['_images'] ) && empty( $data['_embeds'] ) ) {
 			$suggested_format = 'link';
 		}
@@ -1294,7 +1389,7 @@ class WP_Press_This_Plugin {
 	 *
 	 * @since 1.0.0
 	 * @since 2.0.0 Updated for Gutenberg block editor.
-	 * @since 2.1.0 Converted to minimal shell - all UI rendered by React.
+	 * @since 2.0.0 Converted to minimal shell - all UI rendered by React.
 	 *
 	 * @global WP_Locale $wp_locale
 	 */
@@ -1417,6 +1512,9 @@ class WP_Press_This_Plugin {
 			// Config.
 			'redirInParent'       => $site_settings['redirInParent'],
 			'isRTL'               => is_rtl(),
+
+			// Bookmarklet confirmation - prompt user before loading external content.
+			'needsConfirmation'   => ! empty( $data['u'] ) && 'POST' === $_SERVER['REQUEST_METHOD'],
 
 			// Allowed blocks.
 			'allowedBlocks'       => $this->get_allowed_blocks(),

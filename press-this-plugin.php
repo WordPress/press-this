@@ -12,7 +12,7 @@
  * License URI: http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  * Text Domain: press-this
  * Domain Path: /languages
- * Requires at least: 6.0
+ * Requires at least: 6.9
  * Requires PHP: 7.4
  *
  * @package wordpress/press-this
@@ -40,8 +40,9 @@ define( 'PRESS_THIS__VERSION', '2.0.0' );
  * Minimum WordPress version required for the Gutenberg features.
  *
  * @since 2.0.0
+ * @since 2.0.0 Updated to 6.9 to leverage reject_unsafe_urls for URL validation.
  */
-define( 'PRESS_THIS__MIN_WP_VERSION', '6.0' );
+define( 'PRESS_THIS__MIN_WP_VERSION', '6.9' );
 
 /**
  * Check if the current WordPress version is compatible.
@@ -89,7 +90,7 @@ add_action( 'wp_ajax_press-this-plugin-add-category', 'wp_ajax_press_this_plugin
 // Register REST API routes.
 add_action( 'rest_api_init', 'press_this_register_rest_routes' );
 
-// Register SSRF protection filter for HTTP requests.
+// Register URL validation filter for HTTP requests.
 add_filter( 'pre_http_request', 'press_this_validate_http_request_ip', 10, 3 );
 
 // Register Tools page integration.
@@ -116,7 +117,7 @@ function wp_ajax_press_this_plugin_save_post() {
 	include_once plugin_dir_path( __FILE__ ) . 'class-wp-press-this-plugin.php';
 	$wp_press_this = new WP_Press_This_Plugin();
 
-	// Enable SSRF protection for image sideloading.
+	// Enable URL validation for image sideloading.
 	press_this_http_request_context( true );
 	$wp_press_this->save_post();
 	press_this_http_request_context( false );
@@ -320,7 +321,7 @@ function press_this_rest_save_post( $request ) {
 		}
 	}
 
-	// Side-load images from content (with SSRF protection).
+	// Side-load images from content.
 	$wp_press_this = new WP_Press_This_Plugin();
 	press_this_http_request_context( true );
 	$post_data['post_content'] = $wp_press_this->side_load_images( $post_id, wp_slash( $post_data['post_content'] ) );
@@ -339,9 +340,13 @@ function press_this_rest_save_post( $request ) {
 	$updated = wp_update_post( $post_data, true );
 
 	if ( is_wp_error( $updated ) ) {
+		// Log detailed error when WP_DEBUG is enabled, return generic message to user.
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( 'Press This save_post error: ' . $updated->get_error_message() );
+		}
 		return new WP_Error(
 			'press_this_save_failed',
-			$updated->get_error_message(),
+			__( 'Unable to save the post. Please try again.', 'press-this' ),
 			array( 'status' => 500 )
 		);
 	}
@@ -358,7 +363,15 @@ function press_this_rest_save_post( $request ) {
 	// Set featured image.
 	$featured_image = $request->get_param( 'featured_image' );
 	if ( $featured_image && current_user_can( 'upload_files' ) ) {
-		set_post_thumbnail( $post_id, $featured_image );
+		// Validate that the attachment ID exists and is a valid image.
+		$attachment = get_post( $featured_image );
+		if ( $attachment && 'attachment' === $attachment->post_type && wp_attachment_is_image( $featured_image ) ) {
+			set_post_thumbnail( $post_id, $featured_image );
+		} elseif ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			// Log invalid attachment IDs for debugging.
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			error_log( sprintf( 'Press This: Invalid featured image ID %d for post %d', $featured_image, $post_id ) );
+		}
 	} elseif ( 0 === $featured_image ) {
 		delete_post_thumbnail( $post_id );
 	}
@@ -383,6 +396,20 @@ function press_this_rest_save_post( $request ) {
 	 * @param string $status  Post status.
 	 */
 	$redirect = apply_filters( 'press_this_save_redirect', $redirect, $post_id, $post_data['post_status'] );
+
+	// Validate redirect URL is on same host or relative.
+	if ( $redirect ) {
+		$redirect_host = wp_parse_url( $redirect, PHP_URL_HOST );
+		$site_host     = wp_parse_url( home_url(), PHP_URL_HOST );
+
+		// Block external redirects.
+		if ( $redirect_host && $redirect_host !== $site_host ) {
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( sprintf( 'Press This: Blocked external redirect to %s', esc_url( $redirect ) ) );
+			}
+			$redirect = get_edit_post_link( $post_id, 'raw' );
+		}
+	}
 
 	return rest_ensure_response(
 		array(
@@ -414,9 +441,64 @@ function press_this_rest_sideload_permission() {
 }
 
 /**
- * REST API handler for sideloading an external image to the media library.
+ * Get the allowed content types for image sideloading.
+ *
+ * Validates content types for image sideloading.
  *
  * @since 2.0.0
+ *
+ * @return array Array of allowed MIME types for image sideloading.
+ */
+function press_this_get_sideload_allowed_types() {
+	$default_types = array(
+		'image/jpeg',
+		'image/jpg',
+		'image/png',
+		'image/gif',
+		'image/webp',
+	);
+
+	/**
+	 * Filters the allowed content types for image sideloading.
+	 *
+	 * Allows customization of accepted image MIME types.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param array $allowed_types Array of allowed MIME types.
+	 */
+	return apply_filters( 'press_this_sideload_allowed_types', $default_types );
+}
+
+/**
+ * Get the maximum file size for image sideloading.
+ *
+ * Configurable max file size for sideloading.
+ *
+ * @since 2.0.0
+ *
+ * @return int Maximum file size in bytes (default 10MB).
+ */
+function press_this_get_sideload_max_size() {
+	$default_max = 10 * 1024 * 1024; // 10MB.
+
+	/**
+	 * Filters the maximum file size for image sideloading.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param int $max_size Maximum file size in bytes.
+	 */
+	return apply_filters( 'press_this_sideload_max_size', $default_max );
+}
+
+/**
+ * REST API handler for sideloading an external image to the media library.
+ *
+ * Validates content-type via HEAD request before download.
+ *
+ * @since 2.0.0
+ * @since 2.0.0 Added content-type validation via HEAD request.
  *
  * @param WP_REST_Request $request Request object.
  * @return WP_REST_Response|WP_Error Response object on success, WP_Error on failure.
@@ -436,25 +518,83 @@ function press_this_rest_sideload_image( $request ) {
 		);
 	}
 
-	// Validate URL is safe to fetch (SSRF protection).
+	// Validate URL is safe to fetch.
 	$valid = press_this_validate_url_for_proxy( $url );
 	if ( is_wp_error( $valid ) ) {
 		$valid->add_data( array( 'status' => 400 ) );
 		return $valid;
 	}
 
+	// Perform HEAD request to validate content-type before full download.
+	$allowed_types = press_this_get_sideload_allowed_types();
+	$max_size      = press_this_get_sideload_max_size();
+
+	press_this_http_request_context( true );
+	$head_response = wp_remote_head(
+		$url,
+		array(
+			'timeout'            => 10,
+			'redirection'        => 3,
+			'reject_unsafe_urls' => true,
+		)
+	);
+	press_this_http_request_context( false );
+
+	// If HEAD succeeds, validate content-type and size.
+	if ( ! is_wp_error( $head_response ) ) {
+		$content_type = wp_remote_retrieve_header( $head_response, 'content-type' );
+
+		// Extract base content-type (remove charset, boundary, etc.).
+		if ( $content_type ) {
+			$content_type = strtolower( trim( explode( ';', $content_type )[0] ) );
+		}
+
+		// Check content-type is an allowed image type.
+		if ( $content_type && ! in_array( $content_type, $allowed_types, true ) ) {
+			// Log detailed error when WP_DEBUG is enabled.
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( sprintf( 'Press This sideload rejected content-type: %s for URL: %s', $content_type, $url ) );
+			}
+			return new WP_Error(
+				'press_this_invalid_image_type',
+				__( 'The URL does not point to a valid image file.', 'press-this' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		// Check file size if Content-Length header is present.
+		$content_length = wp_remote_retrieve_header( $head_response, 'content-length' );
+		if ( $content_length && (int) $content_length > $max_size ) {
+			// Log detailed error when WP_DEBUG is enabled.
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( sprintf( 'Press This sideload rejected file size: %d bytes for URL: %s', (int) $content_length, $url ) );
+			}
+			return new WP_Error(
+				'press_this_file_too_large',
+				__( 'The image file is too large.', 'press-this' ),
+				array( 'status' => 400 )
+			);
+		}
+	}
+	// If HEAD fails, proceed anyway - let media_handle_sideload validate.
+	// This handles servers that don't support HEAD requests.
+
 	// Require necessary files for media sideload.
 	require_once ABSPATH . 'wp-admin/includes/file.php';
 	require_once ABSPATH . 'wp-admin/includes/media.php';
 	require_once ABSPATH . 'wp-admin/includes/image.php';
 
-	// Download the file with SSRF protection.
+	// Download the file.
 	$tmp_file = press_this_download_url( $url, 30 );
 
 	if ( is_wp_error( $tmp_file ) ) {
+		// Log detailed error when WP_DEBUG is enabled.
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( 'Press This sideload download error: ' . $tmp_file->get_error_message() );
+		}
 		return new WP_Error(
 			'press_this_download_failed',
-			__( 'Failed to download image.', 'press-this' ),
+			__( 'Unable to download the image. Please try again.', 'press-this' ),
 			array( 'status' => 500 )
 		);
 	}
@@ -477,9 +617,13 @@ function press_this_rest_sideload_image( $request ) {
 	// Clean up temp file if sideload failed.
 	if ( is_wp_error( $attachment_id ) ) {
 		@unlink( $tmp_file );
+		// Log detailed error when WP_DEBUG is enabled.
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( 'Press This sideload error: ' . $attachment_id->get_error_message() );
+		}
 		return new WP_Error(
 			'press_this_sideload_failed',
-			$attachment_id->get_error_message(),
+			__( 'Unable to process the image. Please try again.', 'press-this' ),
 			array( 'status' => 500 )
 		);
 	}
@@ -657,7 +801,7 @@ function press_this_get_editor_url( $url = '' ) {
  * Check if the URL proxy feature is enabled.
  *
  * The proxy allows Direct Access Mode to fetch and scrape URLs server-side.
- * Disabled by default for security (prevents SSRF attacks against internal networks).
+ * Disabled by default to only fetch content from known external URLs.
  * Site owners can enable it via the 'press_this_enable_url_proxy' filter.
  *
  * @since 2.0.0
@@ -669,7 +813,7 @@ function press_this_is_proxy_enabled() {
 	 * Filters whether the URL proxy feature is enabled.
 	 *
 	 * When enabled, Press This can fetch URLs server-side for Direct Access Mode.
-	 * Disabled by default to prevent potential SSRF attacks.
+	 * Disabled by default to limit URL fetching to known sources.
 	 *
 	 * @since 2.0.0
 	 *
@@ -709,15 +853,73 @@ function press_this_rest_scrape_permission( $request ) {
 }
 
 /**
+ * Get comprehensive localhost patterns for URL validation.
+ *
+ * Returns an array of hostname patterns that resolve to localhost,
+ * including IPv4, IPv6, and IPv4-mapped IPv6 variants.
+ *
+ * @since 2.0.0
+ *
+ * @return array Array of localhost hostname patterns.
+ */
+function press_this_get_localhost_patterns() {
+	return array(
+		'localhost',
+		'127.0.0.1',
+		'::1',
+		'[::1]',
+		'0.0.0.0',
+		'0:0:0:0:0:0:0:1',
+		'[0:0:0:0:0:0:0:1]',
+		'::ffff:127.0.0.1',
+		'[::ffff:127.0.0.1]',
+	);
+}
+
+/**
+ * Check if a hostname is a localhost variant.
+ *
+ * Checks for common localhost patterns including IPv4, IPv6,
+ * bracketed IPv6, IPv4-mapped IPv6, and the 127.x.x.x range.
+ *
+ * @since 2.0.0
+ *
+ * @param string $host Hostname to check.
+ * @return bool True if localhost, false otherwise.
+ */
+function press_this_is_localhost( $host ) {
+	$host = strtolower( $host );
+
+	// Check against known localhost patterns.
+	$localhost_patterns = press_this_get_localhost_patterns();
+	if ( in_array( $host, $localhost_patterns, true ) ) {
+		return true;
+	}
+
+	// Check 127.x.x.x range (entire Class A block).
+	if ( preg_match( '/^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/', $host ) ) {
+		return true;
+	}
+
+	// Check IPv4-mapped IPv6 in 127.x.x.x range.
+	if ( preg_match( '/^\[?::ffff:127\.\d{1,3}\.\d{1,3}\.\d{1,3}\]?$/i', $host ) ) {
+		return true;
+	}
+
+	return false;
+}
+
+/**
  * Check if a URL is safe to fetch (not a private/internal address).
  *
- * Prevents SSRF attacks by blocking requests to:
+ * Validates URLs by blocking requests to:
  * - Private IP ranges (10.x, 172.16-31.x, 192.168.x)
- * - Localhost (127.x, ::1)
+ * - Localhost (127.x, ::1, IPv4-mapped IPv6)
  * - Link-local addresses (169.254.x)
  * - Non-HTTP(S) schemes
  *
  * @since 2.0.0
+ * @since 2.0.0 Enhanced with comprehensive localhost and private IP blocking.
  *
  * @param string $url URL to validate.
  * @return bool|WP_Error True if safe, WP_Error with reason if not.
@@ -743,9 +945,8 @@ function press_this_validate_url_for_proxy( $url ) {
 
 	$host = strtolower( $parsed['host'] );
 
-	// Block localhost variations.
-	$localhost_patterns = array( 'localhost', '127.0.0.1', '::1', '0.0.0.0' );
-	if ( in_array( $host, $localhost_patterns, true ) ) {
+	// Pre-DNS localhost blocking (defense-in-depth).
+	if ( press_this_is_localhost( $host ) ) {
 		return new WP_Error(
 			'press_this_localhost_blocked',
 			__( 'Localhost URLs are not allowed.', 'press-this' )
@@ -809,7 +1010,7 @@ function press_this_is_private_ip( $ip ) {
  * Set or get the Press This HTTP request context.
  *
  * Used to track when Press This is making HTTP requests so we can
- * apply SSRF protections only to our requests.
+ * apply URL validations only to our requests.
  *
  * @since 2.0.0
  *
@@ -829,13 +1030,15 @@ function press_this_http_request_context( $enable = null ) {
 /**
  * Validate resolved IP address for Press This HTTP requests.
  *
- * Hooks into pre_http_request to prevent DNS rebinding attacks.
- * Only validates requests made within Press This context.
+ * Hooks into pre_http_request to provide pre-DNS hostname blocking
+ * as defense-in-depth. WordPress's reject_unsafe_urls handles the
+ * primary URL validation post-DNS resolution.
  *
  * This function is added via add_filter and can be removed with:
  * remove_filter( 'pre_http_request', 'press_this_validate_http_request_ip', 10 );
  *
  * @since 2.0.0
+ * @since 2.0.0 Simplified to work with WordPress reject_unsafe_urls.
  *
  * @param false|array|WP_Error $preempt     A preemptive return value.
  * @param array                $parsed_args HTTP request arguments.
@@ -855,27 +1058,19 @@ function press_this_validate_http_request_ip( $preempt, $parsed_args, $url ) {
 
 	$parsed = wp_parse_url( $url );
 	if ( empty( $parsed['host'] ) ) {
-		return $preempt; // Let WordPress handle invalid URLs.
+		return new WP_Error(
+			'press_this_invalid_url',
+			__( 'Invalid URL.', 'press-this' )
+		);
 	}
 
 	$host = strtolower( $parsed['host'] );
 
-	// Resolve hostname to IP at request time (prevents DNS rebinding).
-	$ip = gethostbyname( $host );
-
-	// If resolution failed, gethostbyname returns the hostname.
-	if ( $ip === $host && ! filter_var( $host, FILTER_VALIDATE_IP ) ) {
+	// Pre-DNS hostname blocking (defense-in-depth).
+	if ( press_this_is_localhost( $host ) ) {
 		return new WP_Error(
-			'press_this_unresolvable_host',
-			__( 'Could not resolve hostname.', 'press-this' )
-		);
-	}
-
-	// Block private/reserved IPs.
-	if ( press_this_is_private_ip( $ip ) ) {
-		return new WP_Error(
-			'press_this_private_ip_blocked',
-			__( 'Private and reserved IP addresses are not allowed.', 'press-this' )
+			'press_this_localhost_blocked',
+			__( 'Localhost URLs are not allowed.', 'press-this' )
 		);
 	}
 
@@ -888,10 +1083,10 @@ function press_this_validate_http_request_ip( $preempt, $parsed_args, $url ) {
 	 * @since 2.0.0
 	 *
 	 * @param false|WP_Error $result False to allow, WP_Error to block.
-	 * @param string         $ip     The resolved IP address.
+	 * @param string         $host   The request hostname.
 	 * @param string         $url    The request URL.
 	 */
-	$result = apply_filters( 'press_this_validate_request_ip', false, $ip, $url );
+	$result = apply_filters( 'press_this_validate_request_ip', false, $host, $url );
 
 	if ( is_wp_error( $result ) ) {
 		return $result;
@@ -901,18 +1096,22 @@ function press_this_validate_http_request_ip( $preempt, $parsed_args, $url ) {
 }
 
 /**
- * Make an HTTP GET request with Press This SSRF protections.
+ * Make an HTTP GET request with Press This URL validation.
  *
- * Wraps wp_remote_get with context tracking so our pre_http_request
- * filter can validate resolved IPs.
+ * Wraps wp_remote_get with context tracking and reject_unsafe_urls
+ * to leverage WordPress 5.9+ built-in URL validation.
  *
  * @since 2.0.0
+ * @since 2.0.0 Added reject_unsafe_urls for enhanced URL validation.
  *
  * @param string $url  URL to fetch.
  * @param array  $args Optional. Request arguments.
  * @return array|WP_Error Response array or WP_Error.
  */
 function press_this_remote_get( $url, $args = array() ) {
+	// Enable reject_unsafe_urls for URL validation (WordPress 5.9+).
+	$args['reject_unsafe_urls'] = true;
+
 	press_this_http_request_context( true );
 	$response = wp_remote_get( $url, $args );
 	press_this_http_request_context( false );
@@ -921,10 +1120,11 @@ function press_this_remote_get( $url, $args = array() ) {
 }
 
 /**
- * Download a URL with Press This SSRF protections.
+ * Download a URL with Press This URL validation.
  *
  * Wraps download_url with context tracking so our pre_http_request
- * filter can validate resolved IPs.
+ * filter can validate resolved IPs. The download_url function will
+ * use reject_unsafe_urls internally when available.
  *
  * @since 2.0.0
  *
@@ -941,15 +1141,20 @@ function press_this_download_url( $url, $timeout = 300 ) {
 }
 
 /**
- * REST API handler for fetching URL content.
+ * REST API handler for fetching and parsing URL content.
  *
- * Fetches the raw HTML from a URL and returns it for client-side parsing.
- * Includes basic SSRF protections.
+ * Returns sanitized metadata instead of raw HTML.
+ * Fetches the HTML from a URL, parses it server-side, and returns
+ * structured metadata (title, description, images, embeds, canonical).
+ *
+ * Returns generic error messages and logs detailed errors when WP_DEBUG is enabled.
  *
  * @since 2.0.0
+ * @since 2.0.0 Enhanced URL validation with reject_unsafe_urls. Generic error messages.
+ *              Now returns parsed metadata instead of raw HTML.
  *
  * @param WP_REST_Request $request Request object.
- * @return WP_REST_Response|WP_Error Response with HTML content or error.
+ * @return WP_REST_Response|WP_Error Response with parsed metadata or error.
  */
 function press_this_rest_scrape_url( $request ) {
 	$url = $request->get_param( 'url' );
@@ -961,7 +1166,7 @@ function press_this_rest_scrape_url( $request ) {
 		return $valid;
 	}
 
-	// Fetch the URL with SSRF protection.
+	// Fetch the URL.
 	$response = press_this_remote_get(
 		$url,
 		array(
@@ -975,46 +1180,308 @@ function press_this_rest_scrape_url( $request ) {
 	);
 
 	if ( is_wp_error( $response ) ) {
+		// Log detailed error when WP_DEBUG is enabled.
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( 'Press This scrape_url error: ' . $response->get_error_message() . ' for URL: ' . $url );
+		}
 		return new WP_Error(
 			'press_this_fetch_failed',
-			sprintf(
-				/* translators: %s: Error message from wp_remote_get. */
-				__( 'Failed to fetch URL: %s', 'press-this' ),
-				$response->get_error_message()
-			),
+			__( 'Unable to fetch the URL. Please check the address and try again.', 'press-this' ),
 			array( 'status' => 502 )
 		);
 	}
 
 	$status_code = wp_remote_retrieve_response_code( $response );
 	if ( $status_code < 200 || $status_code >= 400 ) {
+		// Log detailed error when WP_DEBUG is enabled.
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( sprintf( 'Press This scrape_url HTTP error: status %d for URL: %s', $status_code, $url ) );
+		}
 		return new WP_Error(
 			'press_this_fetch_http_error',
-			sprintf(
-				/* translators: %d: HTTP status code. */
-				__( 'URL returned HTTP status %d.', 'press-this' ),
-				$status_code
-			),
+			__( 'The URL could not be retrieved. Please check the address and try again.', 'press-this' ),
 			array( 'status' => 502 )
 		);
 	}
 
-	$html         = wp_remote_retrieve_body( $response );
-	$content_type = wp_remote_retrieve_header( $response, 'content-type' );
-	$final_url    = wp_remote_retrieve_header( $response, 'x-final-url' );
+	$html      = wp_remote_retrieve_body( $response );
+	$final_url = wp_remote_retrieve_header( $response, 'x-final-url' );
 
 	// If no final URL header, use the original (some redirects may have occurred).
 	if ( empty( $final_url ) ) {
 		$final_url = $url;
 	}
 
+	// Parse HTML server-side and return metadata instead of raw HTML.
+	$metadata = press_this_parse_html_metadata( $html, $final_url );
+
 	return rest_ensure_response(
 		array(
-			'success'      => true,
-			'url'          => $url,
-			'final_url'    => $final_url,
-			'content_type' => $content_type,
-			'html'         => $html,
+			'success'     => true,
+			'url'         => esc_url( $url ),
+			'final_url'   => esc_url( $final_url ),
+			'title'       => $metadata['title'],
+			'description' => $metadata['description'],
+			'images'      => $metadata['images'],
+			'embeds'      => $metadata['embeds'],
+			'canonical'   => $metadata['canonical'],
 		)
 	);
+}
+
+/**
+ * Resolve a relative URL to an absolute URL.
+ *
+ * Handles various URL formats:
+ * - Absolute URLs (return as-is with escaping)
+ * - Protocol-relative URLs (prepend https:)
+ * - Root-relative URLs (prepend scheme://host)
+ * - Relative paths (resolve against base path)
+ *
+ * @since 2.0.0
+ *
+ * @param string $url      The URL to resolve (may be relative).
+ * @param string $base_url The base URL for resolution.
+ * @return string The resolved absolute URL, or empty string on failure.
+ */
+function press_this_resolve_url( $url, $base_url ) {
+	if ( empty( $url ) ) {
+		return '';
+	}
+
+	$url = trim( $url );
+
+	// Already absolute HTTP/HTTPS URL.
+	if ( preg_match( '#^https?://#i', $url ) ) {
+		return esc_url( $url );
+	}
+
+	// Protocol-relative URL.
+	if ( strpos( $url, '//' ) === 0 ) {
+		return esc_url( 'https:' . $url );
+	}
+
+	// Parse the base URL for resolution.
+	$base_parts = wp_parse_url( $base_url );
+	if ( ! $base_parts || empty( $base_parts['host'] ) ) {
+		return '';
+	}
+
+	$scheme = isset( $base_parts['scheme'] ) ? $base_parts['scheme'] : 'https';
+	$host   = $base_parts['host'];
+	$port   = isset( $base_parts['port'] ) ? ':' . $base_parts['port'] : '';
+
+	// Root-relative URL (starts with /).
+	if ( strpos( $url, '/' ) === 0 ) {
+		return esc_url( $scheme . '://' . $host . $port . $url );
+	}
+
+	// Relative path - resolve against base path.
+	$base_path = isset( $base_parts['path'] ) ? $base_parts['path'] : '/';
+	$base_dir  = dirname( $base_path );
+
+	// Ensure base_dir ends without trailing slash for proper concatenation.
+	$base_dir = rtrim( $base_dir, '/' );
+
+	return esc_url( $scheme . '://' . $host . $port . $base_dir . '/' . $url );
+}
+
+/**
+ * Check if an image should be filtered out based on various criteria.
+ *
+ * Filters out:
+ * - Images smaller than 256x128 pixels (when dimensions are specified)
+ * - Avatar images (detected by src or class containing "avatar")
+ * - Data URLs
+ *
+ * @since 2.0.0
+ *
+ * @param string $src    Image source URL.
+ * @param string $class  Image CSS class attribute.
+ * @param int    $width  Image width (0 if not specified).
+ * @param int    $height Image height (0 if not specified).
+ * @return bool True if image should be filtered out, false otherwise.
+ */
+function press_this_is_filtered_image( $src, $class, $width, $height ) {
+	// Filter out data: URLs.
+	if ( strpos( $src, 'data:' ) === 0 ) {
+		return true;
+	}
+
+	// Filter out small images (only when dimensions are explicitly specified).
+	if ( $width > 0 && $width < 256 ) {
+		return true;
+	}
+	if ( $height > 0 && $height < 128 ) {
+		return true;
+	}
+
+	// Filter out avatar images by src pattern.
+	if ( stripos( $src, 'avatar' ) !== false ) {
+		return true;
+	}
+
+	// Filter out avatar images by class.
+	if ( stripos( $class, 'avatar' ) !== false ) {
+		return true;
+	}
+
+	return false;
+}
+
+/**
+ * Parse HTML and extract metadata server-side.
+ *
+ * Extracts title, description, images, embeds, and canonical URL from HTML.
+ * Uses DOMDocument and DOMXPath for parsing with proper error suppression
+ * for malformed HTML.
+ *
+ * Priority order for extraction:
+ * - Title: og:title > twitter:title > <title>
+ * - Description: og:description > twitter:description > meta description
+ *
+ * @since 2.0.0
+ *
+ * @param string $html     Raw HTML content.
+ * @param string $base_url Base URL for resolving relative URLs.
+ * @return array Extracted metadata with keys: title, description, images, embeds, canonical.
+ */
+function press_this_parse_html_metadata( $html, $base_url ) {
+	$metadata = array(
+		'title'       => '',
+		'description' => '',
+		'images'      => array(),
+		'embeds'      => array(),
+		'canonical'   => '',
+	);
+
+	if ( empty( $html ) ) {
+		return $metadata;
+	}
+
+	// Suppress libxml errors for malformed HTML.
+	libxml_use_internal_errors( true );
+
+	$doc = new DOMDocument();
+
+	// Load HTML with UTF-8 encoding hint.
+	$doc->loadHTML( '<?xml encoding="utf-8" ?>' . $html, LIBXML_NOERROR | LIBXML_NOWARNING );
+
+	libxml_clear_errors();
+
+	$xpath = new DOMXPath( $doc );
+
+	// Extract title (priority: og:title > twitter:title > <title>).
+	$og_title = $xpath->query( '//meta[@property="og:title"]/@content' );
+	if ( $og_title->length > 0 ) {
+		$metadata['title'] = $og_title->item( 0 )->nodeValue;
+	} else {
+		$twitter_title = $xpath->query( '//meta[@name="twitter:title"]/@content' );
+		if ( $twitter_title->length > 0 ) {
+			$metadata['title'] = $twitter_title->item( 0 )->nodeValue;
+		} else {
+			$title = $xpath->query( '//title' );
+			if ( $title->length > 0 ) {
+				$metadata['title'] = $title->item( 0 )->textContent;
+			}
+		}
+	}
+
+	// Extract description (priority: og:description > twitter:description > meta description).
+	$og_desc = $xpath->query( '//meta[@property="og:description"]/@content' );
+	if ( $og_desc->length > 0 ) {
+		$metadata['description'] = $og_desc->item( 0 )->nodeValue;
+	} else {
+		$twitter_desc = $xpath->query( '//meta[@name="twitter:description"]/@content' );
+		if ( $twitter_desc->length > 0 ) {
+			$metadata['description'] = $twitter_desc->item( 0 )->nodeValue;
+		} else {
+			$meta_desc = $xpath->query( '//meta[@name="description"]/@content' );
+			if ( $meta_desc->length > 0 ) {
+				$metadata['description'] = $meta_desc->item( 0 )->nodeValue;
+			}
+		}
+	}
+
+	// Extract og:image URLs.
+	$og_images = $xpath->query( '//meta[@property="og:image"]/@content' );
+	foreach ( $og_images as $img ) {
+		$img_url = press_this_resolve_url( $img->nodeValue, $base_url );
+		if ( $img_url && ! press_this_is_filtered_image( $img_url, '', 0, 0 ) ) {
+			$metadata['images'][] = $img_url;
+		}
+	}
+
+	// Extract images from content with filtering.
+	$content_images = $xpath->query( '//img[@src]' );
+	foreach ( $content_images as $img ) {
+		$src    = $img->getAttribute( 'src' );
+		$width  = (int) $img->getAttribute( 'width' );
+		$height = (int) $img->getAttribute( 'height' );
+		$class  = $img->getAttribute( 'class' );
+
+		// Apply image filtering.
+		if ( press_this_is_filtered_image( $src, $class, $width, $height ) ) {
+			continue;
+		}
+
+		$img_url = press_this_resolve_url( $src, $base_url );
+		if ( $img_url ) {
+			$metadata['images'][] = $img_url;
+		}
+	}
+
+	// Extract embeds from og:video meta tags.
+	$og_video_queries = array(
+		'//meta[@property="og:video"]/@content',
+		'//meta[@property="og:video:url"]/@content',
+		'//meta[@property="og:video:secure_url"]/@content',
+	);
+
+	foreach ( $og_video_queries as $query ) {
+		$og_video = $xpath->query( $query );
+		foreach ( $og_video as $video ) {
+			$embed_url = esc_url( $video->nodeValue );
+			if ( $embed_url ) {
+				$metadata['embeds'][] = $embed_url;
+			}
+		}
+	}
+
+	// Extract iframes (excluding about:blank).
+	$iframes = $xpath->query( '//iframe[@src]' );
+	foreach ( $iframes as $iframe ) {
+		$src = $iframe->getAttribute( 'src' );
+		if ( $src && 'about:blank' !== $src ) {
+			$embed_url = press_this_resolve_url( $src, $base_url );
+			if ( $embed_url ) {
+				$metadata['embeds'][] = $embed_url;
+			}
+		}
+	}
+
+	// Extract canonical URL.
+	$canonical = $xpath->query( '//link[@rel="canonical"]/@href' );
+	if ( $canonical->length > 0 ) {
+		$metadata['canonical'] = esc_url( $canonical->item( 0 )->nodeValue );
+	}
+
+	// Deduplicate arrays.
+	$metadata['images'] = array_values( array_unique( $metadata['images'] ) );
+	$metadata['embeds'] = array_values( array_unique( $metadata['embeds'] ) );
+
+	// Apply array limits (50 images, 20 embeds).
+	$metadata['images'] = array_slice( $metadata['images'], 0, 50 );
+	$metadata['embeds'] = array_slice( $metadata['embeds'], 0, 20 );
+
+	// Sanitize text fields.
+	$metadata['title']       = sanitize_text_field( $metadata['title'] );
+	$metadata['description'] = sanitize_text_field( $metadata['description'] );
+
+	// URLs are already escaped via esc_url() during extraction.
+	// Apply additional sanitization for safety.
+	$metadata['images'] = array_map( 'esc_url', $metadata['images'] );
+	$metadata['embeds'] = array_map( 'esc_url', $metadata['embeds'] );
+
+	return $metadata;
 }
