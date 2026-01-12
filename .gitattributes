@@ -1,0 +1,58 @@
+# Auto-detect text files and normalize line endings
+* text=auto
+
+# Exclude dev files from GitHub's auto-generated archives and `git archive`
+# These won't be included when users download the "Source code" zip from releases
+
+# Source files (build output is in /build/)
+/src/ export-ignore
+
+# Test files
+/tests/ export-ignore
+phpunit.xml export-ignore
+.phpunit.cache/ export-ignore
+
+# Node/npm
+/node_modules/ export-ignore
+package.json export-ignore
+package-lock.json export-ignore
+webpack.config.js export-ignore
+
+# Composer (dev dependencies only)
+/vendor/ export-ignore
+composer.json export-ignore
+composer.lock export-ignore
+
+# Build tools
+Gruntfile.js export-ignore
+.phpcs.xml.dist export-ignore
+
+# CI/CD and tooling
+/.github/ export-ignore
+/.claude/ export-ignore
+/.playwright-mcp/ export-ignore
+/agent-os/ export-ignore
+/docs/ export-ignore
+/claude-desktop-plan/ export-ignore
+
+# Environment and IDE
+.wp-env.json export-ignore
+/.idea/ export-ignore
+/.vscode/ export-ignore
+
+# Git files
+.gitignore export-ignore
+.gitattributes export-ignore
+.svnignore export-ignore
+
+# Documentation (internal only)
+SECURITY-AUDIT.md export-ignore
+
+# Keep these in the archive:
+# - press-this-plugin.php (main plugin)
+# - class-wp-press-this-plugin.php
+# - /includes/ (PHP classes)
+# - /build/ (compiled JS/CSS)
+# - /assets/ (bookmarklet, images)
+# - readme.txt
+# - UPGRADE.md

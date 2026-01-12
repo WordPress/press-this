@@ -1,0 +1,64 @@
+name: Build Release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v2.0.0)'
+        required: false
+
+jobs:
+  build:
+    name: Build Plugin ZIP
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build assets
+        run: npm run build
+
+      - name: Create plugin directory
+        run: |
+          mkdir -p press-this
+
+          # Copy production files
+          cp press-this-plugin.php press-this/
+          cp class-wp-press-this-plugin.php press-this/
+          cp readme.txt press-this/
+          cp UPGRADE.md press-this/
+
+          # Copy directories
+          cp -r includes press-this/
+          cp -r build press-this/
+          cp -r assets press-this/
+
+      - name: Create ZIP archive
+        run: zip -r press-this.zip press-this/
+
+      - name: Upload release asset
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: press-this.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifact (for manual runs)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: press-this
+          path: press-this.zip
