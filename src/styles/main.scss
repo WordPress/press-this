@@ -8,42 +8,35 @@
  */
 
 // ==========================================================================
+// Variables & Partials (@use rules must come first)
+// ==========================================================================
+
+// Design tokens: colors, spacing, breakpoints, typography.
+@use "partials/variables" as *;
+
+// Base styles: resets, utilities, screen reader text.
+@use "partials/base";
+
+// Main app container and layout.
+@use "partials/app-layout";
+
+// MediaGrid & MediaThumbnail: scraped images/embeds grid.
+@use "partials/media-grid";
+
+// Block editor overrides.
+@use "partials/editor";
+
+// WordPress component overrides.
+@use "partials/wordpress-overrides";
+
+// ==========================================================================
 // WordPress Block Editor Styles
 // ==========================================================================
 
 // Import WordPress block editor and components styles.
+// Note: Using @import for external CSS is valid - @import comes after @use.
 @import "@wordpress/block-editor/build-style/style.css";
 @import "@wordpress/components/build-style/style.css";
-
-// ==========================================================================
-// Variables & Base
-// ==========================================================================
-
-// Design tokens: colors, spacing, breakpoints, typography.
-@import "partials/variables";
-
-// Base styles: resets, utilities, screen reader text.
-@import "partials/base";
-
-// ==========================================================================
-// App Layout
-// ==========================================================================
-
-// Main app container and layout.
-@import "partials/app-layout";
-
-// ==========================================================================
-// Components
-// ==========================================================================
-
-// MediaGrid & MediaThumbnail: scraped images/embeds grid.
-@import "partials/media-grid";
-
-// Block editor overrides.
-@import "partials/editor";
-
-// WordPress component overrides.
-@import "partials/wordpress-overrides";
 
 // ==========================================================================
 // Press This Editor (Native Gutenberg Layout)

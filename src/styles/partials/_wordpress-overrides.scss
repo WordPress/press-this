@@ -6,6 +6,9 @@
  * @package press-this
  */
 
+@use "sass:color";
+@use "variables" as *;
+
 // ==========================================================================
 // General Component Overrides
 // ==========================================================================
@@ -54,7 +57,7 @@
 
 		&:hover,
 		&:focus {
-			color: darken($color-error, 10%);
+			color: color.adjust($color-error, $lightness: -10%);
 		}
 	}
 }
