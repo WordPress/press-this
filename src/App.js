@@ -101,6 +101,40 @@ export default function App() {
 	const [ postMessageData, setPostMessageData ] = useState( null );
 
 	/**
+	 * Validate embed URLs through WordPress oEmbed providers.
+	 *
+	 * @param {Array} urls Array of embed URLs to validate.
+	 * @return {Promise<Array>} Promise resolving to array of valid embed URLs.
+	 */
+	const validateEmbeds = useCallback( async ( urls ) => {
+		if ( ! urls || urls.length === 0 ) {
+			return [];
+		}
+
+		try {
+			const response = await fetch( `${ data.restUrl }validate-embeds`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-WP-Nonce': data.restNonce,
+				},
+				body: JSON.stringify( { urls } ),
+			} );
+
+			if ( ! response.ok ) {
+				// On error, return empty array (fail safe).
+				return [];
+			}
+
+			const result = await response.json();
+			return result.embeds || [];
+		} catch {
+			// On network error, return empty array.
+			return [];
+		}
+	}, [ data.restUrl, data.restNonce ] );
+
+	/**
 	 * Listen for postMessage data from bookmarklet.
 	 * This is used when the bookmarklet opens Press This via GET (to send cookies)
 	 * and then sends scraped data via postMessage.
@@ -111,7 +145,7 @@ export default function App() {
 			return;
 		}
 
-		function handleMessage( event ) {
+		async function handleMessage( event ) {
 			// Validate message structure.
 			if ( ! event.data || event.data.type !== 'press-this-data' ) {
 				return;
@@ -128,15 +162,18 @@ export default function App() {
 			// Store the received data.
 			setPostMessageData( messageData );
 
-			// Process images and embeds.
+			// Process images (no validation needed).
 			const receivedImages = messageData._images || [];
-			const receivedEmbeds = messageData._embeds || [];
 			const receivedSourceUrl = messageData.u || data.sourceUrl;
 
-			// Update media state.
+			// Validate embeds through WordPress oEmbed providers.
+			const rawEmbeds = messageData._embeds || [];
+			const validatedEmbeds = await validateEmbeds( rawEmbeds );
+
+			// Update media state with validated embeds.
 			setAdditionalMedia( ( prev ) => ( {
 				images: [ ...prev.images, ...receivedImages ],
-				embeds: [ ...prev.embeds, ...receivedEmbeds ],
+				embeds: [ ...prev.embeds, ...validatedEmbeds ],
 				sourceUrl: receivedSourceUrl,
 			} ) );
 
@@ -174,7 +211,7 @@ export default function App() {
 					title,
 					content: suggestedContent,
 					images: receivedImages,
-					embeds: receivedEmbeds,
+					embeds: validatedEmbeds,
 					sourceUrl: receivedSourceUrl,
 				} );
 			}
@@ -185,7 +222,7 @@ export default function App() {
 		return () => {
 			window.removeEventListener( 'message', handleMessage );
 		};
-	}, [ data.postMessageMode, data.sourceUrl, postMessageReceived ] );
+	}, [ data.postMessageMode, data.restUrl, data.restNonce, data.sourceUrl, postMessageReceived, validateEmbeds ] );
 
 	/**
 	 * Handle scrape completion from Header.

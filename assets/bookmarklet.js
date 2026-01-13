@@ -268,6 +268,24 @@
 			continue;
 		}
 
+		// Skip obvious non-embeddable iframes (comments, analytics, ads, widgets).
+		if ( iframeSrc.indexOf( 'jetpack-comment' ) > -1 ||
+			iframeSrc.indexOf( 'disqus.com' ) > -1 ||
+			iframeSrc.indexOf( 'facebook.com/plugins' ) > -1 ||
+			iframeSrc.indexOf( 'platform.twitter.com/widgets' ) > -1 ||
+			iframeSrc.indexOf( 'google.com/recaptcha' ) > -1 ||
+			iframeSrc.indexOf( 'googletagmanager.com' ) > -1 ||
+			iframeSrc.indexOf( 'doubleclick.net' ) > -1 ||
+			iframeSrc.indexOf( 'googlesyndication.com' ) > -1 ||
+			iframeSrc.indexOf( 'amazon-adsystem.com' ) > -1 ||
+			iframeSrc.indexOf( 'quantserve.com' ) > -1 ||
+			iframeSrc.indexOf( 'scorecardresearch.com' ) > -1 ||
+			iframeSrc.indexOf( 'addthis.com' ) > -1 ||
+			iframeSrc.indexOf( 'sharethis.com' ) > -1 ||
+			iframeSrc.indexOf( 'addtoany.com' ) > -1 ) {
+			continue;
+		}
+
 		add( '_embeds[]', iframeSrc );
 	}
 

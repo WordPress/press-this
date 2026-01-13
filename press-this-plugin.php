@@ -237,6 +237,24 @@ function press_this_register_rest_routes() {
 			),
 		)
 	);
+
+	// Validate embeds endpoint (filters URLs through WordPress oEmbed providers).
+	register_rest_route(
+		'press-this/v1',
+		'/validate-embeds',
+		array(
+			'methods'             => 'POST',
+			'callback'            => 'press_this_rest_validate_embeds',
+			'permission_callback' => 'press_this_rest_validate_embeds_permission',
+			'args'                => array(
+				'urls' => array(
+					'required' => true,
+					'type'     => 'array',
+					'items'    => array( 'type' => 'string' ),
+				),
+			),
+		)
+	);
 }
 
 /**
@@ -438,6 +456,79 @@ function press_this_rest_sideload_permission() {
 	}
 
 	return true;
+}
+
+/**
+ * Permission callback for REST validate-embeds endpoint.
+ *
+ * @since 2.0.0
+ *
+ * @return bool|WP_Error True if the user can edit posts, WP_Error otherwise.
+ */
+function press_this_rest_validate_embeds_permission() {
+	if ( ! current_user_can( 'edit_posts' ) ) {
+		return new WP_Error(
+			'press_this_cannot_validate',
+			__( 'You do not have permission to use this feature.', 'press-this' ),
+			array( 'status' => 403 )
+		);
+	}
+
+	return true;
+}
+
+/**
+ * REST API handler for validating embed URLs.
+ *
+ * Takes an array of URLs and returns only those that are valid oEmbed providers.
+ * Uses WordPress's built-in oEmbed provider list plus known video platforms.
+ *
+ * @since 2.0.0
+ *
+ * @param WP_REST_Request $request Request object.
+ * @return WP_REST_Response Response with valid embed URLs.
+ */
+function press_this_rest_validate_embeds( $request ) {
+	include_once plugin_dir_path( __FILE__ ) . 'class-wp-press-this-plugin.php';
+
+	$urls   = $request->get_param( 'urls' );
+	$valid  = array();
+
+	if ( ! is_array( $urls ) ) {
+		return rest_ensure_response( array( 'embeds' => array() ) );
+	}
+
+	// Create an instance to access limit_embed method.
+	$press_this = new WP_Press_This_Plugin();
+
+	// Use reflection to access the private limit_embed method.
+	$reflection = new ReflectionClass( $press_this );
+	$method     = $reflection->getMethod( 'limit_embed' );
+	$method->setAccessible( true );
+
+	foreach ( $urls as $url ) {
+		if ( ! is_string( $url ) ) {
+			continue;
+		}
+
+		// Sanitize and validate the URL.
+		$url = esc_url_raw( $url );
+		if ( empty( $url ) ) {
+			continue;
+		}
+
+		// Use limit_embed to validate against oEmbed providers.
+		$validated = $method->invoke( $press_this, $url );
+
+		if ( ! empty( $validated ) ) {
+			$valid[] = $validated;
+		}
+	}
+
+	// Remove duplicates.
+	$valid = array_unique( $valid );
+
+	return rest_ensure_response( array( 'embeds' => array_values( $valid ) ) );
 }
 
 /**
