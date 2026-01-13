@@ -289,13 +289,21 @@ function hasImageContent( content = '', images = [] ) {
 /**
  * Suggest a post format based on content analysis.
  *
+ * Priority order:
+ * 1. overrideFormat - Hard override from PHP filter (always wins)
+ * 2. phpSuggestion - PHP suggestion based on content analysis
+ * 3. JS detection - Client-side content analysis
+ * 4. defaultFormat - Fallback from PHP filter when nothing matches
+ *
  * @param {Object} options                  Analysis options.
  * @param {string} options.content          Post content.
  * @param {Array}  options.embeds           Scraped embed URLs.
  * @param {Array}  options.images           Scraped image URLs.
  * @param {string} options.sourceUrl        Source URL being clipped.
  * @param {Array}  options.availableFormats Available formats from theme.
- * @param {string} options.phpSuggestion    Suggestion from PHP filter.
+ * @param {string} options.phpSuggestion    Suggestion from PHP content analysis.
+ * @param {string} options.overrideFormat   Hard override from PHP filter (bypasses all detection).
+ * @param {string} options.defaultFormat    Fallback format from PHP filter (used when no match).
  * @return {string} Suggested format value or empty string.
  */
 export function suggestPostFormat( {
@@ -305,8 +313,15 @@ export function suggestPostFormat( {
 	sourceUrl = '',
 	availableFormats = [],
 	phpSuggestion = '',
+	overrideFormat = '',
+	defaultFormat = '',
 } ) {
-	// If PHP provided a suggestion via filter, use it.
+	// Priority 1: Hard override from PHP filter (always wins).
+	if ( overrideFormat ) {
+		return overrideFormat;
+	}
+
+	// Priority 2: PHP suggestion based on content analysis.
 	if ( phpSuggestion ) {
 		return phpSuggestion;
 	}
@@ -359,6 +374,11 @@ export function suggestPostFormat( {
 		return 'link';
 	}
 
+	// Priority 4: Fallback to default format from PHP filter.
+	if ( defaultFormat ) {
+		return defaultFormat;
+	}
+
 	// Default: no suggestion (will use standard).
 	return '';
 }
@@ -372,7 +392,9 @@ export function suggestPostFormat( {
  * @param {Array}  options.images           Scraped image URLs.
  * @param {string} options.sourceUrl        Source URL being clipped.
  * @param {Array}  options.availableFormats Available formats from theme.
- * @param {string} options.phpSuggestion    Suggestion from PHP filter.
+ * @param {string} options.phpSuggestion    Suggestion from PHP content analysis.
+ * @param {string} options.overrideFormat   Hard override from PHP filter.
+ * @param {string} options.defaultFormat    Fallback format from PHP filter.
  * @return {string} Suggested post format.
  */
 export default function usePostFormatSuggestion( {
@@ -382,6 +404,8 @@ export default function usePostFormatSuggestion( {
 	sourceUrl = '',
 	availableFormats = [],
 	phpSuggestion = '',
+	overrideFormat = '',
+	defaultFormat = '',
 } ) {
 	const suggestion = useMemo( () => {
 		return suggestPostFormat( {
@@ -391,6 +415,8 @@ export default function usePostFormatSuggestion( {
 			sourceUrl,
 			availableFormats,
 			phpSuggestion,
+			overrideFormat,
+			defaultFormat,
 		} );
 	}, [
 		content,
@@ -399,6 +425,8 @@ export default function usePostFormatSuggestion( {
 		sourceUrl,
 		availableFormats,
 		phpSuggestion,
+		overrideFormat,
+		defaultFormat,
 	] );
 
 	return suggestion;

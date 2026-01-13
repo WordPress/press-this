@@ -62,7 +62,9 @@ export default function App() {
 		allowedBlocks: data.allowedBlocks || [],
 		isRTL: data.isRTL,
 		suggestedPostFormat: data.suggestedFormat || '',
-	} ), [ data.allowedBlocks, data.isRTL, data.suggestedFormat ] );
+		postFormatOverride: data.postFormatOverride || '',
+		postFormatDefault: data.postFormatDefault || '',
+	} ), [ data.allowedBlocks, data.isRTL, data.suggestedFormat, data.postFormatOverride, data.postFormatDefault ] );
 
 	// Build capabilities object.
 	const capabilities = useMemo( () => ( {

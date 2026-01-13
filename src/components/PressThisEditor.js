@@ -238,7 +238,9 @@ export default function PressThisEditor( {
 	// State for blocks and post data.
 	const [ blocks, setBlocks ] = useState( [] );
 	const [ title, setTitle ] = useState( post.title || '' );
-	const [ postFormat, setPostFormat ] = useState( settings.suggestedPostFormat || '' );
+	// Post format priority: override > PHP suggestion > default > empty (standard)
+	const initialFormat = settings.postFormatOverride || settings.suggestedPostFormat || settings.postFormatDefault || '';
+	const [ postFormat, setPostFormat ] = useState( initialFormat );
 	const [ selectedCategories, setSelectedCategories ] = useState( [] );
 	const [ tags, setTags ] = useState( [] );
 	const [ featuredImageId, setFeaturedImageId ] = useState( 0 );

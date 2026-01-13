@@ -1266,29 +1266,57 @@ class WP_Press_This_Plugin {
 	 * Automatically detects the most appropriate post format based on the
 	 * bookmarklet data. The detection follows this priority order:
 	 *
-	 * 1. **Video format**: Suggested when embedded videos are detected from
+	 * 1. **Override filter**: If `press_this_post_format_override` returns a
+	 *    non-empty value, that format is used immediately (bypasses all detection).
+	 *
+	 * 2. **Video format**: Suggested when embedded videos are detected from
 	 *    YouTube, Vimeo, or Dailymotion, or when the source URL itself is
 	 *    from one of these video platforms.
 	 *
-	 * 2. **Quote format**: Suggested when the user has selected text that is
+	 * 3. **Quote format**: Suggested when the user has selected text that is
 	 *    longer than 50 characters and does not contain URLs. This indicates
 	 *    the user likely wants to quote the selected passage.
 	 *
-	 * 3. **Link format**: Suggested when only a URL is provided with no
+	 * 4. **Link format**: Suggested when only a URL is provided with no
 	 *    selected text, images, or embeds. This indicates a simple link share.
 	 *
-	 * 4. **Standard format**: Used when none of the above conditions are met.
+	 * 5. **Standard format**: Used when none of the above conditions are met.
 	 *
-	 * To customize the suggested format, use the `press_this_post_format_suggestion`
-	 * filter. Example:
+	 * Note: The `press_this_default_post_format` filter is NOT applied here.
+	 * It is passed separately to JavaScript to allow client-side detection
+	 * to run before falling back to the default. The full priority order
+	 * (including JS detection and default) is:
+	 * override → PHP suggestion → JS detection → default → standard
 	 *
-	 *     add_filter( 'press_this_post_format_suggestion', function( $format, $data ) {
-	 *         // Force image format when images are present
-	 *         if ( ! empty( $data['_images'] ) ) {
-	 *             return 'image';
-	 *         }
-	 *         return $format;
-	 *     }, 10, 2 );
+	 * Available filters:
+	 *
+	 * - `press_this_post_format_override`: Force a format, bypassing all detection.
+	 *   No arguments - works identically in PHP and JavaScript contexts.
+	 *
+	 *       // Always use 'aside' format regardless of content
+	 *       add_filter( 'press_this_post_format_override', function() {
+	 *           return 'aside';
+	 *       } );
+	 *
+	 * - `press_this_default_post_format`: Set fallback when detection finds nothing.
+	 *   No arguments - works identically in PHP and JavaScript contexts.
+	 *   Applied in JS after both PHP and JS detection have run.
+	 *
+	 *       // Use 'link' format when no specific format is detected
+	 *       add_filter( 'press_this_default_post_format', function() {
+	 *           return 'link';
+	 *       } );
+	 *
+	 * - `press_this_post_format_suggestion`: Modify the final suggested format.
+	 *   Has access to $data for conditional logic (PHP context only).
+	 *
+	 *       // Force image format when images are present
+	 *       add_filter( 'press_this_post_format_suggestion', function( $format, $data ) {
+	 *           if ( ! empty( $data['_images'] ) ) {
+	 *               return 'image';
+	 *           }
+	 *           return $format;
+	 *       }, 10, 2 );
 	 *
 	 * @since 2.0.0
 	 *
@@ -1300,6 +1328,26 @@ class WP_Press_This_Plugin {
 	 * @return string Suggested post format ('video', 'quote', 'link') or empty string for standard.
 	 */
 	public function get_suggested_post_format( $data ) {
+		/**
+		 * Filters to force a specific post format, bypassing all detection logic.
+		 *
+		 * Use this filter when you want to always use a specific post format
+		 * regardless of the content being shared. Return a non-empty string
+		 * to override, or empty string to continue with detection logic.
+		 *
+		 * Note: This filter intentionally has no arguments to ensure consistent
+		 * behavior between server-side (PHP) and client-side (JavaScript) contexts.
+		 * For conditional logic based on content, use `press_this_post_format_suggestion`.
+		 *
+		 * @since 2.0.0
+		 *
+		 * @param string $format Empty string by default. Return a format to override.
+		 */
+		$override_format = apply_filters( 'press_this_post_format_override', '' );
+		if ( ! empty( $override_format ) ) {
+			return $override_format;
+		}
+
 		$suggested_format = '';
 
 		// Priority 1: Check for video embeds from major video platforms.
@@ -1334,6 +1382,10 @@ class WP_Press_This_Plugin {
 		if ( empty( $suggested_format ) && ! empty( $data['u'] ) && empty( $data['s'] ) && empty( $data['_images'] ) && empty( $data['_embeds'] ) ) {
 			$suggested_format = 'link';
 		}
+
+		// Note: The default format filter is NOT applied here.
+		// It's passed separately via postFormatDefault to allow JS detection
+		// to run before falling back to the default. See html() method.
 
 		/**
 		 * Filters the suggested post format for Press This.
@@ -1507,6 +1559,29 @@ class WP_Press_This_Plugin {
 			// Post format support.
 			'postFormats'         => $post_formats,
 			'suggestedFormat'     => $this->get_suggested_post_format( $data ),
+
+			// Post format filter values for JS context.
+			// These are static values (no arguments) that work identically in PHP and JS.
+			// Override bypasses all detection; default is used as fallback after JS detection.
+			// Priority: override → suggestedFormat → JS detection → default → standard.
+			/**
+			 * Filters to force a specific post format, bypassing all detection logic.
+			 *
+			 * @since 2.0.0
+			 *
+			 * @param string $format Empty string by default. Return a format to override.
+			 */
+			'postFormatOverride'  => apply_filters( 'press_this_post_format_override', '' ),
+			/**
+			 * Filters the default post format when no format is detected.
+			 *
+			 * Applied after both PHP and JS detection have run and found nothing.
+			 *
+			 * @since 2.0.0
+			 *
+			 * @param string $default_format Empty string by default (standard format).
+			 */
+			'postFormatDefault'   => apply_filters( 'press_this_default_post_format', '' ),
 
 			// Categories data.
 			'categories'          => $categories_data,
