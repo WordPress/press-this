@@ -86,9 +86,6 @@ class Test_Sanitization_Error_Handling extends BaseTestCase {
 	 * @covers WP_Press_This_Plugin::save_post
 	 */
 	public function test_category_array_sanitization_converts_to_integers() {
-		// Skip this test in WorDBless environment - category operations require full database.
-		$this->markTestSkipped( 'Category operations require full WordPress database integration.' );
-
 		// Create test categories.
 		$cat1 = wp_insert_category( array( 'cat_name' => 'Test Category 1' ) );
 		$cat2 = wp_insert_category( array( 'cat_name' => 'Test Category 2' ) );
@@ -106,11 +103,13 @@ class Test_Sanitization_Error_Handling extends BaseTestCase {
 			'-5',                           // Negative should become 5 via absint.
 		);
 
+		ob_start();
 		try {
 			$this->plugin->save_post();
 		} catch ( WPDieException $e ) {
 			// Expected - wp_send_json_* calls wp_die().
 		}
+		ob_end_clean();
 
 		// Verify categories were properly sanitized and assigned.
 		$post_categories = wp_get_post_categories( $this->test_post_id );
@@ -131,9 +130,6 @@ class Test_Sanitization_Error_Handling extends BaseTestCase {
 	 * @covers WP_Press_This_Plugin::save_post
 	 */
 	public function test_taxonomy_input_sanitization() {
-		// Skip this test in WorDBless environment - taxonomy operations require full database.
-		$this->markTestSkipped( 'Taxonomy operations require full WordPress database integration.' );
-
 		// Set up POST data with tax_input containing both valid and malformed data.
 		$_POST['post_ID']      = $this->test_post_id;
 		$_POST['_wpnonce']     = wp_create_nonce( 'update-post_' . $this->test_post_id );
@@ -151,11 +147,13 @@ class Test_Sanitization_Error_Handling extends BaseTestCase {
 			'nonexistent_taxonomy' => array( 'should', 'be', 'ignored' ),  // Invalid taxonomy.
 		);
 
+		ob_start();
 		try {
 			$this->plugin->save_post();
 		} catch ( WPDieException $e ) {
 			// Expected.
 		}
+		ob_end_clean();
 
 		// Verify tags were sanitized.
 		$tags = wp_get_post_tags( $this->test_post_id, array( 'fields' => 'names' ) );

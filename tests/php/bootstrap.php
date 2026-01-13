@@ -2,7 +2,7 @@
 /**
  * PHPUnit bootstrap file for Press This plugin tests.
  *
- * Uses WorDBless for database-less WordPress testing.
+ * Uses WorDBless with SQLite for WordPress testing with full database support.
  *
  * @package Press_This_Plugin
  */
@@ -15,13 +15,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 	define( 'ABSPATH', dirname( dirname( __DIR__ ) ) . '/wordpress/' );
 }
 
-// Initialize WorDBless.
-\WorDBless\Load::load();
-
 // Define DOING_AJAX to ensure wp_send_json uses wp_die() instead of die().
+// Must be defined before WorDBless loads WordPress.
 if ( ! defined( 'DOING_AJAX' ) ) {
 	define( 'DOING_AJAX', true );
 }
+
+// Initialize WorDBless with SQLite database support.
+// This enables full database operations including taxonomies and categories.
+// Note: First run shows "no such table: wp_options" error during initialization,
+// but this is harmless - tables are created immediately after and tests pass.
+\WorDBless\Load::load( 'sqlite' );
 
 /**
  * Custom exception for wp_die() calls in tests.

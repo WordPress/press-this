@@ -90,12 +90,14 @@ class Test_WP_Press_This_Plugin extends BaseTestCase {
 		$_POST['post_content'] = '<p>Test content</p>';
 		$_POST['post_status']  = 'draft';
 
-		// We need to catch the JSON response since save_post() calls wp_send_json_*.
+		// Capture JSON output since save_post() calls wp_send_json_*.
+		ob_start();
 		try {
 			$this->plugin->save_post();
 		} catch ( WPDieException $e ) {
 			// Expected - wp_send_json_* calls wp_die().
 		}
+		ob_end_clean();
 
 		// Verify the post was updated.
 		$post = get_post( $this->test_post_id );
@@ -136,9 +138,6 @@ class Test_WP_Press_This_Plugin extends BaseTestCase {
 	 * @covers WP_Press_This_Plugin::add_category
 	 */
 	public function test_add_category_creates_new_category() {
-		// Skip this test in WorDBless environment - category operations require full database.
-		$this->markTestSkipped( 'Category creation requires full WordPress database integration.' );
-
 		$_POST['new_cat_nonce'] = wp_create_nonce( 'add-category' );
 		$_POST['name']          = 'Test Press This Category';
 		$_POST['parent']        = 0;
@@ -252,11 +251,13 @@ class Test_WP_Press_This_Plugin extends BaseTestCase {
 		$_POST['post_content'] = '<p>Content</p>';
 		$_POST['post_status']  = 'draft';
 
+		ob_start();
 		try {
 			$this->plugin->save_post();
 		} catch ( WPDieException $e ) {
 			// Expected.
 		}
+		ob_end_clean();
 
 		$this->assertTrue( $filter_called );
 
