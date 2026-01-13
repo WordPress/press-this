@@ -1106,6 +1106,11 @@ class WP_Press_This_Plugin {
 			}
 		}
 
+		// Decode HTML entities (e.g., &#8211; to –) for proper display.
+		if ( $title ) {
+			$title = html_entity_decode( $title, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+		}
+
 		return $title;
 	}
 
@@ -1470,7 +1475,8 @@ class WP_Press_This_Plugin {
 		} else {
 			// GET request with proxy enabled and no selection: let JavaScript auto-scan generate content.
 			// Only use title from URL param as a placeholder (can be overwritten by scan).
-			$post_title   = ! empty( $data['t'] ) ? $data['t'] : '';
+			// Decode HTML entities for proper display.
+			$post_title   = ! empty( $data['t'] ) ? html_entity_decode( $data['t'], ENT_QUOTES | ENT_HTML5, 'UTF-8' ) : '';
 			$post_content = '';
 		}
 
