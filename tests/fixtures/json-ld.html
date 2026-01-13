@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Page with JSON-LD</title>
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": "JSON-LD Test Article Headline",
+        "description": "This is a test description extracted from JSON-LD structured data.",
+        "image": "https://example.com/json-ld-image.jpg",
+        "author": {
+            "@type": "Person",
+            "name": "Test Author"
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": "Example Publisher",
+            "logo": {
+                "@type": "ImageObject",
+                "url": "https://example.com/logo.png"
+            }
+        },
+        "datePublished": "2026-01-12",
+        "dateModified": "2026-01-12"
+    }
+    </script>
+
+    <!-- Standard Meta -->
+    <meta name="description" content="Standard meta description for the page.">
+</head>
+<body>
+    <h1>Test Page with JSON-LD</h1>
+    <article>
+        <p>This page contains JSON-LD structured data for testing the URL scraper.</p>
+        <img src="https://example.com/article-image.jpg" alt="Article image">
+    </article>
+</body>
+</html>
