@@ -15,6 +15,7 @@
   "scripts": {
     "build": "wp-scripts build && npm run build:bookmarklet",
     "build:bookmarklet": "terser assets/bookmarklet.js --compress --mangle -o assets/bookmarklet.min.js",
+    "build:dist": "npm run build && rm -rf dist press-this.zip && mkdir -p dist/press-this && cp press-this-plugin.php class-wp-press-this-plugin.php readme.txt dist/press-this/ && cp UPGRADE.md dist/press-this/ 2>/dev/null || true && cp -r includes build assets dist/press-this/ && cd dist && zip -r ../press-this.zip press-this/ && echo 'Created press-this.zip'",
     "start": "wp-scripts start",
     "lint": "wp-scripts lint-js src/",
     "lint:css": "wp-scripts lint-style src/",

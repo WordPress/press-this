@@ -4,6 +4,8 @@ node_modules/
 
 # Build output
 /build/
+/dist/
+*.zip
 
 # wp-env local environment
 .wp-env/
