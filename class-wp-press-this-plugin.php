@@ -1549,7 +1549,8 @@ class WP_Press_This_Plugin {
 			'sourceUrl'           => ! empty( $data['u'] ) ? $data['u'] : '',
 
 			// Site info.
-			'siteName'            => get_bloginfo( 'name', 'display' ),
+			// Decode HTML entities for proper display (e.g., &#8211; to –).
+			'siteName'            => html_entity_decode( get_bloginfo( 'name', 'display' ), ENT_QUOTES | ENT_HTML5, 'UTF-8' ),
 			'siteUrl'             => home_url( '/' ),
 			'ajaxUrl'             => admin_url( 'admin-ajax.php' ),
 			'restUrl'             => rest_url( 'press-this/v1/' ),
