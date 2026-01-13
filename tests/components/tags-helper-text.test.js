@@ -10,117 +10,35 @@
 const fs = require( 'fs' );
 const path = require( 'path' );
 
-/**
- * Simple test runner for tags helper text verification.
- */
-class TestRunner {
-	constructor() {
-		this.passed = 0;
-		this.failed = 0;
-		this.errors = [];
-	}
+describe( 'Tags Helper Text', () => {
+	test( 'Tags helper text renders with correct content', () => {
+		const editorPath = path.resolve( __dirname, '../../src/components/PressThisEditor.js' );
 
-	test( name, fn ) {
-		try {
-			fn();
-			this.passed++;
-			console.log( `  PASS: ${ name }` );
-		} catch ( error ) {
-			this.failed++;
-			this.errors.push( { name, error: error.message } );
-			console.log( `  FAIL: ${ name }` );
-			console.log( `        ${ error.message }` );
-		}
-	}
+		expect( fs.existsSync( editorPath ) ).toBe( true );
 
-	assert( condition, message ) {
-		if ( ! condition ) {
-			throw new Error( message );
-		}
-	}
+		const content = fs.readFileSync( editorPath, 'utf8' );
 
-	assertContains( haystack, needle, message ) {
-		if ( ! haystack.includes( needle ) ) {
-			throw new Error( `${ message }: "${ haystack.substring( 0, 100 ) }..." does not contain "${ needle }"` );
-		}
-	}
+		// Check for helper text content.
+		expect( content ).toContain( 'Separate with commas or the Enter key' );
 
-	summary() {
-		console.log( '\n-------------------' );
-		console.log( `Tests: ${ this.passed } passed, ${ this.failed } failed` );
+		// Check for helper text class.
+		expect( content ).toContain( 'press-this-tags-panel__help' );
+	} );
 
-		if ( this.failed > 0 ) {
-			process.exit( 1 );
-		}
-	}
-}
+	test( 'Tags helper text has correct styling defined', () => {
+		const scssPath = path.resolve( __dirname, '../../src/styles/partials/_tags-panel.scss' );
 
-const runner = new TestRunner();
+		expect( fs.existsSync( scssPath ) ).toBe( true );
 
-console.log( '\nTags Helper Text Tests\n' );
+		const content = fs.readFileSync( scssPath, 'utf8' );
 
-/**
- * Test 1: Tags helper text renders in PressThisEditor.
- */
-runner.test( 'Tags helper text renders with correct content', () => {
-	const editorPath = path.resolve( __dirname, '../../src/components/PressThisEditor.js' );
+		// Check for helper class definition.
+		expect( content ).toContain( '.press-this-tags-panel__help' );
 
-	runner.assert(
-		fs.existsSync( editorPath ),
-		'PressThisEditor component file does not exist'
-	);
+		// Check for font-size styling (should use $font-size-xs which is 12px).
+		expect( content ).toContain( 'font-size' );
 
-	const content = fs.readFileSync( editorPath, 'utf8' );
-
-	// Check for helper text content.
-	runner.assertContains(
-		content,
-		'Separate with commas or the Enter key',
-		'Tags panel should include helper text about comma/Enter key separation'
-	);
-
-	// Check for helper text class.
-	runner.assertContains(
-		content,
-		'press-this-tags-panel__help',
-		'Tags helper text should use press-this-tags-panel__help class'
-	);
+		// Check for color styling (should use $color-text-light which is #757575).
+		expect( content ).toContain( 'color' );
+	} );
 } );
-
-/**
- * Test 2: Tags helper text styling exists in SCSS.
- */
-runner.test( 'Tags helper text has correct styling defined', () => {
-	const scssPath = path.resolve( __dirname, '../../src/styles/partials/_tags-panel.scss' );
-
-	runner.assert(
-		fs.existsSync( scssPath ),
-		'Tags panel SCSS file does not exist'
-	);
-
-	const content = fs.readFileSync( scssPath, 'utf8' );
-
-	// Check for helper class definition.
-	runner.assertContains(
-		content,
-		'.press-this-tags-panel__help',
-		'SCSS should define .press-this-tags-panel__help class'
-	);
-
-	// Check for font-size styling (should use $font-size-xs which is 12px).
-	runner.assertContains(
-		content,
-		'font-size',
-		'Tags helper text should have font-size defined'
-	);
-
-	// Check for color styling (should use $color-text-light which is #757575).
-	runner.assertContains(
-		content,
-		'color',
-		'Tags helper text should have color defined'
-	);
-} );
-
-// Print summary.
-runner.summary();
