@@ -138,11 +138,15 @@ class WP_Press_This_Plugin {
 			wp_send_json_error( array( 'errorMessage' => __( 'Invalid post.', 'press-this' ) ) );
 		}
 
+		// Get the existing post to preserve its post type.
+		$existing_post = get_post( $post_id );
+		$post_type     = $existing_post ? $existing_post->post_type : 'post';
+
 		$post_data = array(
 			'ID'           => $post_id,
 			'post_title'   => ( ! empty( $_POST['post_title'] ) ) ? sanitize_text_field( trim( $_POST['post_title'] ) ) : '',
 			'post_content' => ( ! empty( $_POST['post_content'] ) ) ? trim( $_POST['post_content'] ) : '',
-			'post_type'    => 'post',
+			'post_type'    => $post_type,
 			'post_status'  => 'draft',
 			'post_format'  => ( ! empty( $_POST['post_format'] ) ) ? sanitize_text_field( $_POST['post_format'] ) : '',
 		);
@@ -1496,8 +1500,20 @@ class WP_Press_This_Plugin {
 		$is_post_message_mode = ! empty( $_GET['pm'] ) && '1' === $_GET['pm'];
 
 		// Create a draft post for the editor.
-		$post    = get_default_post_to_edit( 'post', true );
-		$post_ID = (int) $post->ID;
+		/**
+		 * Filters the post type used when creating a new Press This post.
+		 *
+		 * This allows other plugins to change the default post type from 'post'
+		 * to a custom post type (e.g., 'jetpack-social-note' for microblogging).
+		 *
+		 * @since 2.0.0
+		 *
+		 * @param string $post_type The post type to create. Default 'post'.
+		 * @param array  $data      The scraped data from the source URL.
+		 */
+		$post_type = apply_filters( 'press_this_post_type', 'post', $data );
+		$post      = get_default_post_to_edit( $post_type, true );
+		$post_ID   = (int) $post->ID;
 
 		// Get taxonomy capabilities.
 		$categories_tax  = get_taxonomy( 'category' );
@@ -1508,7 +1524,7 @@ class WP_Press_This_Plugin {
 
 		// Get supported post formats.
 		$post_formats = array();
-		if ( current_theme_supports( 'post-formats' ) && post_type_supports( 'post', 'post-formats' ) ) {
+		if ( current_theme_supports( 'post-formats' ) && post_type_supports( $post_type, 'post-formats' ) ) {
 			$theme_formats = get_theme_support( 'post-formats' );
 			if ( is_array( $theme_formats[0] ) ) {
 				$post_formats = $theme_formats[0];

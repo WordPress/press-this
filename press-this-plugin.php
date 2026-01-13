@@ -299,11 +299,15 @@ function press_this_rest_save_post( $request ) {
 
 	$post_id = $request->get_param( 'post_id' );
 
+	// Get the existing post to preserve its post type.
+	$existing_post = get_post( $post_id );
+	$post_type     = $existing_post ? $existing_post->post_type : 'post';
+
 	$post_data = array(
 		'ID'           => $post_id,
 		'post_title'   => $request->get_param( 'title' ),
 		'post_content' => wp_kses_post( $request->get_param( 'content' ) ),
-		'post_type'    => 'post',
+		'post_type'    => $post_type,
 		'post_status'  => 'draft',
 		'post_format'  => $request->get_param( 'format' ),
 	);
