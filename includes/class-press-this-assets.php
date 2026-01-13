@@ -54,10 +54,13 @@ class Press_This_Assets {
 		$asset = require $asset_file;
 
 		// Filter dependencies - remove CSS file paths and keep only valid WP script handles.
-		$dependencies = array_filter( $asset['dependencies'], function( $dep ) {
-			// Skip CSS file paths that webpack incorrectly adds as dependencies.
-			return strpos( $dep, '.css' ) === false;
-		} );
+		$dependencies = array_filter(
+			$asset['dependencies'],
+			function ( $dep ) {
+				// Skip CSS file paths that webpack incorrectly adds as dependencies.
+				return strpos( $dep, '.css' ) === false;
+			}
+		);
 		$dependencies = array_values( $dependencies );
 
 		// Ensure wp-primitives is loaded (needed by @wordpress/components for icons).

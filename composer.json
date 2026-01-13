@@ -7,11 +7,11 @@
     "require-dev": {
         "automattic/wordbless": "^0.6",
         "dealerdirect/phpcodesniffer-composer-installer": "v1.0.0",
-        "phpcompatibility/phpcompatibility-wp": "2.1.0",
+        "phpcompatibility/phpcompatibility-wp": "^2.1",
         "phpunit/phpunit": "^9.6",
         "sirbrillig/phpcs-changed": "^2.11",
         "sirbrillig/phpcs-variable-analysis": "^2",
-        "wp-coding-standards/wpcs": "3.0.1",
+        "wp-coding-standards/wpcs": "^3.3",
         "yoast/phpunit-polyfills": "^2.0 || ^3.0"
     },
     "scripts": {

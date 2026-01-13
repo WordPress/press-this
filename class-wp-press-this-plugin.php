@@ -152,8 +152,8 @@ class WP_Press_This_Plugin {
 		if ( current_user_can( $category_tax->cap->assign_terms ) ) {
 			if ( ! empty( $_POST['post_category'] ) ) {
 				// Convert all values to integers and filter out zeros (invalid IDs).
-				$categories = array_map( 'absint', (array) $_POST['post_category'] );
-				$categories = array_filter( $categories );
+				$categories                 = array_map( 'absint', (array) $_POST['post_category'] );
+				$categories                 = array_filter( $categories );
 				$post_data['post_category'] = $categories;
 			} else {
 				$post_data['post_category'] = array();
@@ -595,6 +595,8 @@ class WP_Press_This_Plugin {
 	 * @return int|null Bookmarklet version number or null if not provided.
 	 */
 	private function get_bookmarklet_version() {
+		// phpcs:disable WordPress.Security.NonceVerification.Missing, WordPress.Security.NonceVerification.Recommended -- Bookmarklet data from external sites cannot include nonces.
+
 		// Modern bookmarklet sends pt_version via POST.
 		if ( ! empty( $_POST['pt_version'] ) ) {
 			return (int) $_POST['pt_version'];
@@ -609,6 +611,7 @@ class WP_Press_This_Plugin {
 			return (int) $_GET['v'];
 		}
 
+		// phpcs:enable WordPress.Security.NonceVerification.Missing, WordPress.Security.NonceVerification.Recommended
 		return null;
 	}
 
@@ -626,11 +629,13 @@ class WP_Press_This_Plugin {
 	 * @return array
 	 */
 	public function merge_or_fetch_data() {
+		// phpcs:disable WordPress.Security.NonceVerification.Missing, WordPress.Security.NonceVerification.Recommended -- Bookmarklet data from external sites cannot include nonces.
+
 		// Get data from $_POST and $_GET, as appropriate ($_POST > $_GET), to remain backward compatible.
 		$data = array();
 
 		// Only instantiate the keys we want. Sanity check and sanitize each one.
-		// Legacy URL format: ?u=URL&t=TITLE&s=SELECTION&v=VERSION
+		// Legacy URL format: ?u=URL&t=TITLE&s=SELECTION&v=VERSION.
 		foreach ( array( 'u', 's', 't', 'v' ) as $key ) {
 			if ( ! empty( $_POST[ $key ] ) ) {
 				$value = wp_unslash( $_POST[ $key ] );
@@ -758,6 +763,8 @@ class WP_Press_This_Plugin {
 				}
 			}
 		}
+
+		// phpcs:enable WordPress.Security.NonceVerification.Missing, WordPress.Security.NonceVerification.Recommended
 
 		/**
 		 * Filters the Press This data array.
@@ -1021,23 +1028,19 @@ class WP_Press_This_Plugin {
 		$link = '';
 
 		// Priority 1: Link rel="canonical".
+		// Priority 2: JSON-LD canonical.
+		// Priority 3: Alternate canonical (hreflang x-default).
+		// Priority 4: Original URL.
+		// Priority 5: Meta tags.
 		if ( ! empty( $data['_links']['canonical'] ) ) {
 			$link = $data['_links']['canonical'];
-		}
-		// Priority 2: JSON-LD canonical.
-		elseif ( ! empty( $data['_jsonld']['canonical'] ) ) {
+		} elseif ( ! empty( $data['_jsonld']['canonical'] ) ) {
 			$link = $data['_jsonld']['canonical'];
-		}
-		// Priority 3: Alternate canonical (hreflang x-default).
-		elseif ( ! empty( $data['_links']['alternate_canonical'] ) ) {
+		} elseif ( ! empty( $data['_links']['alternate_canonical'] ) ) {
 			$link = $data['_links']['alternate_canonical'];
-		}
-		// Priority 4: Original URL.
-		elseif ( ! empty( $data['u'] ) ) {
+		} elseif ( ! empty( $data['u'] ) ) {
 			$link = $data['u'];
-		}
-		// Priority 5: Meta tags.
-		elseif ( ! empty( $data['_meta'] ) ) {
+		} elseif ( ! empty( $data['_meta'] ) ) {
 			if ( ! empty( $data['_meta']['twitter:url'] ) ) {
 				$link = $data['_meta']['twitter:url'];
 			} elseif ( ! empty( $data['_meta']['og:url'] ) ) {
@@ -1392,6 +1395,7 @@ class WP_Press_This_Plugin {
 	 * @global WP_Locale $wp_locale
 	 */
 	public function html() {
+		// phpcs:disable WordPress.Security.NonceVerification.Missing, WordPress.Security.NonceVerification.Recommended -- Bookmarklet data from external sites cannot include nonces.
 		global $wp_locale;
 
 		$wp_version = get_bloginfo( 'version' );
@@ -1438,11 +1442,11 @@ class WP_Press_This_Plugin {
 		$post_ID = (int) $post->ID;
 
 		// Get taxonomy capabilities.
-		$categories_tax    = get_taxonomy( 'category' );
-		$tag_tax           = get_taxonomy( 'post_tag' );
-		$can_assign_cats   = current_user_can( $categories_tax->cap->assign_terms );
-		$can_edit_cats     = current_user_can( $categories_tax->cap->edit_terms );
-		$can_assign_tags   = current_user_can( $tag_tax->cap->assign_terms );
+		$categories_tax  = get_taxonomy( 'category' );
+		$tag_tax         = get_taxonomy( 'post_tag' );
+		$can_assign_cats = current_user_can( $categories_tax->cap->assign_terms );
+		$can_edit_cats   = current_user_can( $categories_tax->cap->edit_terms );
+		$can_assign_tags = current_user_can( $tag_tax->cap->assign_terms );
 
 		// Get supported post formats.
 		$post_formats = array();
@@ -1454,11 +1458,13 @@ class WP_Press_This_Plugin {
 		}
 
 		// Get all categories for the React app.
-		$categories = get_categories( array(
-			'hide_empty' => false,
-			'orderby'    => 'name',
-			'order'      => 'ASC',
-		) );
+		$categories = get_categories(
+			array(
+				'hide_empty' => false,
+				'orderby'    => 'name',
+				'order'      => 'ASC',
+			)
+		);
 
 		$categories_data = array();
 		foreach ( $categories as $cat ) {
@@ -1615,6 +1621,7 @@ class WP_Press_This_Plugin {
 </body>
 </html>
 		<?php
+		// phpcs:enable WordPress.Security.NonceVerification.Missing, WordPress.Security.NonceVerification.Recommended
 		die();
 	}
 

@@ -166,37 +166,37 @@ function press_this_register_rest_routes() {
 			'callback'            => 'press_this_rest_save_post',
 			'permission_callback' => 'press_this_rest_save_permission',
 			'args'                => array(
-				'post_id'       => array(
+				'post_id'        => array(
 					'required'          => true,
 					'type'              => 'integer',
 					'sanitize_callback' => 'absint',
 				),
-				'title'         => array(
+				'title'          => array(
 					'type'              => 'string',
 					'sanitize_callback' => 'sanitize_text_field',
 					'default'           => '',
 				),
-				'content'       => array(
+				'content'        => array(
 					'type'    => 'string',
 					'default' => '',
 				),
-				'status'        => array(
+				'status'         => array(
 					'type'              => 'string',
 					'sanitize_callback' => 'sanitize_text_field',
 					'default'           => 'draft',
 					'enum'              => array( 'draft', 'publish' ),
 				),
-				'format'        => array(
+				'format'         => array(
 					'type'              => 'string',
 					'sanitize_callback' => 'sanitize_text_field',
 					'default'           => '',
 				),
-				'categories'    => array(
+				'categories'     => array(
 					'type'    => 'array',
 					'items'   => array( 'type' => 'integer' ),
 					'default' => array(),
 				),
-				'tags'          => array(
+				'tags'           => array(
 					'type'    => 'array',
 					'items'   => array( 'type' => 'string' ),
 					'default' => array(),
@@ -359,6 +359,7 @@ function press_this_rest_save_post( $request ) {
 	if ( is_wp_error( $updated ) ) {
 		// Log detailed error when WP_DEBUG is enabled, return generic message to user.
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug logging only when WP_DEBUG enabled.
 			error_log( 'Press This save_post error: ' . $updated->get_error_message() );
 		}
 		return new WP_Error(
@@ -422,6 +423,7 @@ function press_this_rest_save_post( $request ) {
 		// Block external redirects.
 		if ( $redirect_host && $redirect_host !== $site_host ) {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug logging only when WP_DEBUG enabled.
 				error_log( sprintf( 'Press This: Blocked external redirect to %s', esc_url( $redirect ) ) );
 			}
 			$redirect = get_edit_post_link( $post_id, 'raw' );
@@ -490,8 +492,8 @@ function press_this_rest_validate_embeds_permission() {
 function press_this_rest_validate_embeds( $request ) {
 	include_once plugin_dir_path( __FILE__ ) . 'class-wp-press-this-plugin.php';
 
-	$urls   = $request->get_param( 'urls' );
-	$valid  = array();
+	$urls  = $request->get_param( 'urls' );
+	$valid = array();
 
 	if ( ! is_array( $urls ) ) {
 		return rest_ensure_response( array( 'embeds' => array() ) );
@@ -642,6 +644,7 @@ function press_this_rest_sideload_image( $request ) {
 		if ( $content_type && ! in_array( $content_type, $allowed_types, true ) ) {
 			// Log detailed error when WP_DEBUG is enabled.
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug logging only when WP_DEBUG enabled.
 				error_log( sprintf( 'Press This sideload rejected content-type: %s for URL: %s', $content_type, $url ) );
 			}
 			return new WP_Error(
@@ -656,6 +659,7 @@ function press_this_rest_sideload_image( $request ) {
 		if ( $content_length && (int) $content_length > $max_size ) {
 			// Log detailed error when WP_DEBUG is enabled.
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug logging only when WP_DEBUG enabled.
 				error_log( sprintf( 'Press This sideload rejected file size: %d bytes for URL: %s', (int) $content_length, $url ) );
 			}
 			return new WP_Error(
@@ -679,6 +683,7 @@ function press_this_rest_sideload_image( $request ) {
 	if ( is_wp_error( $tmp_file ) ) {
 		// Log detailed error when WP_DEBUG is enabled.
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug logging only when WP_DEBUG enabled.
 			error_log( 'Press This sideload download error: ' . $tmp_file->get_error_message() );
 		}
 		return new WP_Error(
@@ -705,9 +710,10 @@ function press_this_rest_sideload_image( $request ) {
 
 	// Clean up temp file if sideload failed.
 	if ( is_wp_error( $attachment_id ) ) {
-		@unlink( $tmp_file );
+		wp_delete_file( $tmp_file );
 		// Log detailed error when WP_DEBUG is enabled.
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug logging only when WP_DEBUG enabled.
 			error_log( 'Press This sideload error: ' . $attachment_id->get_error_message() );
 		}
 		return new WP_Error(
@@ -916,10 +922,10 @@ function press_this_is_proxy_enabled() {
  *
  * @since 2.0.0
  *
- * @param WP_REST_Request $request Request object.
+ * @param WP_REST_Request $request Request object (unused but required by REST API).
  * @return bool|WP_Error True if allowed, WP_Error otherwise.
  */
-function press_this_rest_scrape_permission( $request ) {
+function press_this_rest_scrape_permission( $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found, VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable -- Required by REST API.
 	// Check if proxy feature is enabled.
 	if ( ! press_this_is_proxy_enabled() ) {
 		return new WP_Error(
@@ -1266,6 +1272,7 @@ function press_this_rest_scrape_url( $request ) {
 	if ( is_wp_error( $response ) ) {
 		// Log detailed error when WP_DEBUG is enabled.
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug logging only when WP_DEBUG enabled.
 			error_log( 'Press This scrape_url error: ' . $response->get_error_message() . ' for URL: ' . $url );
 		}
 		return new WP_Error(
@@ -1279,6 +1286,7 @@ function press_this_rest_scrape_url( $request ) {
 	if ( $status_code < 200 || $status_code >= 400 ) {
 		// Log detailed error when WP_DEBUG is enabled.
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug logging only when WP_DEBUG enabled.
 			error_log( sprintf( 'Press This scrape_url HTTP error: status %d for URL: %s', $status_code, $url ) );
 		}
 		return new WP_Error(
@@ -1380,13 +1388,13 @@ function press_this_resolve_url( $url, $base_url ) {
  *
  * @since 2.0.0
  *
- * @param string $src    Image source URL.
- * @param string $class  Image CSS class attribute.
- * @param int    $width  Image width (0 if not specified).
- * @param int    $height Image height (0 if not specified).
+ * @param string $src       Image source URL.
+ * @param string $classname Image CSS class attribute.
+ * @param int    $width     Image width (0 if not specified).
+ * @param int    $height    Image height (0 if not specified).
  * @return bool True if image should be filtered out, false otherwise.
  */
-function press_this_is_filtered_image( $src, $class, $width, $height ) {
+function press_this_is_filtered_image( $src, $classname, $width, $height ) {
 	// Filter out data: URLs.
 	if ( strpos( $src, 'data:' ) === 0 ) {
 		return true;
@@ -1406,7 +1414,7 @@ function press_this_is_filtered_image( $src, $class, $width, $height ) {
 	}
 
 	// Filter out avatar images by class.
-	if ( stripos( $class, 'avatar' ) !== false ) {
+	if ( stripos( $classname, 'avatar' ) !== false ) {
 		return true;
 	}
 
@@ -1431,6 +1439,8 @@ function press_this_is_filtered_image( $src, $class, $width, $height ) {
  * @return array Extracted metadata with keys: title, description, images, embeds, canonical.
  */
 function press_this_parse_html_metadata( $html, $base_url ) {
+	// phpcs:disable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOM API uses camelCase properties.
+
 	$metadata = array(
 		'title'       => '',
 		'description' => '',
@@ -1566,6 +1576,8 @@ function press_this_parse_html_metadata( $html, $base_url ) {
 	// Apply additional sanitization for safety.
 	$metadata['images'] = array_map( 'esc_url', $metadata['images'] );
 	$metadata['embeds'] = array_map( 'esc_url', $metadata['embeds'] );
+
+	// phpcs:enable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 
 	return $metadata;
 }
