@@ -10,9 +10,8 @@
 /**
  * WordPress dependencies
  */
-import { useMemo, useState, useCallback, useEffect } from '@wordpress/element';
+import { useMemo, useState, useCallback } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
-import { Modal, Button } from '@wordpress/components';
 
 /**
  * Internal dependencies
@@ -46,16 +45,6 @@ export default function App() {
 		isSaving: false,
 		publishLabel: __( 'Publish', 'press-this' ),
 	} );
-
-	// Bookmarklet confirmation state - show prompt before loading external content.
-	const [ showConfirmation, setShowConfirmation ] = useState( false );
-	const [ confirmed, setConfirmed ] = useState( false );
-
-	useEffect( () => {
-		if ( data.needsConfirmation && data.sourceUrl && ! confirmed ) {
-			setShowConfirmation( true );
-		}
-	}, [ data.needsConfirmation, data.sourceUrl, confirmed ] );
 
 	// Build initial post object for editor.
 	const post = useMemo( () => ( {
@@ -140,46 +129,8 @@ export default function App() {
 		setSaveState( state );
 	}, [] );
 
-	/**
-	 * Handle confirmation to proceed with external content.
-	 */
-	const handleConfirm = useCallback( () => {
-		setConfirmed( true );
-		setShowConfirmation( false );
-	}, [] );
-
-	/**
-	 * Handle cancellation - close the window.
-	 */
-	const handleCancel = useCallback( () => {
-		window.close();
-	}, [] );
-
 	return (
 		<div className="press-this-app">
-			{ showConfirmation && (
-				<Modal
-					title={ __( 'Load External Content?', 'press-this' ) }
-					onRequestClose={ handleCancel }
-					isDismissible={ false }
-				>
-					<p>
-						{ __( 'Content will be loaded from:', 'press-this' ) }
-					</p>
-					<p>
-						<strong>{ data.sourceUrl }</strong>
-					</p>
-					<div style={ { display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '16px' } }>
-						<Button variant="tertiary" onClick={ handleCancel }>
-							{ __( 'Cancel', 'press-this' ) }
-						</Button>
-						<Button variant="primary" onClick={ handleConfirm }>
-							{ __( 'Continue', 'press-this' ) }
-						</Button>
-					</div>
-				</Modal>
-			) }
-
 			<Header
 				siteName={ data.siteName }
 				siteUrl={ data.siteUrl }

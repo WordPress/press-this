@@ -1513,9 +1513,6 @@ class WP_Press_This_Plugin {
 			'redirInParent'       => $site_settings['redirInParent'],
 			'isRTL'               => is_rtl(),
 
-			// Bookmarklet confirmation - prompt user before loading external content.
-			'needsConfirmation'   => ! empty( $data['u'] ) && 'POST' === $_SERVER['REQUEST_METHOD'],
-
 			// Allowed blocks.
 			'allowedBlocks'       => $this->get_allowed_blocks(),
 
