@@ -192,6 +192,7 @@ class Press_This_Assets {
 			'isRTL'           => is_rtl(),
 			'siteUrl'         => home_url(),
 			'ajaxUrl'         => admin_url( 'admin-ajax.php' ),
+			'scriptDebug'     => defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG,
 		);
 	}
 

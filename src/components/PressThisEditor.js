@@ -117,16 +117,22 @@ function safeRedirect( url, options = {} ) {
 
 		// Block external redirects.
 		// Log blocked redirect for debugging (development only).
-		console.warn(
-			'Press This: Blocked external redirect to',
-			redirectUrl.host,
-			'- using fallback'
-		);
+		if ( window.pressThisEditorSettings?.scriptDebug ) {
+			// eslint-disable-next-line no-console
+			console.warn(
+				'Press This: Blocked external redirect to',
+				redirectUrl.host,
+				'- using fallback'
+			);
+		}
 
 		return fallback;
 	} catch ( e ) {
 		// If URL parsing fails, treat it as potentially malicious.
-		console.warn( 'Press This: Invalid redirect URL - using fallback' );
+		if ( window.pressThisEditorSettings?.scriptDebug ) {
+			// eslint-disable-next-line no-console
+			console.warn( 'Press This: Invalid redirect URL - using fallback' );
+		}
 		return fallback;
 	}
 }

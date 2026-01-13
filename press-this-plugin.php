@@ -40,7 +40,6 @@ define( 'PRESS_THIS__VERSION', '2.0.0' );
  * Minimum WordPress version required for the Gutenberg features.
  *
  * @since 2.0.0
- * @since 2.0.0 Updated to 6.9 to leverage reject_unsafe_urls for URL validation.
  */
 define( 'PRESS_THIS__MIN_WP_VERSION', '6.9' );
 
@@ -589,7 +588,6 @@ function press_this_get_sideload_max_size() {
  * Validates content-type via HEAD request before download.
  *
  * @since 2.0.0
- * @since 2.0.0 Added content-type validation via HEAD request.
  *
  * @param WP_REST_Request $request Request object.
  * @return WP_REST_Response|WP_Error Response object on success, WP_Error on failure.
@@ -1010,7 +1008,6 @@ function press_this_is_localhost( $host ) {
  * - Non-HTTP(S) schemes
  *
  * @since 2.0.0
- * @since 2.0.0 Enhanced with comprehensive localhost and private IP blocking.
  *
  * @param string $url URL to validate.
  * @return bool|WP_Error True if safe, WP_Error with reason if not.
@@ -1129,7 +1126,6 @@ function press_this_http_request_context( $enable = null ) {
  * remove_filter( 'pre_http_request', 'press_this_validate_http_request_ip', 10 );
  *
  * @since 2.0.0
- * @since 2.0.0 Simplified to work with WordPress reject_unsafe_urls.
  *
  * @param false|array|WP_Error $preempt     A preemptive return value.
  * @param array                $parsed_args HTTP request arguments.
@@ -1193,7 +1189,6 @@ function press_this_validate_http_request_ip( $preempt, $parsed_args, $url ) {
  * to leverage WordPress 5.9+ built-in URL validation.
  *
  * @since 2.0.0
- * @since 2.0.0 Added reject_unsafe_urls for enhanced URL validation.
  *
  * @param string $url  URL to fetch.
  * @param array  $args Optional. Request arguments.
@@ -1241,8 +1236,6 @@ function press_this_download_url( $url, $timeout = 300 ) {
  * Returns generic error messages and logs detailed errors when WP_DEBUG is enabled.
  *
  * @since 2.0.0
- * @since 2.0.0 Enhanced URL validation with reject_unsafe_urls. Generic error messages.
- *              Now returns parsed metadata instead of raw HTML.
  *
  * @param WP_REST_Request $request Request object.
  * @return WP_REST_Response|WP_Error Response with parsed metadata or error.

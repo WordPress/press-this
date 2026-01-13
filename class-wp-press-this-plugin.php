@@ -17,8 +17,7 @@ class WP_Press_This_Plugin {
 	 * Used to trigger the bookmarklet update notice.
 	 * Increment when bookmarklet functionality changes.
 	 *
-	 * @since 2.0.0 Updated to version 10 for enhanced data extraction.
-	 * @since 2.0.0 Updated to version 11 for GET + postMessage flow (SameSite cookie fix).
+	 * @since 2.0.0
 	 */
 	const VERSION = 11;
 
@@ -1118,8 +1117,7 @@ class WP_Press_This_Plugin {
 	 * - Text content uses esc_html()
 	 *
 	 * @since 1.0.0
-	 * @since 2.0.0 Added JSON-LD description support.
-	 * @since 2.0.0 Added escaping for all dynamic content.
+	 * @since 2.0.0 Added JSON-LD support and escaping for all dynamic content.
 	 *
 	 * @param array $data The site's data.
 	 * @return string Discovered content, or empty
@@ -1389,8 +1387,7 @@ class WP_Press_This_Plugin {
 	 * - Asset enqueueing
 	 *
 	 * @since 1.0.0
-	 * @since 2.0.0 Updated for Gutenberg block editor.
-	 * @since 2.0.0 Converted to minimal shell - all UI rendered by React.
+	 * @since 2.0.0 Converted to minimal shell with Gutenberg block editor - all UI rendered by React.
 	 *
 	 * @global WP_Locale $wp_locale
 	 */
