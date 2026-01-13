@@ -2,19 +2,23 @@
 	/**
 	 * Press This Bookmarklet
 	 *
-	 * Extracts content from the current page and submits it to Press This.
-	 * Supports both POST (preferred) and GET (fallback) submission methods.
+	 * Extracts content from the current page and sends it to Press This.
+	 * Uses GET request + postMessage to work around SameSite cookie restrictions.
 	 *
-	 * @version 10
+	 * Flow:
+	 * 1. Open Press This via GET (sends session cookies)
+	 * 2. Send scraped data via postMessage (after popup loads)
+	 *
+	 * @version 11
 	 */
-	var PT_VERSION = 10,
+	var PT_VERSION = 11,
 		encURI = window.encodeURIComponent,
-		form = document.createElement( 'form' ),
 		head = document.getElementsByTagName( 'head' )[0],
 		target = '_press_this_app',
-		canPost = true,
 		windowWidth, windowHeight, selection,
-		metas, links, content, images, iframes, img, scripts;
+		metas, links, content, images, iframes, img, scripts,
+		scrapedData = {},
+		popup;
 
 	if ( ! pt_url ) {
 		return;
@@ -22,9 +26,6 @@
 
 	if ( href.match( /^https?:/ ) ) {
 		pt_url += '&u=' + encURI( href );
-		if ( href.match( /^https:/ ) && pt_url.match( /^http:/ ) ) {
-			canPost = false;
-		}
 	} else {
 		top.location.href = pt_url;
 		return;
@@ -40,15 +41,8 @@
 
 	pt_url += '&buster=' + ( new Date().getTime() );
 
-	if ( ! canPost ) {
-		if ( document.title ) {
-			pt_url += '&t=' + encURI( document.title.substr( 0, 256 ) );
-		}
-
-		if ( selection ) {
-			pt_url += '&s=' + encURI( selection.substr( 0, 512 ) );
-		}
-	}
+	// Add postMessage mode flag - tells Press This to expect data via postMessage.
+	pt_url += '&pm=1';
 
 	windowWidth  = window.outerWidth || document.documentElement.clientWidth || 600;
 	windowHeight = window.outerHeight || document.documentElement.clientHeight || 700;
@@ -56,29 +50,42 @@
 	windowWidth = ( windowWidth < 800 || windowWidth > 5000 ) ? 600 : ( windowWidth * 0.7 );
 	windowHeight = ( windowHeight < 800 || windowHeight > 3000 ) ? 700 : ( windowHeight * 0.9 );
 
-	if ( ! canPost ) {
-		window.open( pt_url, target, 'location,resizable,scrollbars,width=' + windowWidth + ',height=' + windowHeight );
-		return;
-	}
-
 	/**
-	 * Add a hidden input field to the form.
+	 * Add data to the scraped data object.
 	 *
-	 * @param {string} name  Input name.
-	 * @param {string} value Input value.
+	 * @param {string} name  Data key name.
+	 * @param {string} value Data value.
 	 */
 	function add( name, value ) {
 		if ( typeof value === 'undefined' || value === null || value === '' ) {
 			return;
 		}
 
-		var input = document.createElement( 'input' );
+		// Handle array notation (e.g., '_images[]', '_embeds[]').
+		var arrayMatch = name.match( /^(.+)\[\]$/ );
+		if ( arrayMatch ) {
+			var arrayName = arrayMatch[1];
+			if ( ! scrapedData[ arrayName ] ) {
+				scrapedData[ arrayName ] = [];
+			}
+			scrapedData[ arrayName ].push( value );
+			return;
+		}
 
-		input.name = name;
-		input.value = value;
-		input.type = 'hidden';
+		// Handle nested notation (e.g., '_meta[og:title]', '_links[canonical]').
+		var nestedMatch = name.match( /^(.+)\[(.+)\]$/ );
+		if ( nestedMatch ) {
+			var parentKey = nestedMatch[1];
+			var childKey = nestedMatch[2];
+			if ( ! scrapedData[ parentKey ] ) {
+				scrapedData[ parentKey ] = {};
+			}
+			scrapedData[ parentKey ][ childKey ] = value;
+			return;
+		}
 
-		form.appendChild( input );
+		// Simple key-value.
+		scrapedData[ name ] = value;
 	}
 
 	/**
@@ -274,15 +281,47 @@
 		add( 's', selection );
 	}
 
-	// Set up form for POST submission.
-	form.setAttribute( 'method', 'POST' );
-	form.setAttribute( 'action', pt_url );
-	form.setAttribute( 'target', target );
-	form.setAttribute( 'style', 'display: none;' );
+	/**
+	 * Send scraped data to the Press This popup via postMessage.
+	 * Uses polling to wait for the popup to be ready.
+	 */
+	function sendDataToPopup() {
+		var attempts = 0;
+		var maxAttempts = 50; // 5 seconds max wait (50 * 100ms).
+		var targetOrigin = pt_url.match( /^https?:\/\/[^\/]+/ )[0];
 
-	// Open popup window and submit form.
-	window.open( 'about:blank', target, 'location,resizable,scrollbars,width=' + windowWidth + ',height=' + windowHeight );
+		function trySend() {
+			attempts++;
 
-	document.body.appendChild( form );
-	form.submit();
+			if ( ! popup || popup.closed ) {
+				// Popup was closed, stop trying.
+				return;
+			}
+
+			try {
+				// Send the data with a special type identifier.
+				popup.postMessage( {
+					type: 'press-this-data',
+					version: PT_VERSION,
+					data: scrapedData
+				}, targetOrigin );
+			} catch ( e ) {
+				// Cross-origin access error, keep trying.
+			}
+
+			// Keep sending for a bit to ensure it's received.
+			if ( attempts < maxAttempts ) {
+				setTimeout( trySend, 100 );
+			}
+		}
+
+		// Start sending after a short delay to allow popup to load.
+		setTimeout( trySend, 200 );
+	}
+
+	// Open popup window directly (GET request sends session cookies).
+	popup = window.open( pt_url, target, 'location,resizable,scrollbars,width=' + windowWidth + ',height=' + windowHeight );
+
+	// Send scraped data via postMessage.
+	sendDataToPopup();
 } )( window, document, top.location.href, window.pt_url );

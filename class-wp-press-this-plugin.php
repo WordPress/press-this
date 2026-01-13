@@ -18,15 +18,16 @@ class WP_Press_This_Plugin {
 	 * Increment when bookmarklet functionality changes.
 	 *
 	 * @since 2.0.0 Updated to version 10 for enhanced data extraction.
+	 * @since 2.0.0 Updated to version 11 for GET + postMessage flow (SameSite cookie fix).
 	 */
-	const VERSION = 10;
+	const VERSION = 11;
 
 	/**
 	 * Bookmarklet version number.
 	 *
 	 * @var int
 	 */
-	public $version = 10;
+	public $version = 11;
 
 	/**
 	 * Images from the Pressed site.
@@ -1430,6 +1431,11 @@ class WP_Press_This_Plugin {
 		// Check if this is a legacy bookmarklet (version < current VERSION).
 		$is_legacy_bookmarklet = ! empty( $data['v'] ) && (int) $data['v'] < self::VERSION;
 
+		// Check if this is postMessage mode (bookmarklet v11+).
+		// In this mode, the bookmarklet opens Press This via GET, then sends data via postMessage.
+		// This works around SameSite cookie restrictions that block cross-site POST requests.
+		$is_post_message_mode = ! empty( $_GET['pm'] ) && '1' === $_GET['pm'];
+
 		// Create a draft post for the editor.
 		$post    = get_default_post_to_edit( 'post', true );
 		$post_ID = (int) $post->ID;
@@ -1518,6 +1524,10 @@ class WP_Press_This_Plugin {
 
 			// URL proxy feature (for Direct Access Mode).
 			'proxyEnabled'        => press_this_is_proxy_enabled(),
+
+			// PostMessage mode (bookmarklet v11+).
+			// When true, the app waits for scraped data via postMessage from the opener.
+			'postMessageMode'     => $is_post_message_mode,
 		);
 
 		if ( ! headers_sent() ) {

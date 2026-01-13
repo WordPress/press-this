@@ -10,7 +10,7 @@
 /**
  * WordPress dependencies
  */
-import { useMemo, useState, useCallback } from '@wordpress/element';
+import { useMemo, useState, useCallback, useEffect } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 
 /**
@@ -18,6 +18,7 @@ import { __ } from '@wordpress/i18n';
  */
 import Header from './components/Header';
 import PressThisEditor from './components/PressThisEditor';
+import { buildSuggestedContentFromMetadata } from './utils';
 
 /**
  * Get initial data from PHP.
@@ -92,6 +93,99 @@ export default function App() {
 	}, [ data.embeds, additionalMedia.embeds ] );
 
 	const sourceUrl = additionalMedia.sourceUrl || data.sourceUrl || '';
+
+	// State to track if we've received postMessage data.
+	const [ postMessageReceived, setPostMessageReceived ] = useState( false );
+
+	// State for title/content that may come from postMessage.
+	const [ postMessageData, setPostMessageData ] = useState( null );
+
+	/**
+	 * Listen for postMessage data from bookmarklet.
+	 * This is used when the bookmarklet opens Press This via GET (to send cookies)
+	 * and then sends scraped data via postMessage.
+	 */
+	useEffect( () => {
+		// Only listen if we're in postMessage mode and haven't received data yet.
+		if ( ! data.postMessageMode || postMessageReceived ) {
+			return;
+		}
+
+		function handleMessage( event ) {
+			// Validate message structure.
+			if ( ! event.data || event.data.type !== 'press-this-data' ) {
+				return;
+			}
+
+			const messageData = event.data.data;
+			if ( ! messageData ) {
+				return;
+			}
+
+			// Mark as received so we stop listening.
+			setPostMessageReceived( true );
+
+			// Store the received data.
+			setPostMessageData( messageData );
+
+			// Process images and embeds.
+			const receivedImages = messageData._images || [];
+			const receivedEmbeds = messageData._embeds || [];
+			const receivedSourceUrl = messageData.u || data.sourceUrl;
+
+			// Update media state.
+			setAdditionalMedia( ( prev ) => ( {
+				images: [ ...prev.images, ...receivedImages ],
+				embeds: [ ...prev.embeds, ...receivedEmbeds ],
+				sourceUrl: receivedSourceUrl,
+			} ) );
+
+			// Build suggested content from bookmarklet metadata.
+			// Extract description from meta tags.
+			const meta = messageData._meta || {};
+			const description = messageData.s || // User selection takes priority.
+				meta[ 'twitter:description' ] ||
+				meta[ 'og:description' ] ||
+				meta.description ||
+				'';
+
+			const title = messageData.t ||
+				meta[ 'twitter:title' ] ||
+				meta[ 'og:title' ] ||
+				meta.title ||
+				'';
+
+			// Get canonical URL.
+			const links = messageData._links || {};
+			const canonical = links.canonical || receivedSourceUrl;
+
+			// Build suggested content using the same utility as Header.
+			const suggestedContent = buildSuggestedContentFromMetadata( {
+				title,
+				description,
+				siteName: meta[ 'og:site_name' ] || '',
+				canonical,
+				url: receivedSourceUrl,
+			} );
+
+			// Set as pending scrape so the editor will process it.
+			if ( title || suggestedContent ) {
+				setPendingScrape( {
+					title,
+					content: suggestedContent,
+					images: receivedImages,
+					embeds: receivedEmbeds,
+					sourceUrl: receivedSourceUrl,
+				} );
+			}
+		}
+
+		window.addEventListener( 'message', handleMessage );
+
+		return () => {
+			window.removeEventListener( 'message', handleMessage );
+		};
+	}, [ data.postMessageMode, data.sourceUrl, postMessageReceived ] );
 
 	/**
 	 * Handle scrape completion from Header.
