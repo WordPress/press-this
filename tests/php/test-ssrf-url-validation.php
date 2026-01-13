@@ -5,10 +5,12 @@
  * @package Press_This_Plugin
  */
 
+use WorDBless\BaseTestCase;
+
 /**
  * Test case for SSRF Protection and URL Validation.
  */
-class Test_SSRF_URL_Validation extends WP_UnitTestCase {
+class Test_SSRF_URL_Validation extends BaseTestCase {
 
 	/**
 	 * Plugin instance.

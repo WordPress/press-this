@@ -8,10 +8,12 @@
  * @package Press_This_Plugin
  */
 
+use WorDBless\BaseTestCase;
+
 /**
  * Test case for endpoint and frontend security.
  */
-class Test_Endpoint_Frontend extends WP_UnitTestCase {
+class Test_Endpoint_Frontend extends BaseTestCase {
 
 	/**
 	 * Set up before each test.
@@ -99,7 +101,14 @@ class Test_Endpoint_Frontend extends WP_UnitTestCase {
 	 */
 	public function test_needs_confirmation_flag_for_bookmarklet() {
 		// Create an admin user.
-		$user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
+		$user_id = wp_insert_user(
+			array(
+				'user_login' => 'test_editor_' . wp_generate_password( 6, false ),
+				'user_pass'  => wp_generate_password(),
+				'user_email' => 'editor_' . wp_generate_password( 6, false ) . '@example.com',
+				'role'       => 'editor',
+			)
+		);
 		wp_set_current_user( $user_id );
 
 		// Simulate POST request context.

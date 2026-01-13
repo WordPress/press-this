@@ -5,15 +5,18 @@
     "license": "GPL-2.0-or-later",
     "require": {},
     "require-dev": {
+        "automattic/wordbless": "^0.6",
         "dealerdirect/phpcodesniffer-composer-installer": "v1.0.0",
         "phpcompatibility/phpcompatibility-wp": "2.1.0",
         "phpunit/phpunit": "^9.6",
         "sirbrillig/phpcs-changed": "^2.11",
         "sirbrillig/phpcs-variable-analysis": "^2",
         "wp-coding-standards/wpcs": "3.0.1",
-        "yoast/phpunit-polyfills": "^1.1"
+        "yoast/phpunit-polyfills": "^2.0 || ^3.0"
     },
     "scripts": {
+        "post-install-cmd": "WorDBless\\Composer\\InstallDropin::copy",
+        "post-update-cmd": "WorDBless\\Composer\\InstallDropin::copy",
         "php:compatibility": "vendor/bin/phpcs -p -s --runtime-set testVersion '5.6-' --standard=PHPCompatibilityWP --ignore=docker,tools,tests,node_modules,vendor --extensions=php",
         "php:lint": "vendor/bin/phpcs -p -s",
         "php:changed": "vendor/sirbrillig/phpcs-changed/bin/phpcs-changed --git",
@@ -23,7 +26,11 @@
     },
     "config": {
         "allow-plugins": {
-            "dealerdirect/phpcodesniffer-composer-installer": true
+            "dealerdirect/phpcodesniffer-composer-installer": true,
+            "roots/wordpress-core-installer": true
         }
+    },
+    "extra": {
+        "wordpress-install-dir": "wordpress"
     }
 }

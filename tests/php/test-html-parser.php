@@ -5,10 +5,12 @@
  * @package Press_This_Plugin
  */
 
+use WorDBless\BaseTestCase;
+
 /**
  * Test case for HTML metadata parser.
  */
-class Test_HTML_Parser extends WP_UnitTestCase {
+class Test_HTML_Parser extends BaseTestCase {
 
 	/**
 	 * Set up before each test.

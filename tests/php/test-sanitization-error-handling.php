@@ -5,10 +5,12 @@
  * @package Press_This_Plugin
  */
 
+use WorDBless\BaseTestCase;
+
 /**
  * Test case for Input Sanitization and Error Handling.
  */
-class Test_Sanitization_Error_Handling extends WP_UnitTestCase {
+class Test_Sanitization_Error_Handling extends BaseTestCase {
 
 	/**
 	 * Plugin instance.
@@ -44,17 +46,22 @@ class Test_Sanitization_Error_Handling extends WP_UnitTestCase {
 		$this->plugin = new WP_Press_This_Plugin();
 
 		// Create a test user with editor capabilities.
-		$this->editor_user_id = $this->factory->user->create(
+		$this->editor_user_id = wp_insert_user(
 			array(
-				'role' => 'editor',
+				'user_login' => 'test_editor_' . wp_generate_password( 6, false ),
+				'user_pass'  => wp_generate_password(),
+				'user_email' => 'editor_' . wp_generate_password( 6, false ) . '@example.com',
+				'role'       => 'editor',
 			)
 		);
 
 		// Create a test post.
-		$this->test_post_id = $this->factory->post->create(
+		$this->test_post_id = wp_insert_post(
 			array(
-				'post_author' => $this->editor_user_id,
-				'post_status' => 'draft',
+				'post_author'  => $this->editor_user_id,
+				'post_status'  => 'draft',
+				'post_title'   => 'Test Post',
+				'post_content' => 'Test content',
 			)
 		);
 
@@ -80,8 +87,8 @@ class Test_Sanitization_Error_Handling extends WP_UnitTestCase {
 	 */
 	public function test_category_array_sanitization_converts_to_integers() {
 		// Create test categories.
-		$cat1 = $this->factory->category->create( array( 'name' => 'Test Category 1' ) );
-		$cat2 = $this->factory->category->create( array( 'name' => 'Test Category 2' ) );
+		$cat1 = wp_insert_category( array( 'cat_name' => 'Test Category 1' ) );
+		$cat2 = wp_insert_category( array( 'cat_name' => 'Test Category 2' ) );
 
 		// Set up POST data with string category IDs and malformed values.
 		$_POST['post_ID']        = $this->test_post_id;

@@ -5,10 +5,12 @@
  * @package Press_This_Plugin
  */
 
+use WorDBless\BaseTestCase;
+
 /**
  * Test case for WP_Press_This_Plugin.
  */
-class Test_WP_Press_This_Plugin extends WP_UnitTestCase {
+class Test_WP_Press_This_Plugin extends BaseTestCase {
 
 	/**
 	 * Plugin instance.
@@ -43,17 +45,22 @@ class Test_WP_Press_This_Plugin extends WP_UnitTestCase {
 		$this->plugin = new WP_Press_This_Plugin();
 
 		// Create a test user with editor capabilities.
-		$this->editor_user_id = $this->factory->user->create(
+		$this->editor_user_id = wp_insert_user(
 			array(
-				'role' => 'editor',
+				'user_login' => 'test_editor_' . wp_generate_password( 6, false ),
+				'user_pass'  => wp_generate_password(),
+				'user_email' => 'editor_' . wp_generate_password( 6, false ) . '@example.com',
+				'role'       => 'editor',
 			)
 		);
 
 		// Create a test post.
-		$this->test_post_id = $this->factory->post->create(
+		$this->test_post_id = wp_insert_post(
 			array(
-				'post_author' => $this->editor_user_id,
-				'post_status' => 'draft',
+				'post_author'  => $this->editor_user_id,
+				'post_status'  => 'draft',
+				'post_title'   => 'Test Post',
+				'post_content' => 'Test content',
 			)
 		);
 

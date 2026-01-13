@@ -8,10 +8,12 @@
  * @package Press_This_Plugin
  */
 
+use WorDBless\BaseTestCase;
+
 /**
  * Test case for security integration tests.
  */
-class Test_Security_Integration extends WP_UnitTestCase {
+class Test_Security_Integration extends BaseTestCase {
 
 	/**
 	 * Plugin instance.
