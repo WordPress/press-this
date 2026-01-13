@@ -254,12 +254,10 @@ export default function Header( {
 		}
 	}, [ onSave ] );
 
-	// Show scanner when:
-	// 1. proxyEnabled - can fetch content in-place via server API
-	// 2. sourceUrl exists - came from bookmarklet or ?u= param, scanner allows re-scanning
-	// Without proxy and no sourceUrl, scanner would just reload with ?u= param which
-	// won't fetch content (server-side scraping requires proxy setting).
-	const showScanner = proxyEnabled || sourceUrl;
+	// Only show scanner when proxy is enabled.
+	// Without proxy, server-side scraping doesn't work - the scanner would be non-functional.
+	// Bookmarklet flow works without proxy (client-side scraping) but doesn't need the scanner UI.
+	const showScanner = proxyEnabled;
 
 	// Only show publish controls if onSave callback is provided.
 	const showPublishControls = typeof onSave === 'function';
