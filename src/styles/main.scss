@@ -64,8 +64,11 @@
 	padding: 24px;
 	max-width: 840px;
 	margin: 0 auto;
+	// Prevent overflow at narrow viewports.
+	width: 100%;
 
-	@media (max-width: 782px) {
+	// Use standardized breakpoint variable instead of 782px.
+	@media (max-width: $breakpoint-tablet) {
 		padding: 16px;
 	}
 }
@@ -117,7 +120,8 @@
 		background: transparent;
 	}
 
-	@media (max-width: 782px) {
+	// Use standardized breakpoint variable instead of 782px.
+	@media (max-width: $breakpoint-tablet) {
 		margin: -16px -16px 24px -16px;
 		padding: 8px;
 	}
@@ -162,13 +166,16 @@
 
 .press-this-editor__sidebar {
 	width: 280px;
+	// Ensure sidebar doesn't exceed viewport on small screens.
+	max-width: 100%;
 	background: $color-white;
 	border-left: 1px solid $color-border-light;
 	display: flex;
 	flex-direction: column;
 	overflow-y: auto;
 
-	@media (max-width: 782px) {
+	// Use standardized breakpoint variable instead of 782px.
+	@media (max-width: $breakpoint-tablet) {
 		position: fixed;
 		top: 46px;
 		right: 0;

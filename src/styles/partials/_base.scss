@@ -19,6 +19,21 @@
 }
 
 // ==========================================================================
+// HTML and Body Reset
+// ==========================================================================
+// Prevent horizontal overflow at all viewport widths.
+// Reference: assets/press-this.css body { overflow-x: hidden; }
+
+html {
+	overflow-x: hidden;
+}
+
+body {
+	margin: 0;
+	overflow-x: hidden;
+}
+
+// ==========================================================================
 // Screen Reader Text
 // ==========================================================================
 
