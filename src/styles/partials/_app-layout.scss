@@ -4,6 +4,8 @@
  * Main layout structure for the Press This application.
  */
 
+@use "variables" as *;
+
 // ==========================================================================
 // App Container
 // ==========================================================================
@@ -13,6 +15,9 @@
 	flex-direction: column;
 	min-height: 100vh;
 	background: #f0f0f1;
+	// Prevent horizontal overflow from any child elements.
+	max-width: 100%;
+	overflow-x: hidden;
 }
 
 // ==========================================================================
@@ -47,17 +52,38 @@
 	position: sticky;
 	top: 0;
 	z-index: 100;
+	// Prevent header from exceeding viewport width.
+	max-width: 100%;
+
+	// Mobile-specific: reduce padding at narrow viewports.
+	@media (max-width: $breakpoint-mobile) {
+		padding: 0 8px;
+	}
 }
 
 .press-this-header__bar {
 	display: flex;
 	align-items: center;
+	justify-content: space-between;
 	gap: 16px;
 	height: 46px;
+	// Ensure bar doesn't exceed parent width.
+	max-width: 100%;
+
+	// Mobile-specific: reduce gap at narrow viewports.
+	@media (max-width: $breakpoint-mobile) {
+		gap: 8px;
+	}
 }
 
 .press-this-header__site {
-	flex-shrink: 0;
+	// Allow site container to shrink when space is constrained.
+	// This enables the site title to truncate while keeping action buttons visible.
+	flex-shrink: 1;
+	// Required for text-overflow: ellipsis to work in flex children.
+	min-width: 0;
+	// Clip overflowing content.
+	overflow: hidden;
 }
 
 .press-this-header__site-link {
@@ -68,6 +94,10 @@
 	text-decoration: none;
 	font-size: 14px;
 	font-weight: 600;
+	// Text truncation styles - matches .current-site pattern from assets/press-this.css.
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 
 	&:hover,
 	&:focus {
@@ -79,6 +109,8 @@
 .press-this-header__wp-icon {
 	font-size: 20px;
 	color: #1e1e1e;
+	// Prevent icon from shrinking when title truncates.
+	flex-shrink: 0;
 }
 
 // ==========================================================================
@@ -92,6 +124,12 @@
 	margin-left: 8px;
 	padding-left: 8px;
 	border-left: 1px solid #e0e0e0;
+
+	// Hide undo/redo at very narrow viewports to save space for critical actions.
+	// Reference: $breakpoint-small: 320px for extreme narrow cases.
+	@media (max-width: 400px) {
+		display: none;
+	}
 }
 
 .press-this-header__toolbar-button {
@@ -135,17 +173,23 @@
 	align-items: center;
 	gap: 8px;
 	flex: 1;
-	max-width: 500px;
+	// Use min() to ensure scanner never exceeds viewport.
+	// At narrow viewports, constrain to 100% of available space.
+	max-width: min(500px, 100%);
 
 	.components-base-control {
 		margin: 0;
 		flex: 1;
+		// Prevent base control from exceeding parent.
+		max-width: 100%;
 	}
 
 	.components-text-control__input {
 		background: #fff;
 		border-color: #ddd;
 		color: #1e1e1e;
+		// Ensure input doesn't overflow container.
+		max-width: 100%;
 
 		&::placeholder {
 			color: #757575;
@@ -170,11 +214,21 @@
 	align-items: center;
 	gap: 8px;
 	margin-left: auto;
+	flex-shrink: 0;
+
+	// Reduce gap at very narrow viewports.
+	@media (max-width: 400px) {
+		gap: 4px;
+	}
 }
 
 .press-this-header__save-draft {
 	color: #1e1e1e;
 	font-size: 13px;
+	// Ensure minimum touch target for accessibility.
+	min-height: $touch-target-min;
+	display: inline-flex;
+	align-items: center;
 
 	&:hover:not(:disabled) {
 		color: #007cba;
@@ -183,11 +237,18 @@
 	&:disabled {
 		opacity: 0.5;
 	}
+
+	// Reduce font size at narrow viewports to save space.
+	@media (max-width: 400px) {
+		font-size: 12px;
+	}
 }
 
 .press-this-header__publish {
 	// Primary button styling is handled by WordPress components.
-	// Additional adjustments if needed.
+	// Ensure minimum touch target for accessibility per WCAG standards.
+	min-height: $touch-target-min;
+
 	&:disabled {
 		opacity: 0.7;
 	}
@@ -196,8 +257,9 @@
 .press-this-header__more-menu {
 	// Dropdown menu button styling.
 	.components-button {
-		min-width: 36px;
-		min-height: 36px;
+		// Ensure minimum touch target for accessibility.
+		min-width: $touch-target-min;
+		min-height: $touch-target-min;
 		padding: 6px;
 		color: #1e1e1e;
 
@@ -215,6 +277,9 @@
 
 .press-this-header__sidebar-toggle {
 	margin-left: auto;
+	// Ensure minimum touch target for accessibility.
+	min-width: $touch-target-min;
+	min-height: $touch-target-min;
 
 	.dashicons {
 		color: #1e1e1e;
@@ -249,6 +314,8 @@
 	top: 46px;
 	right: -320px;
 	width: 320px;
+	// Ensure sidebar doesn't exceed viewport on very small screens.
+	max-width: 100%;
 	height: calc(100vh - 46px - 60px); // Minus header and action bar
 	background: #fff;
 	border-left: 1px solid #ddd;
@@ -259,6 +326,16 @@
 
 	&.is-open {
 		right: 0;
+	}
+
+	// At very narrow viewports, sidebar takes full width.
+	@media (max-width: $breakpoint-small) {
+		width: 100%;
+		right: -100%;
+
+		&.is-open {
+			right: 0;
+		}
 	}
 }
 
@@ -291,6 +368,13 @@
 	position: sticky;
 	bottom: 0;
 	z-index: 100;
+	// Prevent action bar from exceeding viewport width.
+	max-width: 100%;
+
+	// Reduce padding at narrow viewports.
+	@media (max-width: $breakpoint-mobile) {
+		padding: 12px 8px;
+	}
 }
 
 .press-this-action-bar__media {
@@ -303,6 +387,11 @@
 	display: flex;
 	align-items: center;
 	gap: 12px;
+
+	// Reduce gap at narrow viewports.
+	@media (max-width: $breakpoint-mobile) {
+		gap: 8px;
+	}
 }
 
 .press-this-action-bar__publish-group {
@@ -339,6 +428,8 @@
 	border-radius: 4px;
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 	padding: 20px;
+	// Prevent block editor from exceeding viewport.
+	max-width: 100%;
 }
 
 .press-this-block-editor__title-wrapper {
@@ -411,6 +502,8 @@
 // Fix the quick inserter popover
 .block-editor-inserter__quick-inserter {
 	min-width: 300px;
+	// Ensure popover doesn't exceed viewport.
+	max-width: 100%;
 
 	// Fix icon clipping in quick inserter
 	.block-editor-block-types-list__list-item {
