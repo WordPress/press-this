@@ -11,7 +11,7 @@
 /**
  * WordPress dependencies
  */
-import { useState, useCallback, useEffect, useMemo } from '@wordpress/element';
+import { useState, useCallback, useEffect } from '@wordpress/element';
 import { Button, Spinner, PanelBody } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 

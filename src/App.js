@@ -100,7 +100,7 @@ export default function App() {
 	const [ postMessageReceived, setPostMessageReceived ] = useState( false );
 
 	// State for title/content that may come from postMessage.
-	const [ postMessageData, setPostMessageData ] = useState( null );
+	const [ , setPostMessageData ] = useState( null );
 
 	/**
 	 * Validate embed URLs through WordPress oEmbed providers.

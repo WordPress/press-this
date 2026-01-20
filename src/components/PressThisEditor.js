@@ -11,7 +11,7 @@
  * WordPress dependencies
  */
 import { useMemo, useCallback, useState, useEffect, useRef } from '@wordpress/element';
-import { useSelect, useDispatch } from '@wordpress/data';
+import { useSelect } from '@wordpress/data';
 import { parse } from '@wordpress/blocks';
 import {
 	BlockEditorProvider,
@@ -144,16 +144,11 @@ function safeRedirect( url, options = {} ) {
  *
  * @param {string}  url             URL to redirect to.
  * @param {boolean} inParentWindow  Whether to redirect in parent window.
- * @param {string}  expectedOrigin  Expected origin for parent window redirects.
  */
-function performSafeRedirect( url, inParentWindow = false, expectedOrigin = '' ) {
+function performSafeRedirect( url, inParentWindow = false ) {
 	const safeUrl = safeRedirect( url );
 
 	if ( inParentWindow && window.opener ) {
-		// For parent window redirects, use postMessage with origin check.
-		// This prevents cross-origin redirect attacks.
-		const targetOrigin = expectedOrigin || window.location.origin;
-
 		try {
 			// Attempt to check if opener is same origin.
 			// This will throw if cross-origin.
@@ -351,7 +346,7 @@ export default function PressThisEditor( {
 					if ( result.force ) {
 						performSafeRedirect( result.redirect, false );
 					} else if ( restConfig.redirInParent && window.opener ) {
-						performSafeRedirect( result.redirect, true, window.location.origin );
+						performSafeRedirect( result.redirect, true );
 					} else {
 						performSafeRedirect( result.redirect, false );
 					}
