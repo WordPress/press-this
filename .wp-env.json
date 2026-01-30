@@ -1,0 +1,27 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/wp-env.json",
+	"core": null,
+	"phpVersion": "8.2",
+	"plugins": [
+		"."
+	],
+	"themes": [],
+	"config": {
+		"WP_DEBUG": true,
+		"WP_DEBUG_LOG": true,
+		"SCRIPT_DEBUG": true
+	},
+	"mappings": {
+		"wp-content/plugins/press-this": ".",
+		"wp-content/mu-plugins": "./tests/mu-plugins"
+	},
+	"env": {
+		"tests": {
+			"phpVersion": "8.2",
+			"config": {
+				"WP_DEBUG": true,
+				"WP_DEBUG_LOG": true
+			}
+		}
+	}
+}

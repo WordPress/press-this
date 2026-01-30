@@ -1,0 +1,152 @@
+/**
+ * AdminBar Component Styles
+ *
+ * Styles for the dark header bar with site name and options toggle.
+ *
+ * @package press-this
+ */
+
+// ==========================================================================
+// AdminBar Container
+// ==========================================================================
+
+.press-this-admin-bar {
+	position: relative;
+	width: 100%;
+	padding: 0 0.8em;
+	min-height: $admin-bar-height;
+	background: $color-header-bg;
+	color: $color-white;
+	z-index: $z-index-admin-bar;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+
+	// Clearfix for older browsers.
+	&::before,
+	&::after {
+		content: "";
+		display: table;
+	}
+
+	&::after {
+		clear: both;
+	}
+
+	// WordPress icon styling.
+	.dashicons {
+		color: $color-header-icon;
+	}
+}
+
+// ==========================================================================
+// Site Name
+// ==========================================================================
+
+.press-this-admin-bar__site {
+	margin: 0;
+	font-size: 16px;
+	line-height: $admin-bar-height;
+	font-weight: 400;
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	flex: 1 1 auto;
+}
+
+.press-this-admin-bar__site-link {
+	text-decoration: none;
+	display: inline-flex;
+	align-items: center;
+
+	&:hover,
+	&:focus {
+		text-decoration: none;
+	}
+
+	&:focus {
+		outline: none;
+
+		.press-this-admin-bar__site-name {
+			text-decoration: underline;
+		}
+	}
+
+	.dashicons-wordpress {
+		position: relative;
+		margin-right: 10px;
+		vertical-align: middle;
+	}
+}
+
+.press-this-admin-bar__site-name {
+	color: #ededed;
+}
+
+// ==========================================================================
+// Options Toggle Button
+// ==========================================================================
+
+.press-this-admin-bar__options-toggle {
+	position: relative;
+	padding: 0 10px 1px;
+	font-size: $font-size-small;
+	text-decoration: none;
+	transition: none;
+	background: transparent;
+	border: none;
+	color: $color-accent-light;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: $spacing-xs;
+
+	&:hover,
+	&:focus {
+		color: $color-white;
+
+		.dashicons {
+			color: $color-white;
+		}
+	}
+
+	&:focus {
+		outline: 1px dotted $color-white;
+		outline-offset: 2px;
+	}
+
+	.dashicons {
+		margin-top: 3px;
+		transition: color $transition-speed-fast ease;
+	}
+
+	// Hide "Done" text when closed.
+	&.is-closed .press-this-admin-bar__toggle-text {
+		display: none;
+	}
+}
+
+// ==========================================================================
+// Responsive Adjustments
+// ==========================================================================
+
+@media (max-width: $breakpoint-small) {
+	.press-this-admin-bar {
+		min-height: 45px;
+	}
+
+	.press-this-admin-bar__site {
+		margin: 0;
+		font-size: $font-size-base;
+	}
+
+	.press-this-admin-bar__site-name {
+		font-weight: 600;
+	}
+}
+
+@media (max-width: $breakpoint-mobile) {
+	.press-this-admin-bar__site {
+		margin: 3px 0 0;
+	}
+}

@@ -1,0 +1,216 @@
+/**
+ * CategoriesPanel Component Styles
+ *
+ * Styles for the categories selection panel.
+ *
+ * @package press-this
+ */
+
+// ==========================================================================
+// Search Input
+// ==========================================================================
+
+.press-this-categories-panel__search-wrapper {
+	padding: $spacing-md $spacing-lg;
+	border-bottom: 1px solid $color-border-light;
+
+	.components-text-control__input,
+	input[type="search"] {
+		width: 100%;
+		padding: $spacing-sm $spacing-md;
+		border: 1px solid $color-border;
+		border-radius: 4px;
+		font-size: $font-size-base;
+
+		&:focus {
+			border-color: $color-accent;
+			box-shadow: 0 0 0 1px $color-accent;
+			outline: none;
+		}
+	}
+}
+
+// ==========================================================================
+// Category List
+// ==========================================================================
+
+.press-this-categories-panel__list-wrapper {
+	flex: 1 1 auto;
+	overflow-y: auto;
+	max-height: 300px;
+}
+
+.press-this-categories-panel__empty {
+	padding: $spacing-xl $spacing-lg;
+	text-align: center;
+	color: $color-text-light;
+	margin: 0;
+}
+
+.press-this-categories-panel__list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.press-this-categories-panel__item {
+	border-bottom: 1px solid $color-border-light;
+
+	&:last-child {
+		border-bottom: none;
+	}
+}
+
+// ==========================================================================
+// Category Row
+// ==========================================================================
+
+.press-this-categories-panel__category {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 10px $spacing-lg;
+	cursor: pointer;
+	transition: background-color $transition-speed-fast ease;
+
+	&:hover {
+		background: $color-bg-light;
+	}
+
+	&:focus {
+		outline: none;
+		box-shadow: inset 0 0 0 2px $color-accent;
+	}
+
+	&.is-selected {
+		background: rgba($color-accent, 0.05);
+	}
+}
+
+// ==========================================================================
+// Checkbox
+// ==========================================================================
+
+.press-this-categories-panel__checkbox {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 18px;
+	height: 18px;
+	border: 1px solid $color-border;
+	border-radius: 3px;
+	background: $color-white;
+	flex: 0 0 auto;
+
+	&.is-checked {
+		background: $color-accent;
+		border-color: $color-accent;
+
+		.dashicons {
+			color: $color-white;
+			font-size: 14px;
+			width: 14px;
+			height: 14px;
+		}
+	}
+}
+
+.press-this-categories-panel__name {
+	flex: 1 1 auto;
+	font-size: $font-size-base;
+	color: $color-text;
+}
+
+// ==========================================================================
+// Nested Children
+// ==========================================================================
+
+.press-this-categories-panel__children {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+// ==========================================================================
+// Add New Category
+// ==========================================================================
+
+.press-this-categories-panel__add-new-wrapper {
+	border-top: 1px solid $color-border-light;
+	background: $color-bg-light;
+}
+
+.press-this-categories-panel__add-toggle {
+	display: flex;
+	align-items: center;
+	gap: $spacing-sm;
+	width: 100%;
+	padding: $spacing-md $spacing-lg;
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	color: $color-accent;
+	font-size: $font-size-small;
+	font-weight: 500;
+	text-align: left;
+
+	&:hover,
+	&:focus {
+		background: $color-border-light;
+	}
+
+	&:focus {
+		outline: none;
+		box-shadow: inset 0 0 0 2px $color-accent;
+	}
+
+	.dashicons {
+		color: $color-accent;
+	}
+}
+
+.press-this-categories-panel__add-form {
+	padding: $spacing-md $spacing-lg;
+	border-top: 1px solid $color-border-light;
+
+	.components-base-control {
+		margin-bottom: $spacing-md;
+	}
+
+	.components-text-control__input,
+	.components-select-control__input,
+	input,
+	select {
+		width: 100%;
+		padding: $spacing-sm $spacing-md;
+		border: 1px solid $color-border;
+		border-radius: 4px;
+		font-size: $font-size-base;
+
+		&:focus {
+			border-color: $color-accent;
+			box-shadow: 0 0 0 1px $color-accent;
+			outline: none;
+		}
+	}
+}
+
+.press-this-categories-panel__add-submit {
+	display: flex;
+	align-items: center;
+	gap: $spacing-sm;
+
+	.components-spinner {
+		margin: 0;
+	}
+}
+
+// ==========================================================================
+// Responsive Adjustments
+// ==========================================================================
+
+@media (max-width: $breakpoint-mobile) {
+	.press-this-categories-panel__list-wrapper {
+		max-height: 250px;
+	}
+}

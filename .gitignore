@@ -1,3 +1,26 @@
 node_modules/
 
 /vendor/
+/wordpress/
+composer.lock
+
+# Build output
+/build/
+/dist/
+*.zip
+
+# wp-env local environment
+.wp-env/
+
+# IDE files
+.idea/
+.vscode/
+*.sublime-*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Debug logs
+*.log
+npm-debug.log*

@@ -1,0 +1,130 @@
+/**
+ * ScanBar Component Styles
+ *
+ * Styles for the URL input bar used in Direct Access Mode.
+ *
+ * @package press-this
+ */
+
+// ==========================================================================
+// ScanBar Container
+// ==========================================================================
+
+.press-this-scan-bar {
+	position: relative;
+	border-bottom: 1px solid $color-border-light;
+	background: $color-white;
+
+	&.is-hidden {
+		display: none;
+	}
+
+	&.is-loading {
+		.press-this-scan-bar__input {
+			opacity: 0.7;
+		}
+	}
+}
+
+// ==========================================================================
+// Form Layout
+// ==========================================================================
+
+.press-this-scan-bar__form {
+	display: flex;
+	position: relative;
+
+	@media (max-width: $breakpoint-tablet) {
+		transition: opacity $transition-speed ease-in-out;
+
+		.press-this-scan-bar.is-hidden & {
+			opacity: 0.2;
+			pointer-events: none;
+		}
+	}
+}
+
+// ==========================================================================
+// URL Input
+// ==========================================================================
+
+.press-this-scan-bar__input {
+	display: block;
+	flex: 1 1 auto;
+	border: 0;
+	padding: 0.85714em 1.07143em;
+	font-size: $font-size-base;
+	width: 100%;
+	line-height: $line-height-base;
+	background: $color-white;
+	color: $color-text;
+
+	&::placeholder {
+		color: $color-text-light;
+	}
+
+	&:focus {
+		outline: none;
+		box-shadow: inset 0 0 0 2px $color-accent-light;
+	}
+
+	&:disabled {
+		background: $color-bg-light;
+		cursor: not-allowed;
+	}
+
+	// Prevent zoom on iOS.
+	@media (max-width: $breakpoint-mobile) {
+		font-size: $font-size-lg;
+	}
+}
+
+// ==========================================================================
+// Submit Button
+// ==========================================================================
+
+.press-this-scan-bar__submit {
+	position: relative;
+	padding: 0 1.07143em;
+	background: $color-bg-light;
+	border: 0;
+	border-left: 1px solid #f1f1f1;
+	border-radius: 0;
+	color: #555;
+	font-size: $font-size-base;
+	line-height: $line-height-base;
+	cursor: pointer;
+	min-width: 70px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+
+	&:hover,
+	&:focus {
+		background: $color-accent;
+		border-color: $color-accent-hover;
+		color: $color-white;
+		outline: 0;
+	}
+
+	&:active {
+		background: $color-accent-hover;
+		border-color: $color-accent-hover;
+		color: $color-white;
+	}
+
+	&:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+
+		&:hover {
+			background: $color-bg-light;
+			color: #555;
+		}
+	}
+
+	// Spinner inside button.
+	.components-spinner {
+		margin: 0;
+	}
+}

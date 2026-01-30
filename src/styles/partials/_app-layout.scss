@@ -1,0 +1,635 @@
+/**
+ * App Layout
+ *
+ * Main layout structure for the Press This application.
+ */
+
+@use "variables" as *;
+
+// ==========================================================================
+// App Container
+// ==========================================================================
+
+.press-this-app {
+	display: flex;
+	flex-direction: column;
+	min-height: 100vh;
+	background: #f0f0f1;
+	// Prevent horizontal overflow from any child elements.
+	max-width: 100%;
+	overflow-x: hidden;
+}
+
+// ==========================================================================
+// App Body (editor + sidebar)
+// ==========================================================================
+
+.press-this-app__body {
+	display: flex;
+	flex: 1;
+	overflow: hidden;
+	position: relative;
+}
+
+.press-this-app__main {
+	flex: 1;
+	padding: 20px;
+	overflow-y: auto;
+	max-width: 840px;
+	margin: 0 auto;
+	width: 100%;
+}
+
+// ==========================================================================
+// Header - Light Theme (matches Gutenberg editor)
+// ==========================================================================
+
+.press-this-header {
+	background: #fff;
+	color: #1e1e1e;
+	border-bottom: 1px solid #e0e0e0;
+	padding: 0 16px;
+	position: sticky;
+	top: 0;
+	z-index: 100;
+	// Prevent header from exceeding viewport width.
+	max-width: 100%;
+
+	// Mobile-specific: reduce padding at narrow viewports.
+	@media (max-width: $breakpoint-mobile) {
+		padding: 0 8px;
+	}
+}
+
+.press-this-header__bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	height: 46px;
+	// Ensure bar doesn't exceed parent width.
+	max-width: 100%;
+
+	// Mobile-specific: reduce gap at narrow viewports.
+	@media (max-width: $breakpoint-mobile) {
+		gap: 8px;
+	}
+}
+
+.press-this-header__site {
+	// Allow site container to shrink when space is constrained.
+	// This enables the site title to truncate while keeping action buttons visible.
+	flex-shrink: 1;
+	// Required for text-overflow: ellipsis to work in flex children.
+	min-width: 0;
+	// Clip overflowing content.
+	overflow: hidden;
+}
+
+.press-this-header__site-link {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	color: #1e1e1e;
+	text-decoration: none;
+	font-size: 14px;
+	font-weight: 600;
+	// Text truncation styles - matches .current-site pattern from assets/press-this.css.
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+
+	&:hover,
+	&:focus {
+		color: #007cba;
+		text-decoration: none;
+	}
+}
+
+.press-this-header__wp-icon {
+	font-size: 20px;
+	color: #1e1e1e;
+	// Prevent icon from shrinking when title truncates.
+	flex-shrink: 0;
+}
+
+// ==========================================================================
+// Header Toolbar - Document Tools (Undo/Redo)
+// ==========================================================================
+
+.press-this-header__toolbar {
+	display: flex;
+	align-items: center;
+	gap: 0;
+	margin-left: 8px;
+	padding-left: 8px;
+	border-left: 1px solid #e0e0e0;
+
+	// Hide undo/redo at very narrow viewports to save space for critical actions.
+	// Reference: $breakpoint-small: 320px for extreme narrow cases.
+	@media (max-width: 400px) {
+		display: none;
+	}
+}
+
+.press-this-header__toolbar-button {
+	min-width: 36px;
+	min-height: 36px;
+	padding: 6px;
+	border-radius: 4px;
+	color: #1e1e1e;
+	background: transparent;
+	border: none;
+	cursor: pointer;
+
+	&:hover:not(:disabled) {
+		background: #f0f0f1;
+		color: #007cba;
+	}
+
+	&:focus {
+		box-shadow: 0 0 0 2px #007cba;
+		outline: none;
+	}
+
+	&:disabled {
+		opacity: 0.3;
+		cursor: default;
+	}
+
+	svg {
+		width: 24px;
+		height: 24px;
+		fill: currentColor;
+	}
+}
+
+// ==========================================================================
+// Header Scanner
+// ==========================================================================
+
+.press-this-header__scanner {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex: 1;
+	// Use min() to ensure scanner never exceeds viewport.
+	// At narrow viewports, constrain to 100% of available space.
+	max-width: min(500px, 100%);
+
+	.components-base-control {
+		margin: 0;
+		flex: 1;
+		// Prevent base control from exceeding parent.
+		max-width: 100%;
+	}
+
+	.components-text-control__input {
+		background: #fff;
+		border-color: #ddd;
+		color: #1e1e1e;
+		// Ensure input doesn't overflow container.
+		max-width: 100%;
+
+		&::placeholder {
+			color: #757575;
+		}
+
+		&:focus {
+			background: #fff;
+			color: #1e1e1e;
+			border-color: #007cba;
+			box-shadow: 0 0 0 1px #007cba;
+			outline: none;
+		}
+	}
+}
+
+// ==========================================================================
+// Header Actions - Publish Controls
+// ==========================================================================
+
+.press-this-header__actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-left: auto;
+	flex-shrink: 0;
+
+	// Reduce gap at very narrow viewports.
+	@media (max-width: 400px) {
+		gap: 4px;
+	}
+}
+
+.press-this-header__save-draft {
+	color: #1e1e1e;
+	font-size: 13px;
+	// Ensure minimum touch target for accessibility.
+	min-height: $touch-target-min;
+	display: inline-flex;
+	align-items: center;
+
+	&:hover:not(:disabled) {
+		color: #007cba;
+	}
+
+	&:disabled {
+		opacity: 0.5;
+	}
+
+	// Reduce font size at narrow viewports to save space.
+	@media (max-width: 400px) {
+		font-size: 12px;
+	}
+}
+
+.press-this-header__publish {
+	// Primary button styling is handled by WordPress components.
+	// Ensure minimum touch target for accessibility per WCAG standards.
+	min-height: $touch-target-min;
+
+	&:disabled {
+		opacity: 0.7;
+	}
+}
+
+.press-this-header__more-menu {
+	// Dropdown menu button styling.
+	.components-button {
+		// Ensure minimum touch target for accessibility.
+		min-width: $touch-target-min;
+		min-height: $touch-target-min;
+		padding: 6px;
+		color: #1e1e1e;
+
+		&:hover {
+			background: #f0f0f1;
+			color: #007cba;
+		}
+
+		svg {
+			width: 24px;
+			height: 24px;
+		}
+	}
+}
+
+.press-this-header__sidebar-toggle {
+	margin-left: auto;
+	// Ensure minimum touch target for accessibility.
+	min-width: $touch-target-min;
+	min-height: $touch-target-min;
+
+	.dashicons {
+		color: #1e1e1e;
+	}
+
+	&:hover,
+	&:focus {
+		.dashicons {
+			color: #007cba;
+		}
+	}
+
+	&.is-pressed {
+		background: #f0f0f1;
+
+		.dashicons {
+			color: #007cba;
+		}
+	}
+}
+
+.press-this-header__notice {
+	margin: 8px 0;
+}
+
+// ==========================================================================
+// Sidebar
+// ==========================================================================
+
+.press-this-sidebar {
+	position: fixed;
+	top: 46px;
+	right: -320px;
+	width: 320px;
+	// Ensure sidebar doesn't exceed viewport on very small screens.
+	max-width: 100%;
+	height: calc(100vh - 46px - 60px); // Minus header and action bar
+	background: #fff;
+	border-left: 1px solid #ddd;
+	transition: right 0.2s ease;
+	overflow-y: auto;
+	z-index: 99;
+	box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+
+	&.is-open {
+		right: 0;
+	}
+
+	// At very narrow viewports, sidebar takes full width.
+	@media (max-width: $breakpoint-small) {
+		width: 100%;
+		right: -100%;
+
+		&.is-open {
+			right: 0;
+		}
+	}
+}
+
+.press-this-sidebar__panel {
+	.components-panel__body {
+		border-bottom: 1px solid #e0e0e0;
+	}
+}
+
+.press-this-sidebar__categories {
+	max-height: 200px;
+	overflow-y: auto;
+}
+
+.press-this-sidebar__category {
+	padding: 2px 0;
+}
+
+// ==========================================================================
+// Action Bar
+// ==========================================================================
+
+.press-this-action-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 16px;
+	background: #fff;
+	border-top: 1px solid #ddd;
+	position: sticky;
+	bottom: 0;
+	z-index: 100;
+	// Prevent action bar from exceeding viewport width.
+	max-width: 100%;
+
+	// Reduce padding at narrow viewports.
+	@media (max-width: $breakpoint-mobile) {
+		padding: 12px 8px;
+	}
+}
+
+.press-this-action-bar__media {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.press-this-action-bar__actions {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+
+	// Reduce gap at narrow viewports.
+	@media (max-width: $breakpoint-mobile) {
+		gap: 8px;
+	}
+}
+
+.press-this-action-bar__publish-group {
+	display: flex;
+	align-items: center;
+
+	.components-button.is-primary:first-child {
+		border-top-right-radius: 0;
+		border-bottom-right-radius: 0;
+	}
+
+	.components-button.is-primary:last-child {
+		border-top-left-radius: 0;
+		border-bottom-left-radius: 0;
+		border-left: 1px solid rgba(255, 255, 255, 0.3);
+		padding: 6px 8px;
+	}
+}
+
+.press-this-action-bar__spinner {
+	margin-right: 8px;
+}
+
+.press-this-action-bar__dropdown-content {
+	min-width: 160px;
+}
+
+// ==========================================================================
+// Block Editor Wrapper
+// ==========================================================================
+
+.press-this-block-editor {
+	background: #fff;
+	border-radius: 4px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	padding: 20px;
+	// Prevent block editor from exceeding viewport.
+	max-width: 100%;
+}
+
+.press-this-block-editor__title-wrapper {
+	margin-bottom: 16px;
+}
+
+.press-this-block-editor__title {
+	width: 100%;
+	font-size: 24px;
+	font-weight: 600;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	padding: 8px 12px;
+	background: #fff;
+
+	&:focus {
+		border-color: #007cba;
+		outline: none;
+		box-shadow: 0 0 0 1px #007cba;
+	}
+}
+
+.press-this-block-editor__content {
+	min-height: 300px;
+	position: relative;
+
+	.block-editor-writing-flow {
+		padding: 8px 0;
+	}
+
+	.block-editor-block-list__layout {
+		padding: 0;
+	}
+}
+
+.press-this-block-editor__inserter {
+	margin-bottom: 12px;
+
+	// Fix the inserter button sizing
+	.components-button {
+		min-width: 32px;
+		min-height: 32px;
+		padding: 6px;
+
+		svg {
+			width: 24px;
+			height: 24px;
+		}
+	}
+}
+
+// ==========================================================================
+// Block Inserter Fixes
+// ==========================================================================
+
+// Fix the inline inserter button that appears next to blocks
+.block-editor-inserter {
+	.components-button {
+		min-width: 24px;
+		min-height: 24px;
+
+		svg {
+			width: 24px;
+			height: 24px;
+			fill: currentColor;
+		}
+	}
+}
+
+// Fix the quick inserter popover
+.block-editor-inserter__quick-inserter {
+	min-width: 300px;
+	// Ensure popover doesn't exceed viewport.
+	max-width: 100%;
+
+	// Fix icon clipping in quick inserter
+	.block-editor-block-types-list__list-item {
+		.block-editor-block-types-list__item {
+			padding: 8px;
+			min-height: 60px;
+
+			.block-editor-block-types-list__item-icon {
+				width: 48px;
+				height: 48px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+
+				svg,
+				.block-editor-block-icon {
+					width: 24px;
+					height: 24px;
+				}
+			}
+		}
+	}
+}
+
+// Fix block icon sizing in inserter
+.block-editor-block-icon {
+	width: 24px;
+	height: 24px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+
+	svg {
+		width: 24px;
+		height: 24px;
+		max-width: 100%;
+		max-height: 100%;
+	}
+}
+
+// Fix block types list in inserter
+.block-editor-block-types-list {
+	.block-editor-block-types-list__item {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		padding: 8px;
+		min-width: 72px;
+
+		.block-editor-block-types-list__item-icon {
+			margin-bottom: 4px;
+
+			.block-editor-block-icon {
+				width: 24px;
+				height: 24px;
+
+				svg {
+					width: 24px;
+					height: 24px;
+				}
+			}
+		}
+
+		.block-editor-block-types-list__item-title {
+			font-size: 12px;
+			text-align: center;
+			word-break: break-word;
+		}
+	}
+}
+
+// Ensure SVGs in buttons are properly sized
+.press-this-app {
+	.components-button svg {
+		width: 24px;
+		height: 24px;
+		fill: currentColor;
+	}
+
+	// Fix the appender button
+	.block-list-appender {
+		.block-editor-inserter {
+			.components-button {
+				width: 32px;
+				height: 32px;
+				padding: 4px;
+
+				svg {
+					width: 24px;
+					height: 24px;
+				}
+			}
+		}
+	}
+
+	// Fix inline appender
+	.block-editor-default-block-appender {
+		.block-editor-inserter {
+			.components-button {
+				width: 24px;
+				height: 24px;
+				padding: 0;
+
+				svg {
+					width: 24px;
+					height: 24px;
+				}
+			}
+		}
+	}
+}
+
+// ==========================================================================
+// Loading State
+// ==========================================================================
+
+.press-this-loading {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 12px;
+	height: 100vh;
+	font-size: 14px;
+	color: #666;
+
+	.spinner {
+		float: none;
+	}
+}

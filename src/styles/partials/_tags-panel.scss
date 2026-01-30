@@ -1,0 +1,176 @@
+/**
+ * TagsPanel Component Styles
+ *
+ * Styles for the tags input and display panel.
+ *
+ * @package press-this
+ */
+
+// ==========================================================================
+// Content Area
+// ==========================================================================
+
+.press-this-tags-panel__content {
+	flex: 1 1 auto;
+	overflow-y: auto;
+	padding: $spacing-lg;
+}
+
+// ==========================================================================
+// Tag Input (Token Field)
+// ==========================================================================
+
+.press-this-tags-panel__input {
+	margin-bottom: $spacing-sm;
+
+	.components-form-token-field__input-container {
+		border: 1px solid $color-border;
+		border-radius: 4px;
+		padding: $spacing-xs $spacing-sm;
+
+		&:focus-within {
+			border-color: $color-accent;
+			box-shadow: 0 0 0 1px $color-accent;
+		}
+	}
+
+	.components-form-token-field__token {
+		background: $color-bg-light;
+		border: 1px solid $color-border;
+		border-radius: 3px;
+		margin: 2px;
+	}
+
+	.components-form-token-field__token-text {
+		font-size: $font-size-small;
+		padding: 2px 6px;
+	}
+
+	.components-form-token-field__remove-token {
+		padding: 0 $spacing-xs;
+
+		&:hover {
+			color: $color-error;
+		}
+	}
+}
+
+// ==========================================================================
+// Help Text
+// ==========================================================================
+
+.press-this-tags-panel__help {
+	margin: 0 0 $spacing-lg;
+	font-size: $font-size-xs;
+	color: $color-text-light;
+}
+
+// ==========================================================================
+// Selected Tags Display
+// ==========================================================================
+
+.press-this-tags-panel__tags {
+	margin-top: $spacing-lg;
+	padding-top: $spacing-lg;
+	border-top: 1px solid $color-border-light;
+}
+
+.press-this-tags-panel__tags-label {
+	margin: 0 0 $spacing-sm;
+	font-size: $font-size-xs;
+	font-weight: 600;
+	color: $color-text-light;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.press-this-tags-panel__tag-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.press-this-tags-panel__tag {
+	display: inline-flex;
+	align-items: center;
+	background: $color-bg-light;
+	border: 1px solid $color-border;
+	border-radius: 3px;
+	padding: $spacing-xs $spacing-sm;
+	font-size: $font-size-small;
+	gap: 6px;
+}
+
+.press-this-tags-panel__tag-name {
+	color: $color-text;
+}
+
+.press-this-tags-panel__tag-remove {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	color: $color-text-light;
+
+	&:hover,
+	&:focus {
+		color: $color-error;
+	}
+
+	&:focus {
+		outline: 1px dotted $color-text;
+	}
+
+	.dashicons {
+		font-size: 14px;
+		width: 14px;
+		height: 14px;
+	}
+}
+
+// ==========================================================================
+// Tag Cloud Link
+// ==========================================================================
+
+.press-this-tags-panel__cloud-link-wrapper {
+	margin-top: $spacing-lg;
+	padding-top: $spacing-lg;
+	border-top: 1px solid $color-border-light;
+}
+
+.press-this-tags-panel__tagCloud-link {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	color: $color-accent;
+	text-decoration: none;
+	font-size: $font-size-small;
+
+	&:hover,
+	&:focus {
+		color: $color-accent-hover;
+		text-decoration: underline;
+	}
+
+	.dashicons {
+		font-size: 16px;
+		width: 16px;
+		height: 16px;
+	}
+}
+
+// ==========================================================================
+// Responsive Adjustments
+// ==========================================================================
+
+@media (max-width: $breakpoint-small) {
+	.press-this-tags-panel__content {
+		padding: $spacing-md;
+	}
+}

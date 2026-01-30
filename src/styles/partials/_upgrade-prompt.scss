@@ -1,0 +1,90 @@
+/**
+ * UpgradePrompt Component Styles
+ *
+ * Styles for the legacy bookmarklet upgrade notice banner.
+ *
+ * @package press-this
+ */
+
+// ==========================================================================
+// Upgrade Prompt Container
+// ==========================================================================
+
+.press-this-upgrade-prompt {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: $spacing-sm $spacing-lg;
+	background: $color-warning-bg;
+	border-bottom: 1px solid $color-warning-border;
+	color: $color-warning-text;
+	font-size: $font-size-small;
+	line-height: 1.5;
+	gap: $spacing-md;
+}
+
+// ==========================================================================
+// Message
+// ==========================================================================
+
+.press-this-upgrade-prompt__message {
+	margin: 0;
+	flex: 1 1 auto;
+}
+
+// ==========================================================================
+// Upgrade Link
+// ==========================================================================
+
+.press-this-upgrade-prompt__link {
+	color: $color-accent;
+	text-decoration: none;
+	font-weight: 500;
+
+	&:hover,
+	&:focus {
+		color: $color-accent-hover;
+		text-decoration: underline;
+	}
+}
+
+// ==========================================================================
+// Dismiss Button
+// ==========================================================================
+
+.press-this-upgrade-prompt__dismiss {
+	flex: 0 0 auto;
+	padding: 0;
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	color: $color-warning-text;
+	opacity: 0.7;
+
+	&:hover,
+	&:focus {
+		opacity: 1;
+		color: $color-warning-text;
+	}
+
+	&:focus {
+		outline: 1px dotted $color-warning-text;
+		outline-offset: 2px;
+	}
+
+	svg {
+		width: 20px;
+		height: 20px;
+	}
+}
+
+// ==========================================================================
+// Responsive Adjustments
+// ==========================================================================
+
+@media (max-width: $breakpoint-small) {
+	.press-this-upgrade-prompt {
+		padding: 6px $spacing-md;
+		font-size: $font-size-xs;
+	}
+}

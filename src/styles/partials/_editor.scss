@@ -1,0 +1,308 @@
+/**
+ * Block Editor Styles
+ *
+ * Styles for the Gutenberg block editor in the Press This popup context.
+ *
+ * @package press-this
+ */
+
+@use "variables" as *;
+
+// ==========================================================================
+// Editor Container
+// ==========================================================================
+
+.press-this-editor {
+	background: $color-white;
+	min-height: 300px;
+	padding: $spacing-lg;
+
+	// Block editor specific styles.
+	.block-editor-writing-flow {
+		min-height: 200px;
+	}
+
+	.block-list-appender {
+		margin-top: $spacing-lg;
+	}
+
+	// Block toolbar positioning for popup context.
+	.block-editor-block-toolbar {
+		position: relative;
+	}
+}
+
+// ==========================================================================
+// Editor Structure
+// ==========================================================================
+
+.press-this-editor__container {
+	display: flex;
+	flex-direction: column;
+	min-height: 300px;
+}
+
+.press-this-editor__content {
+	flex: 1 1 auto;
+	overflow-y: auto;
+}
+
+// ==========================================================================
+// Block Inserter
+// ==========================================================================
+
+.press-this-editor__inserter {
+	position: relative;
+	margin-bottom: $spacing-sm;
+
+	// Inserter button styling.
+	.block-editor-inserter {
+		display: inline-flex;
+	}
+
+	.components-button.block-editor-inserter__toggle {
+		background: $color-accent;
+		color: $color-white;
+		border-radius: 4px;
+		padding: $spacing-sm $spacing-md;
+		font-size: $font-size-small;
+
+		&:hover,
+		&:focus {
+			background: $color-accent-hover;
+			color: $color-white;
+		}
+
+		&:focus {
+			box-shadow: 0 0 0 2px $color-white, 0 0 0 4px $color-accent;
+		}
+
+		.dashicon,
+		svg {
+			fill: currentColor;
+		}
+	}
+
+	// Inserter popover positioning.
+	.block-editor-inserter__popover {
+		.components-popover__content {
+			max-height: 400px;
+			overflow-y: auto;
+		}
+	}
+}
+
+// ==========================================================================
+// Block Inserter Menu
+// ==========================================================================
+
+.block-editor-inserter__menu {
+	// Ensure clean display of allowed blocks.
+	.block-editor-block-types-list {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+		gap: $spacing-sm;
+	}
+}
+
+// ==========================================================================
+// Main Editor Mount Point
+// ==========================================================================
+
+#press-this-editor {
+	flex: 1 1 auto;
+	overflow-y: auto;
+	padding: 0 $spacing-lg;
+}
+
+// ==========================================================================
+// Popup Context Overrides
+// ==========================================================================
+
+.press-this-popup {
+	.block-editor-block-list__layout {
+		padding: 0;
+	}
+
+	.block-editor-default-block-appender {
+		margin-top: $spacing-sm;
+	}
+
+	// Simplified toolbar for popup.
+	.block-editor-block-contextual-toolbar {
+		position: sticky;
+		top: 0;
+		z-index: 100;
+	}
+}
+
+// ==========================================================================
+// Block List Styling
+// ==========================================================================
+
+.press-this-editor {
+	.block-editor-block-list__layout {
+		padding-left: 0;
+		padding-right: 0;
+	}
+
+	.block-editor-block-list__block {
+		margin-left: 0;
+		margin-right: 0;
+
+		// Ensure proper padding for block content.
+		&.is-selected,
+		&.has-child-selected {
+			.block-editor-block-list__block-edit {
+				margin-left: 0;
+				margin-right: 0;
+			}
+		}
+	}
+
+	// Paragraph block styling.
+	.wp-block-paragraph {
+		font-size: $font-size-lg;
+		line-height: $line-height-base;
+		margin-bottom: 1em;
+	}
+
+	// Heading block styling.
+	.wp-block-heading {
+		margin-top: 1.5em;
+		margin-bottom: 0.5em;
+
+		&:first-child {
+			margin-top: 0;
+		}
+	}
+
+	// Quote block styling.
+	.wp-block-quote {
+		border-left: 4px solid $color-accent;
+		padding-left: $spacing-lg;
+		margin: 1em 0;
+		font-style: italic;
+	}
+
+	// Image block styling.
+	.wp-block-image {
+		margin: 1em 0;
+
+		img {
+			max-width: 100%;
+			height: auto;
+		}
+
+		figcaption {
+			font-size: $font-size-small;
+			color: $color-text-light;
+			text-align: center;
+			margin-top: $spacing-sm;
+		}
+	}
+
+	// Embed block styling.
+	.wp-block-embed {
+		margin: 1em 0;
+
+		.wp-block-embed__wrapper {
+			max-width: 100%;
+		}
+
+		figcaption {
+			font-size: $font-size-small;
+			color: $color-text-light;
+			text-align: center;
+			margin-top: $spacing-sm;
+		}
+	}
+
+	// List block styling.
+	.wp-block-list {
+		margin: 1em 0;
+		padding-left: 2em;
+
+		li {
+			margin-bottom: 0.5em;
+		}
+	}
+}
+
+// ==========================================================================
+// Fixed Toolbar
+// ==========================================================================
+
+.press-this-editor {
+	.block-editor-block-contextual-toolbar {
+		background: $color-white;
+		border: 1px solid $color-border;
+		border-radius: 4px;
+		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+	}
+
+	// Keep toolbar visible and fixed when editing.
+	&.has-fixed-toolbar {
+		.block-editor-block-contextual-toolbar {
+			position: sticky;
+			top: 0;
+			z-index: 100;
+		}
+	}
+}
+
+// ==========================================================================
+// Popover Styling
+// ==========================================================================
+
+.components-popover__content {
+	z-index: $z-index-popover;
+}
+
+// ==========================================================================
+// Responsive Adjustments
+// ==========================================================================
+
+@media (max-width: $breakpoint-mobile) {
+	.press-this-editor {
+		padding: $spacing-sm;
+	}
+
+	#press-this-editor {
+		padding: 0 $spacing-sm;
+	}
+
+	.press-this-editor__inserter {
+		.components-button.block-editor-inserter__toggle {
+			padding: 6px 10px;
+			font-size: $font-size-xs;
+		}
+
+		.block-editor-inserter__popover {
+			.components-popover__content {
+				max-height: 300px;
+			}
+		}
+	}
+
+	// Smaller blocks on mobile.
+	.press-this-editor {
+		.wp-block-paragraph {
+			font-size: $font-size-base;
+		}
+
+		.wp-block-quote {
+			padding-left: $spacing-md;
+		}
+	}
+}
+
+@media (max-width: $breakpoint-tablet) {
+	.press-this-editor__inserter {
+		.block-editor-inserter__popover {
+			.components-popover__content {
+				max-width: 90vw;
+			}
+		}
+	}
+}

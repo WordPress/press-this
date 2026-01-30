@@ -1,0 +1,82 @@
+/**
+ * MediaButton Component Styles
+ *
+ * Styles for the media upload button in the action bar.
+ *
+ * @package press-this
+ */
+
+// ==========================================================================
+// MediaButton
+// ==========================================================================
+
+.press-this-media-button {
+	color: #9ea7af;
+	float: left;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	border-radius: 0;
+	background: none;
+	box-shadow: none;
+	overflow: hidden;
+	cursor: pointer;
+
+	&:hover,
+	&:focus,
+	&:active {
+		color: $color-header-bg;
+		background: none;
+		box-shadow: none;
+	}
+
+	&:focus,
+	&:active {
+		outline: 0;
+		color: $color-accent-light;
+		box-shadow:
+			0 0 0 1px #5b9dd9,
+			0 0 2px 1px rgba(30, 140, 190, 0.8);
+	}
+
+	&:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+
+		&:hover {
+			color: #9ea7af;
+		}
+	}
+
+	.dashicons {
+		padding: 11px;
+		width: 63px;
+		height: 58px;
+		font-size: 40px;
+	}
+
+	.screen-reader-text {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
+	}
+}
+
+// ==========================================================================
+// Responsive Adjustments
+// ==========================================================================
+
+@media (max-width: $breakpoint-small) {
+	.press-this-media-button .dashicons {
+		width: 55px;
+		height: 49px;
+		padding: 14px;
+		font-size: 20px;
+	}
+}

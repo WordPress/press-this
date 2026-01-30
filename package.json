@@ -12,8 +12,58 @@
     "url": "https://github.com/WordPress/press-this/issues"
   },
   "homepage": "https://github.com/WordPress/press-this#readme",
+  "scripts": {
+    "build": "wp-scripts build && npm run build:bookmarklet",
+    "build:bookmarklet": "terser assets/bookmarklet.js --compress --mangle -o assets/bookmarklet.min.js",
+    "build:dist": "npm run build && rm -rf dist press-this.zip && mkdir -p dist/press-this && cp press-this-plugin.php class-wp-press-this-plugin.php readme.txt dist/press-this/ && cp UPGRADE.md dist/press-this/ 2>/dev/null || true && cp -r includes build assets dist/press-this/ && cd dist && zip -r ../press-this.zip press-this/ && echo 'Created press-this.zip'",
+    "start": "wp-scripts start",
+    "lint": "wp-scripts lint-js src/",
+    "lint:css": "wp-scripts lint-style src/",
+    "test:unit": "wp-scripts test-unit-js",
+    "test:build": "node tests/build/build-output.test.js",
+    "test:bookmarklet": "node tests/bookmarklet/bookmarklet.test.js",
+    "test:editor": "node tests/editor/block-editor.test.js",
+    "test:header": "node tests/components/header.test.js",
+    "test:title-media": "node tests/components/title-media/title-media.test.js",
+    "test:sidebar": "node tests/components/sidebar/sidebar.test.js",
+    "test:action-bar": "node tests/components/action-bar/action-bar.test.js",
+    "test:responsive": "node tests/styles/responsive.test.js",
+    "test:integration": "node tests/integration/integration.test.js",
+    "test:e2e": "node tests/e2e/workflow.test.js",
+    "test:js": "npm run test:build && npm run test:bookmarklet && npm run test:editor && npm run test:header && npm run test:title-media && npm run test:sidebar && npm run test:action-bar && npm run test:responsive && npm run test:integration && npm run test:e2e",
+    "wp-env": "wp-env",
+    "env:start": "wp-env start",
+    "env:stop": "wp-env stop",
+    "env:destroy": "wp-env destroy",
+    "env:cli": "wp-env run cli"
+  },
   "devDependencies": {
+    "@wordpress/env": "^10.37.0",
+    "@wordpress/scripts": "^31.2.0",
     "grunt-checktextdomain": "^1.0.1",
-    "grunt-wp-i18n": "^1.0.0"
+    "grunt-wp-i18n": "^1.0.4",
+    "terser": "^5.44.1"
+  },
+  "dependencies": {
+    "@wordpress/block-editor": "^15.10.0",
+    "@wordpress/block-library": "^9.37.0",
+    "@wordpress/blocks": "^15.10.0",
+    "@wordpress/components": "^31.0.0",
+    "@wordpress/compose": "^7.37.0",
+    "@wordpress/core-data": "^7.37.0",
+    "@wordpress/data": "^10.37.0",
+    "@wordpress/dom-ready": "^4.37.0",
+    "@wordpress/edit-post": "^8.37.0",
+    "@wordpress/editor": "^14.37.0",
+    "@wordpress/element": "^6.37.0",
+    "@wordpress/i18n": "^6.10.0",
+    "@wordpress/icons": "^11.4.0",
+    "@wordpress/rich-text": "^7.37.0"
+  },
+  "overrides": {
+    "react-autosize-textarea": {
+      "react": "^18.0.0",
+      "react-dom": "^18.0.0"
+    }
   }
 }

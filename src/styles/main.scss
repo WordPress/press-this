@@ -1,0 +1,562 @@
+/**
+ * Press This - Main Styles
+ *
+ * Main stylesheet for the Gutenberg-based Press This editor.
+ * Imports all component partials for organized style management.
+ *
+ * @package press-this
+ */
+
+// ==========================================================================
+// Variables & Partials (@use rules must come first)
+// ==========================================================================
+
+// Design tokens: colors, spacing, breakpoints, typography.
+@use "partials/variables" as *;
+
+// Base styles: resets, utilities, screen reader text.
+@use "partials/base";
+
+// Main app container and layout.
+@use "partials/app-layout";
+
+// MediaGrid & MediaThumbnail: scraped images/embeds grid.
+@use "partials/media-grid";
+
+// Block editor overrides.
+@use "partials/editor";
+
+// WordPress component overrides.
+@use "partials/wordpress-overrides";
+
+// ==========================================================================
+// WordPress Block Editor Styles
+// ==========================================================================
+
+// Import WordPress block editor and components styles.
+// Note: Using @import for external CSS is valid - @import comes after @use.
+@import "@wordpress/block-editor/build-style/style.css";
+@import "@wordpress/components/build-style/style.css";
+
+// ==========================================================================
+// Press This Editor (Native Gutenberg Layout)
+// ==========================================================================
+
+.press-this-editor {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	min-height: 0;
+}
+
+.press-this-editor__layout {
+	display: flex;
+	flex: 1;
+	min-height: 0;
+	overflow: hidden;
+}
+
+.press-this-editor__main {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	overflow-y: auto;
+	padding: 24px;
+	max-width: 840px;
+	margin: 0 auto;
+	// Prevent overflow at narrow viewports.
+	width: 100%;
+
+	// Use standardized breakpoint variable instead of 782px.
+	@media (max-width: $breakpoint-tablet) {
+		padding: 16px;
+	}
+}
+
+.press-this-editor__title-wrapper {
+	margin-bottom: 20px;
+}
+
+.press-this-editor__title {
+	width: 100%;
+	font-size: 28px;
+	font-weight: 600;
+	line-height: 1.4;
+	border: 1px solid transparent;
+	border-radius: 4px;
+	padding: 12px 16px;
+	background: $color-white;
+	transition: border-color 0.1s;
+
+	&:hover {
+		border-color: $color-border;
+	}
+
+	&:focus {
+		border-color: $color-accent;
+		outline: none;
+		box-shadow: 0 0 0 1px $color-accent;
+	}
+
+	&::placeholder {
+		color: $color-text-muted;
+	}
+}
+
+.press-this-editor__toolbar {
+	position: sticky;
+	top: 0;
+	z-index: 90;
+	background: $color-white;
+	border-bottom: 1px solid $color-border-light;
+	margin: -24px -24px 32px -24px;
+	padding: 8px 16px;
+	min-height: 48px;
+	display: flex;
+	align-items: center;
+
+	.block-editor-block-toolbar {
+		border: none;
+		background: transparent;
+	}
+
+	// Use standardized breakpoint variable instead of 782px.
+	@media (max-width: $breakpoint-tablet) {
+		margin: -16px -16px 24px -16px;
+		padding: 8px;
+	}
+}
+
+.press-this-editor__content {
+	flex: 1;
+	background: $color-white;
+	border-radius: 4px;
+	padding: 16px;
+	min-height: 300px;
+	position: relative;
+
+	.block-editor-writing-flow {
+		min-height: 250px;
+	}
+
+	.block-editor-block-list__layout {
+		padding: 0;
+	}
+}
+
+.press-this-editor__inserter {
+	display: flex;
+	justify-content: center;
+	padding: 16px 0;
+	margin-top: 16px;
+	border-top: 1px dashed $color-border;
+}
+
+.press-this-editor__inserter-button {
+	border-radius: 50%;
+	width: 36px;
+	height: 36px;
+	min-width: 36px;
+	padding: 0;
+}
+
+// ==========================================================================
+// Press This Editor Sidebar
+// ==========================================================================
+
+.press-this-editor__sidebar {
+	width: 280px;
+	// Ensure sidebar doesn't exceed viewport on small screens.
+	max-width: 100%;
+	background: $color-white;
+	border-left: 1px solid $color-border-light;
+	display: flex;
+	flex-direction: column;
+	overflow-y: auto;
+
+	// Use standardized breakpoint variable instead of 782px.
+	@media (max-width: $breakpoint-tablet) {
+		position: fixed;
+		top: 46px;
+		right: 0;
+		bottom: 0;
+		width: 280px;
+		z-index: 100;
+		transform: translateX(100%);
+		transition: transform 0.2s;
+		box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+
+		&.is-open {
+			transform: translateX(0);
+		}
+	}
+}
+
+.press-this-editor__sidebar-header {
+	padding: 16px;
+	border-bottom: 1px solid $color-border-light;
+	background: $color-bg-panel;
+
+	h2 {
+		margin: 0;
+		font-size: 14px;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		color: $color-text;
+	}
+}
+
+.press-this-editor__sidebar-content {
+	flex: 1;
+	overflow-y: auto;
+}
+
+// ==========================================================================
+// Sidebar Panels
+// ==========================================================================
+
+.press-this-editor__panel {
+	padding: 16px;
+	border-bottom: 1px solid $color-border-light;
+
+	h3 {
+		margin: 0 0 12px 0;
+		font-size: 13px;
+		font-weight: 600;
+		color: $color-text;
+	}
+
+	h4 {
+		margin: 12px 0 8px 0;
+		font-size: 12px;
+		font-weight: 600;
+		color: $color-text-muted;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+	}
+}
+
+.press-this-editor__format-select {
+	width: 100%;
+	padding: 8px 12px;
+	border: 1px solid $color-border;
+	border-radius: 4px;
+	font-size: 14px;
+
+	&:focus {
+		border-color: $color-accent;
+		outline: none;
+		box-shadow: 0 0 0 1px $color-accent;
+	}
+}
+
+.press-this-editor__categories {
+	max-height: 200px;
+	overflow-y: auto;
+	border: 1px solid $color-border;
+	border-radius: 4px;
+	padding: 8px;
+}
+
+.press-this-editor__category {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 4px 0;
+	font-size: 14px;
+	cursor: pointer;
+
+	input[type="checkbox"] {
+		margin: 0;
+	}
+}
+
+.press-this-editor__tags-input {
+	width: 100%;
+	padding: 8px 12px;
+	border: 1px solid $color-border;
+	border-radius: 4px;
+	font-size: 14px;
+
+	&:focus {
+		border-color: $color-accent;
+		outline: none;
+		box-shadow: 0 0 0 1px $color-accent;
+	}
+}
+
+.press-this-editor__tags-list {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 12px;
+}
+
+.press-this-editor__tag {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 4px 8px;
+	background: $color-bg-input;
+	border-radius: 4px;
+	font-size: 12px;
+
+	button {
+		background: none;
+		border: none;
+		padding: 0;
+		cursor: pointer;
+		font-size: 14px;
+		line-height: 1;
+		color: $color-text-muted;
+
+		&:hover {
+			color: $color-error;
+		}
+	}
+}
+
+// ==========================================================================
+// Scraped Media Panel
+// ==========================================================================
+
+.press-this-scraped-media__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	padding: 0;
+	background: none;
+	border: none;
+	cursor: pointer;
+	text-align: left;
+
+	h3 {
+		margin: 0;
+	}
+
+	.dashicons {
+		color: $color-text-muted;
+	}
+
+	&:hover .dashicons {
+		color: $color-accent;
+	}
+}
+
+.press-this-scraped-media__content {
+	margin-top: 12px;
+}
+
+.press-this-scraped-media__source {
+	font-size: 12px;
+	color: $color-text-muted;
+	margin-bottom: 12px;
+
+	a {
+		color: $color-accent;
+		text-decoration: none;
+
+		&:hover {
+			text-decoration: underline;
+		}
+	}
+}
+
+.press-this-scraped-media__loading {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	color: $color-text-muted;
+	font-size: 13px;
+}
+
+.press-this-scraped-media__section {
+	margin-bottom: 16px;
+
+	&:last-child {
+		margin-bottom: 0;
+	}
+}
+
+.press-this-scraped-media__embeds {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+
+	li {
+		margin-bottom: 8px;
+	}
+}
+
+.press-this-scraped-media__embed-button {
+	width: 100%;
+	justify-content: flex-start;
+	gap: 8px;
+
+	.dashicons {
+		color: $color-text-muted;
+	}
+}
+
+.press-this-scraped-media__embed-domain {
+	font-size: 13px;
+	color: $color-text;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.press-this-scraped-media__images {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+	gap: 8px;
+}
+
+.press-this-scraped-media__image-button {
+	display: block;
+	padding: 0;
+	border: 2px solid transparent;
+	border-radius: 4px;
+	background: $color-bg-input;
+	cursor: pointer;
+	overflow: hidden;
+	aspect-ratio: 1;
+	transition: border-color 0.1s;
+
+	&:hover,
+	&:focus {
+		border-color: $color-accent;
+		outline: none;
+	}
+
+	img {
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+}
+
+.press-this-scraped-media__empty {
+	font-size: 13px;
+	color: $color-text-muted;
+	font-style: italic;
+}
+
+// ==========================================================================
+// Notices
+// ==========================================================================
+
+.press-this-editor__notice {
+	position: fixed;
+	bottom: 20px;
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 1000;
+
+	.components-snackbar {
+		margin: 0;
+	}
+}
+
+// ==========================================================================
+// Featured Image Panel
+// ==========================================================================
+
+.press-this-featured-image {
+	&__loading {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+		padding: 12px;
+		color: $color-text-muted;
+		font-size: 13px;
+	}
+
+	&__preview {
+		text-align: center;
+	}
+
+	&__image {
+		display: block;
+		max-width: 100%;
+		height: auto;
+		border-radius: 4px;
+		margin-bottom: 12px;
+	}
+
+	&__actions {
+		display: flex;
+		justify-content: center;
+		gap: 12px;
+	}
+
+	&__set {
+		width: 100%;
+	}
+
+	&__no-upload {
+		color: $color-text-muted;
+		font-style: italic;
+		font-size: 13px;
+	}
+
+	&__scraped {
+		margin-top: 16px;
+		padding-top: 16px;
+		border-top: 1px solid $color-border-light;
+	}
+
+	&__scraped-title {
+		margin: 0 0 12px 0;
+		font-size: 11px;
+		font-weight: 600;
+		color: $color-text-muted;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+	}
+
+	&__scraped-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 8px;
+	}
+
+	&__scraped-item {
+		display: block;
+		padding: 0;
+		border: 2px solid transparent;
+		border-radius: 4px;
+		background: $color-bg-input;
+		cursor: pointer;
+		overflow: hidden;
+		aspect-ratio: 1;
+		transition: border-color 0.1s, transform 0.1s;
+
+		&:hover,
+		&:focus {
+			border-color: $color-accent;
+			outline: none;
+			transform: scale(1.02);
+		}
+
+		img {
+			display: block;
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+		}
+	}
+
+	&__error {
+		margin: 8px 0;
+		padding: 8px;
+		background: #fcf0f1;
+		border-left: 4px solid $color-error;
+		color: $color-error;
+		font-size: 12px;
+	}
+}

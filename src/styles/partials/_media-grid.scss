@@ -1,0 +1,349 @@
+/**
+ * MediaGrid & MediaThumbnail Component Styles
+ *
+ * Styles for the scraped images/embeds thumbnail grid.
+ *
+ * @package press-this
+ */
+
+@use "variables" as *;
+
+// ==========================================================================
+// MediaGrid Container
+// ==========================================================================
+
+.press-this-media-grid-container {
+	border-bottom: 1px solid $color-border-light;
+	background: $color-bg-light;
+
+	&:empty {
+		display: none;
+	}
+}
+
+// ==========================================================================
+// MediaGrid List
+// ==========================================================================
+
+.press-this-media-grid {
+	display: grid;
+	grid-template-columns: repeat(6, 1fr);
+	gap: 2px;
+	padding: 2px;
+	margin: 0;
+	list-style: none;
+
+	&:not(.has-media) {
+		display: none;
+	}
+
+	&.is-loading {
+		opacity: 0.7;
+	}
+
+	li {
+		margin: 0;
+		padding: 0;
+	}
+}
+
+// ==========================================================================
+// Screen Reader Title
+// ==========================================================================
+
+.press-this-media-grid__title {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+// ==========================================================================
+// Loading State
+// ==========================================================================
+
+.press-this-media-grid__loading {
+	padding: $spacing-lg;
+	margin: 0;
+	text-align: center;
+	color: $color-text-light;
+	font-size: $font-size-small;
+}
+
+// ==========================================================================
+// MediaThumbnail
+// ==========================================================================
+
+.press-this-media-thumbnail {
+	position: relative;
+	aspect-ratio: 1;
+	background-color: $color-header-bg;
+	background-size: cover;
+	background-position: center;
+	background-repeat: no-repeat;
+	cursor: pointer;
+	overflow: hidden;
+	transition: transform $transition-speed-fast ease;
+
+	&:hover,
+	&:focus {
+		z-index: 1;
+		outline: none;
+	}
+
+	&:focus {
+		box-shadow: inset 0 0 0 3px $color-accent-light;
+	}
+
+	&.no-background {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background-color: $color-header-bg;
+	}
+}
+
+// ==========================================================================
+// Preload Image (for onload detection)
+// ==========================================================================
+
+.press-this-media-thumbnail__preload {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	opacity: 0;
+	pointer-events: none;
+}
+
+// ==========================================================================
+// Media Type Icon
+// ==========================================================================
+
+.press-this-media-thumbnail__icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: $color-white;
+	opacity: 0.8;
+
+	svg {
+		width: 32px;
+		height: 32px;
+	}
+}
+
+.press-this-media-thumbnail__type-icon {
+	position: absolute;
+	top: $spacing-sm;
+	left: $spacing-sm;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	background: $color-overlay-bg;
+	border-radius: 50%;
+	color: $color-white;
+
+	svg {
+		width: 16px;
+		height: 16px;
+	}
+}
+
+// ==========================================================================
+// Featured Badge
+// ==========================================================================
+
+.press-this-media-thumbnail__featured-badge {
+	position: absolute;
+	top: $spacing-sm;
+	right: $spacing-sm;
+	padding: 2px $spacing-sm;
+	background: $color-featured-bg;
+	color: $color-white;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	border-radius: 2px;
+	letter-spacing: 0.5px;
+}
+
+// ==========================================================================
+// Hover Overlay
+// ==========================================================================
+
+.press-this-media-thumbnail__overlay {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: $spacing-sm;
+	padding: $spacing-sm;
+	background: $color-overlay-bg;
+	opacity: 0;
+	transition: opacity $transition-speed-fast ease;
+
+	.press-this-media-thumbnail:hover &,
+	.press-this-media-thumbnail:focus &,
+	.press-this-media-thumbnail.is-active & {
+		opacity: 1;
+	}
+}
+
+// ==========================================================================
+// Action Buttons
+// ==========================================================================
+
+.press-this-media-thumbnail__insert-btn,
+.press-this-media-thumbnail__featured-btn {
+	padding: 6px $spacing-md;
+	background: $color-accent;
+	border: none;
+	border-radius: 3px;
+	color: $color-white;
+	font-size: 11px;
+	font-weight: 500;
+	text-align: center;
+	cursor: pointer;
+	white-space: nowrap;
+	transition: background-color $transition-speed-fast ease;
+	max-width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+
+	&:hover,
+	&:focus {
+		background: $color-accent-hover;
+		outline: none;
+	}
+
+	&:focus {
+		box-shadow: 0 0 0 2px $color-white;
+	}
+}
+
+.press-this-media-thumbnail__featured-btn {
+	background: transparent;
+	border: 1px solid $color-white;
+
+	&:hover,
+	&:focus {
+		background: rgba(255, 255, 255, 0.2);
+	}
+
+	&[aria-pressed="true"] {
+		background: $color-featured-bg;
+		border-color: $color-featured-bg;
+	}
+}
+
+// ==========================================================================
+// Featured Image Indicator
+// ==========================================================================
+
+.press-this-media-thumbnail.is-featured {
+	box-shadow: inset 0 0 0 3px $color-featured-bg;
+
+	&::after {
+		content: "";
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		border: 3px solid $color-featured-bg;
+		pointer-events: none;
+	}
+}
+
+// ==========================================================================
+// Embed Type Styles
+// ==========================================================================
+
+.press-this-media-thumbnail.is-video {
+	.press-this-media-thumbnail__icon svg {
+		opacity: 0.9;
+	}
+}
+
+.press-this-media-thumbnail.is-audio {
+	background: linear-gradient(135deg, #1db954 0%, #191414 100%);
+}
+
+.press-this-media-thumbnail.is-tweet {
+	background: linear-gradient(135deg, #1da1f2 0%, #14171a 100%);
+}
+
+// ==========================================================================
+// Screen Reader Text (within thumbnail)
+// ==========================================================================
+
+.press-this-media-thumbnail .screen-reader-text {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+// ==========================================================================
+// Responsive Adjustments
+// ==========================================================================
+
+@media (max-width: $breakpoint-tablet) {
+	.press-this-media-grid {
+		grid-template-columns: repeat(4, 1fr);
+	}
+}
+
+@media (max-width: $breakpoint-mobile) {
+	.press-this-media-grid {
+		grid-template-columns: repeat(3, 1fr);
+	}
+
+	.press-this-media-thumbnail__insert-btn,
+	.press-this-media-thumbnail__featured-btn {
+		padding: $spacing-xs $spacing-sm;
+		font-size: 10px;
+	}
+
+	.press-this-media-thumbnail__type-icon {
+		width: 24px;
+		height: 24px;
+		top: $spacing-xs;
+		left: $spacing-xs;
+
+		svg {
+			width: 14px;
+			height: 14px;
+		}
+	}
+
+	.press-this-media-thumbnail__featured-badge {
+		top: $spacing-xs;
+		right: $spacing-xs;
+		padding: 2px 6px;
+		font-size: 9px;
+	}
+}
+
+@media (max-width: $breakpoint-small) {
+	.press-this-media-grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}

@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<phpunit
+	bootstrap="tests/php/bootstrap.php"
+	backupGlobals="false"
+	colors="true"
+	convertErrorsToExceptions="true"
+	convertNoticesToExceptions="true"
+	convertWarningsToExceptions="true"
+	>
+	<testsuites>
+		<testsuite name="Press This Plugin Test Suite">
+			<directory suffix=".php">./tests/php/</directory>
+			<exclude>./tests/php/bootstrap.php</exclude>
+		</testsuite>
+	</testsuites>
+	<filter>
+		<whitelist>
+			<directory suffix=".php">./</directory>
+			<exclude>
+				<directory suffix=".php">./tests/</directory>
+				<directory suffix=".php">./vendor/</directory>
+				<directory suffix=".php">./node_modules/</directory>
+			</exclude>
+		</whitelist>
+	</filter>
+</phpunit>

@@ -1,0 +1,291 @@
+/**
+ * WordPress Components Styling Overrides
+ *
+ * Ensures @wordpress/components match Press This design.
+ *
+ * @package press-this
+ */
+
+@use "sass:color";
+@use "variables" as *;
+
+// ==========================================================================
+// General Component Overrides
+// ==========================================================================
+
+// Ensure buttons match Press This styling.
+.components-button {
+	&.is-primary {
+		background: $color-accent;
+		border-color: $color-accent;
+		color: $color-white;
+
+		&:hover,
+		&:focus {
+			background: $color-accent-hover;
+			border-color: $color-accent-hover;
+			color: $color-white;
+		}
+
+		&:focus {
+			box-shadow: 0 0 0 1px $color-white, 0 0 0 3px $color-accent;
+		}
+	}
+
+	&.is-secondary {
+		color: $color-accent;
+		border-color: $color-accent;
+
+		&:hover,
+		&:focus {
+			color: $color-accent-hover;
+			border-color: $color-accent-hover;
+		}
+	}
+
+	&.is-tertiary {
+		color: $color-accent;
+
+		&:hover,
+		&:focus {
+			color: $color-accent-hover;
+		}
+	}
+
+	&.is-destructive {
+		color: $color-error;
+
+		&:hover,
+		&:focus {
+			color: color.adjust($color-error, $lightness: -10%);
+		}
+	}
+}
+
+// ==========================================================================
+// Spinner
+// ==========================================================================
+
+.components-spinner {
+	border-color: $color-accent transparent transparent transparent;
+}
+
+// ==========================================================================
+// Text Control
+// ==========================================================================
+
+.components-text-control__input {
+	border-color: $color-border;
+	border-radius: 4px;
+
+	&:focus {
+		border-color: $color-accent;
+		box-shadow: 0 0 0 1px $color-accent;
+		outline: none;
+	}
+}
+
+// ==========================================================================
+// Select Control
+// ==========================================================================
+
+.components-select-control__input {
+	border-color: $color-border;
+	border-radius: 4px;
+
+	&:focus {
+		border-color: $color-accent;
+		box-shadow: 0 0 0 1px $color-accent;
+		outline: none;
+	}
+}
+
+// ==========================================================================
+// Checkbox Control
+// ==========================================================================
+
+.components-checkbox-control__input[type="checkbox"] {
+	&:checked {
+		background: $color-accent;
+		border-color: $color-accent;
+	}
+
+	&:focus {
+		box-shadow: 0 0 0 2px $color-white, 0 0 0 4px $color-accent;
+	}
+}
+
+// ==========================================================================
+// Radio Control
+// ==========================================================================
+
+.components-radio-control__input[type="radio"] {
+	&:checked {
+		border-color: $color-accent;
+
+		&::before {
+			background: $color-accent;
+		}
+	}
+
+	&:focus {
+		box-shadow: 0 0 0 2px $color-white, 0 0 0 4px $color-accent;
+	}
+}
+
+// ==========================================================================
+// Form Token Field (Tags)
+// ==========================================================================
+
+.components-form-token-field {
+	.components-form-token-field__input-container {
+		border-color: $color-border;
+		border-radius: 4px;
+
+		&.is-active {
+			border-color: $color-accent;
+			box-shadow: 0 0 0 1px $color-accent;
+		}
+	}
+
+	.components-form-token-field__token {
+		background: $color-bg-light;
+		border-color: $color-border;
+		color: $color-text;
+	}
+
+	.components-form-token-field__remove-token.components-button {
+		&:hover {
+			color: $color-error;
+		}
+	}
+
+	.components-form-token-field__suggestions-list {
+		border-color: $color-border;
+		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+	}
+
+	.components-form-token-field__suggestion {
+		&.is-selected {
+			background: $color-accent;
+			color: $color-white;
+		}
+	}
+}
+
+// ==========================================================================
+// Panel
+// ==========================================================================
+
+.components-panel {
+	border-color: $color-border-light;
+}
+
+.components-panel__header {
+	border-bottom-color: $color-border-light;
+}
+
+.components-panel__body {
+	border-bottom-color: $color-border-light;
+}
+
+.components-panel__body-toggle {
+	color: $color-text;
+
+	&:hover,
+	&:focus {
+		color: $color-accent;
+	}
+}
+
+// ==========================================================================
+// Notice
+// ==========================================================================
+
+.components-notice {
+	&.is-success {
+		background-color: #d4edda;
+		border-left-color: #28a745;
+	}
+
+	&.is-warning {
+		background-color: $color-warning-bg;
+		border-left-color: $color-warning-border;
+	}
+
+	&.is-error {
+		background-color: #f8d7da;
+		border-left-color: $color-error;
+	}
+
+	&.is-info {
+		background-color: $color-suggestion-bg;
+		border-left-color: $color-accent-light;
+	}
+}
+
+// ==========================================================================
+// Popover
+// ==========================================================================
+
+.components-popover {
+	.components-popover__content {
+		border-color: $color-border;
+		box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+	}
+}
+
+// ==========================================================================
+// Modal
+// ==========================================================================
+
+.components-modal__screen-overlay {
+	background-color: rgba(0, 0, 0, 0.5);
+}
+
+.components-modal__frame {
+	border-radius: 4px;
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.components-modal__header {
+	border-bottom-color: $color-border-light;
+}
+
+// ==========================================================================
+// Dropdown Menu
+// ==========================================================================
+
+.components-dropdown-menu__menu {
+	border-color: $color-border;
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+}
+
+.components-menu-item__button {
+	&:hover,
+	&:focus {
+		background: $color-bg-light;
+		color: $color-text;
+	}
+}
+
+// ==========================================================================
+// Tooltip
+// ==========================================================================
+
+.components-tooltip {
+	background: $color-header-bg;
+	color: $color-white;
+	border-radius: 4px;
+}
+
+// ==========================================================================
+// Dashicons Sizing
+// ==========================================================================
+
+.dashicons,
+.dashicons-before::before {
+	width: 20px;
+	height: 20px;
+	font-size: 20px;
+}
