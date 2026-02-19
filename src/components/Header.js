@@ -6,14 +6,28 @@
  * @package
  */
 
+/* global navigator */
+
 /**
  * WordPress dependencies
  */
 import { useState, useCallback, useEffect, useRef } from '@wordpress/element';
 import { useSelect, useDispatch } from '@wordpress/data';
-import { Button, TextControl, Notice, Tooltip, DropdownMenu, MenuGroup, MenuItem } from '@wordpress/components';
+import {
+	Button,
+	TextControl,
+	Notice,
+	Tooltip,
+	DropdownMenu,
+	MenuGroup,
+	MenuItem,
+} from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
-import { undo as undoIcon, redo as redoIcon, moreVertical } from '@wordpress/icons';
+import {
+	undo as undoIcon,
+	redo as redoIcon,
+	moreVertical,
+} from '@wordpress/icons';
 import { store as blockEditorStore } from '@wordpress/block-editor';
 
 /**
@@ -27,7 +41,10 @@ import { buildSuggestedContentFromMetadata } from '../utils';
  * @return {boolean} True if macOS, false otherwise.
  */
 function isMacOS() {
-	return typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test( navigator.platform );
+	return (
+		typeof navigator !== 'undefined' &&
+		/Mac|iPod|iPhone|iPad/.test( navigator.platform )
+	);
 }
 
 /**
@@ -67,7 +84,8 @@ export default function Header( {
 	const [ scanUrl, setScanUrl ] = useState( sourceUrl || '' );
 	const [ isScanning, setIsScanning ] = useState( false );
 	const [ scanError, setScanError ] = useState( '' );
-	const [ showUpgradeNotice, setShowUpgradeNotice ] = useState( isLegacyBookmarklet );
+	const [ showUpgradeNotice, setShowUpgradeNotice ] =
+		useState( isLegacyBookmarklet );
 
 	// Track if initial auto-scan has been performed.
 	const hasAutoScanned = useRef( false );
@@ -78,8 +96,10 @@ export default function Header( {
 	const { hasUndo, hasRedo } = useSelect( ( select ) => {
 		const store = select( blockEditorStore );
 		// Check if hasUndo/hasRedo exist (they might not if outside BlockEditorProvider context).
-		const canUndo = typeof store.hasUndo === 'function' ? store.hasUndo() : false;
-		const canRedo = typeof store.hasRedo === 'function' ? store.hasRedo() : false;
+		const canUndo =
+			typeof store.hasUndo === 'function' ? store.hasUndo() : false;
+		const canRedo =
+			typeof store.hasRedo === 'function' ? store.hasRedo() : false;
 		return {
 			hasUndo: canUndo,
 			hasRedo: canRedo,
@@ -101,72 +121,79 @@ export default function Header( {
 	 *
 	 * @param {boolean} mediaOnly If true, only fetch media (images/embeds), not content.
 	 */
-	const handleProxyScan = useCallback( async ( mediaOnly = false ) => {
-		if ( ! scanUrl ) {
-			return;
-		}
-
-		setIsScanning( true );
-		setScanError( '' );
-
-		try {
-			const response = await fetch( `${ restUrl }scrape`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					'X-WP-Nonce': restNonce,
-				},
-				body: JSON.stringify( { url: scanUrl } ),
-			} );
-
-			const data = await response.json();
-
-			if ( ! response.ok ) {
-				throw new Error( data.message || __( 'Failed to fetch URL', 'press-this' ) );
+	const handleProxyScan = useCallback(
+		async ( mediaOnly = false ) => {
+			if ( ! scanUrl ) {
+				return;
 			}
 
-			// Server returns sanitized metadata object directly.
-			// No client-side HTML parsing needed - data.title, data.description,
-			// data.images, data.embeds are all pre-sanitized by the server.
+			setIsScanning( true );
+			setScanError( '' );
 
-			// Callback with scraped data.
-			if ( onScrapeComplete ) {
-				if ( mediaOnly ) {
-					// Only send images/embeds, not content (content already exists).
-					onScrapeComplete( {
-						title: '',
-						content: '',
-						images: data.images || [],
-						embeds: data.embeds || [],
-						sourceUrl: scanUrl,
-						mediaOnly: true,
-					} );
-				} else {
-					// Build suggested content from server-sanitized metadata.
-					// buildSuggestedContentFromMetadata applies additional escaping.
-					const suggestedContent = buildSuggestedContentFromMetadata( {
-						title: data.title || '',
-						description: data.description || '',
-						siteName: '',
-						canonical: data.canonical || scanUrl,
-						url: data.final_url || scanUrl,
-					} );
+			try {
+				const response = await fetch( `${ restUrl }scrape`, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'X-WP-Nonce': restNonce,
+					},
+					body: JSON.stringify( { url: scanUrl } ),
+				} );
 
-					onScrapeComplete( {
-						title: data.title || '',
-						content: suggestedContent,
-						images: data.images || [],
-						embeds: data.embeds || [],
-						sourceUrl: scanUrl,
-					} );
+				const data = await response.json();
+
+				if ( ! response.ok ) {
+					throw new Error(
+						data.message ||
+							__( 'Failed to fetch URL', 'press-this' )
+					);
 				}
+
+				// Server returns sanitized metadata object directly.
+				// No client-side HTML parsing needed - data.title, data.description,
+				// data.images, data.embeds are all pre-sanitized by the server.
+
+				// Callback with scraped data.
+				if ( onScrapeComplete ) {
+					if ( mediaOnly ) {
+						// Only send images/embeds, not content (content already exists).
+						onScrapeComplete( {
+							title: '',
+							content: '',
+							images: data.images || [],
+							embeds: data.embeds || [],
+							sourceUrl: scanUrl,
+							mediaOnly: true,
+						} );
+					} else {
+						// Build suggested content from server-sanitized metadata.
+						// buildSuggestedContentFromMetadata applies additional escaping.
+						const suggestedContent =
+							buildSuggestedContentFromMetadata( {
+								title: data.title || '',
+								description: data.description || '',
+								siteName: '',
+								canonical: data.canonical || scanUrl,
+								url: data.final_url || scanUrl,
+							} );
+
+						onScrapeComplete( {
+							title: data.title || '',
+							content: suggestedContent,
+							images: data.images || [],
+							embeds: data.embeds || [],
+							sourceUrl: scanUrl,
+						} );
+					}
+				}
+			} catch ( error ) {
+				setScanError( error.message );
+			} finally {
+				setIsScanning( false );
 			}
-		} catch ( error ) {
-			setScanError( error.message );
-		} finally {
-			setIsScanning( false );
-		}
-	}, [ scanUrl, restUrl, restNonce, onScrapeComplete ] );
+		},
+		[ scanUrl, restUrl, restNonce, onScrapeComplete ]
+	);
 
 	/**
 	 * Handle URL scan (redirect method for non-proxy mode).
@@ -215,17 +242,26 @@ export default function Header( {
 			hasAutoScanned.current = true;
 			handleProxyScan( true );
 		}
-	}, [ sourceUrl, proxyEnabled, hasBookmarkletContent, hasBookmarkletMedia, handleProxyScan ] );
+	}, [
+		sourceUrl,
+		proxyEnabled,
+		hasBookmarkletContent,
+		hasBookmarkletMedia,
+		handleProxyScan,
+	] );
 
 	/**
 	 * Handle scan form submit.
 	 *
 	 * @param {Event} event Form submit event.
 	 */
-	const handleScanSubmit = useCallback( ( event ) => {
-		event.preventDefault();
-		handleScan();
-	}, [ handleScan ] );
+	const handleScanSubmit = useCallback(
+		( event ) => {
+			event.preventDefault();
+			handleScan();
+		},
+		[ handleScan ]
+	);
 
 	/**
 	 * Handle Save Draft button click.
@@ -284,7 +320,12 @@ export default function Header( {
 
 				{ /* Undo/Redo Toolbar */ }
 				<div className="press-this-header__toolbar">
-					<Tooltip text={ `${ __( 'Undo', 'press-this' ) } (${ undoShortcut })` }>
+					<Tooltip
+						text={ `${ __(
+							'Undo',
+							'press-this'
+						) } (${ undoShortcut })` }
+					>
 						<Button
 							className="press-this-header__toolbar-button"
 							icon={ undoIcon }
@@ -293,7 +334,12 @@ export default function Header( {
 							aria-label={ __( 'Undo', 'press-this' ) }
 						/>
 					</Tooltip>
-					<Tooltip text={ `${ __( 'Redo', 'press-this' ) } (${ redoShortcut })` }>
+					<Tooltip
+						text={ `${ __(
+							'Redo',
+							'press-this'
+						) } (${ redoShortcut })` }
+					>
 						<Button
 							className="press-this-header__toolbar-button"
 							icon={ redoIcon }
@@ -313,7 +359,10 @@ export default function Header( {
 							className="press-this-header__url-input"
 							value={ scanUrl }
 							onChange={ setScanUrl }
-							placeholder={ __( 'Enter a URL to scan', 'press-this' ) }
+							placeholder={ __(
+								'Enter a URL to scan',
+								'press-this'
+							) }
 							type="url"
 							hideLabelFromVision
 							label={ __( 'URL to scan', 'press-this' ) }
@@ -363,7 +412,10 @@ export default function Header( {
 											onClose();
 										} }
 									>
-										{ __( 'Continue in Standard Editor', 'press-this' ) }
+										{ __(
+											'Continue in Standard Editor',
+											'press-this'
+										) }
 									</MenuItem>
 								</MenuGroup>
 							) }
@@ -388,7 +440,10 @@ export default function Header( {
 					status="warning"
 					onRemove={ () => setShowUpgradeNotice( false ) }
 				>
-					{ __( 'Your bookmarklet is out of date. Please update it for the best experience.', 'press-this' ) }
+					{ __(
+						'Your bookmarklet is out of date. Please update it for the best experience.',
+						'press-this'
+					) }
 				</Notice>
 			) }
 		</header>

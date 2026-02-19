@@ -7,6 +7,8 @@
  * @package
  */
 
+/* global Image */
+
 /**
  * WordPress dependencies
  */
@@ -153,25 +155,31 @@ export default function ScrapedMediaPanel( {
 	 *
 	 * @param {string} src Image URL.
 	 */
-	const handleInsertImage = useCallback( ( src ) => {
-		const block = createBlock( 'core/image', {
-			url: src,
-			alt: '',
-		} );
-		onInsertBlock( block );
-	}, [ onInsertBlock ] );
+	const handleInsertImage = useCallback(
+		( src ) => {
+			const block = createBlock( 'core/image', {
+				url: src,
+				alt: '',
+			} );
+			onInsertBlock( block );
+		},
+		[ onInsertBlock ]
+	);
 
 	/**
 	 * Insert embed block.
 	 *
 	 * @param {string} url Embed URL.
 	 */
-	const handleInsertEmbed = useCallback( ( url ) => {
-		const block = createBlock( 'core/embed', {
-			url,
-		} );
-		onInsertBlock( block );
-	}, [ onInsertBlock ] );
+	const handleInsertEmbed = useCallback(
+		( url ) => {
+			const block = createBlock( 'core/embed', {
+				url,
+			} );
+			onInsertBlock( block );
+		},
+		[ onInsertBlock ]
+	);
 
 	// Check if we have any media to display.
 	const hasMedia = filteredImages.length > 0 || sanitizedEmbeds.length > 0;
@@ -191,7 +199,9 @@ export default function ScrapedMediaPanel( {
 			>
 				<h3>{ __( 'Scraped Media', 'press-this' ) }</h3>
 				<span
-					className={ `dashicons dashicons-arrow-${ isExpanded ? 'up' : 'down' }-alt2` }
+					className={ `dashicons dashicons-arrow-${
+						isExpanded ? 'up' : 'down'
+					}-alt2` }
 					aria-hidden="true"
 				/>
 			</button>
@@ -201,7 +211,11 @@ export default function ScrapedMediaPanel( {
 					{ sourceUrl && (
 						<p className="press-this-scraped-media__source">
 							{ __( 'From:', 'press-this' ) }{ ' ' }
-							<a href={ sourceUrl } target="_blank" rel="noopener noreferrer">
+							<a
+								href={ sourceUrl }
+								target="_blank"
+								rel="noopener noreferrer"
+							>
 								{ getDomain( sourceUrl ) }
 							</a>
 						</p>
@@ -210,7 +224,9 @@ export default function ScrapedMediaPanel( {
 					{ isLoading && (
 						<div className="press-this-scraped-media__loading">
 							<Spinner />
-							<span>{ __( 'Loading images...', 'press-this' ) }</span>
+							<span>
+								{ __( 'Loading images…', 'press-this' ) }
+							</span>
 						</div>
 					) }
 
@@ -223,10 +239,15 @@ export default function ScrapedMediaPanel( {
 									<li key={ index }>
 										<Button
 											variant="secondary"
-											onClick={ () => handleInsertEmbed( url ) }
+											onClick={ () =>
+												handleInsertEmbed( url )
+											}
 											className="press-this-scraped-media__embed-button"
 										>
-											<span className="dashicons dashicons-embed-video" aria-hidden="true" />
+											<span
+												className="dashicons dashicons-embed-video"
+												aria-hidden="true"
+											/>
 											<span className="press-this-scraped-media__embed-domain">
 												{ getDomain( url ) }
 											</span>
@@ -247,12 +268,20 @@ export default function ScrapedMediaPanel( {
 										key={ index }
 										type="button"
 										className="press-this-scraped-media__image-button"
-										onClick={ () => handleInsertImage( src ) }
-										title={ __( 'Click to insert', 'press-this' ) }
+										onClick={ () =>
+											handleInsertImage( src )
+										}
+										title={ __(
+											'Click to insert',
+											'press-this'
+										) }
 									>
 										<img
 											src={ src }
-											alt={ __( 'Scraped image', 'press-this' ) }
+											alt={ __(
+												'Scraped image',
+												'press-this'
+											) }
 											loading="lazy"
 										/>
 									</button>
@@ -263,7 +292,10 @@ export default function ScrapedMediaPanel( {
 
 					{ ! isLoading && ! hasMedia && (
 						<p className="press-this-scraped-media__empty">
-							{ __( 'No media found on this page.', 'press-this' ) }
+							{ __(
+								'No media found on this page.',
+								'press-this'
+							) }
 						</p>
 					) }
 				</div>

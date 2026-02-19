@@ -7,6 +7,8 @@
  * @package
  */
 
+/* global Image */
+
 /**
  * WordPress dependencies
  */

@@ -10,7 +10,13 @@
 /**
  * WordPress dependencies
  */
-import { useMemo, useCallback, useState, useEffect, useRef } from '@wordpress/element';
+import {
+	useMemo,
+	useCallback,
+	useState,
+	useEffect,
+	useRef,
+} from '@wordpress/element';
 import { useSelect } from '@wordpress/data';
 import { parse } from '@wordpress/blocks';
 import {
@@ -88,8 +94,8 @@ function ensureBlocksRegistered() {
  * Validates redirect URLs to ensure they point to expected destinations.
  * Only allows redirects to the same host or relative URLs.
  *
- * @param {string} url      The URL to redirect to.
- * @param {Object} options  Redirect options.
+ * @param {string} url              The URL to redirect to.
+ * @param {Object} options          Redirect options.
  * @param {string} options.fallback Fallback URL if validation fails. Defaults to /wp-admin/.
  * @return {string} Safe URL to use for redirection.
  */
@@ -111,7 +117,10 @@ function safeRedirect( url, options = {} ) {
 		}
 
 		// Relative URLs (no host) are safe.
-		if ( ! redirectUrl.host || redirectUrl.origin === window.location.origin ) {
+		if (
+			! redirectUrl.host ||
+			redirectUrl.origin === window.location.origin
+		) {
 			return url;
 		}
 
@@ -142,8 +151,8 @@ function safeRedirect( url, options = {} ) {
  *
  * Uses safeRedirect to validate the URL before redirecting.
  *
- * @param {string}  url             URL to redirect to.
- * @param {boolean} inParentWindow  Whether to redirect in parent window.
+ * @param {string}  url            URL to redirect to.
+ * @param {boolean} inParentWindow Whether to redirect in parent window.
  */
 function performSafeRedirect( url, inParentWindow = false ) {
 	const safeUrl = safeRedirect( url );
@@ -159,7 +168,10 @@ function performSafeRedirect( url, inParentWindow = false ) {
 			}
 		} catch ( e ) {
 			// Cross-origin opener - don't redirect parent.
-			console.warn( 'Press This: Cannot redirect cross-origin parent window' );
+			// eslint-disable-next-line no-console
+			console.warn(
+				'Press This: Cannot redirect cross-origin parent window'
+			);
 		}
 
 		// Fallback: redirect self.
@@ -194,19 +206,21 @@ function getWpRestBaseUrl( pressThisRestUrl ) {
 /**
  * Press This Editor component.
  *
- * @param {Object}   props                    Component props.
- * @param {Object}   props.post               Post object with ID, title, content.
- * @param {Object}   props.settings           Editor settings.
- * @param {Array}    props.images             Scraped images from source.
- * @param {Array}    props.embeds             Scraped embeds from source.
- * @param {Object}   props.categories         Available categories.
- * @param {Array}    props.postFormats        Available post formats.
- * @param {Object}   props.capabilities       User capabilities.
- * @param {Object}   props.restConfig         REST API configuration.
- * @param {string}   props.sourceUrl          Source URL being clipped.
- * @param {Object}   props.pendingScrape      Pending scraped content to append.
- * @param {Function} props.onScrapeProcessed  Callback after scrape is processed.
- * @param {Function} props.onSaveReady        Callback when save handler is ready (receives { handleSave, isSaving, publishLabel }).
+ * @param {Object}   props                   Component props.
+ * @param {Object}   props.post              Post object with ID, title, content.
+ * @param {Object}   props.settings          Editor settings.
+ * @param {Array}    props.images            Scraped images from source.
+ * @param {Array}    props.embeds            Scraped embeds from source.
+ * @param {Object}   props.categories        Available categories.
+ * @param {Array}    props.postFormats       Available post formats.
+ * @param {Object}   props.capabilities      User capabilities.
+ * @param {Object}   props.restConfig        REST API configuration.
+ * @param {string}   props.sourceUrl         Source URL being clipped.
+ * @param {Object}   props.pendingScrape     Pending scraped content to append.
+ * @param {Function} props.onScrapeProcessed Callback after scrape is processed.
+ * @param {Function} props.onSaveReady       Callback when save handler is ready (receives { handleSave, isSaving, publishLabel }).
+ * @param {string}   props.categoryNonce
+ * @param {string}   props.ajaxUrl
  * @return {JSX.Element} Press This Editor component.
  */
 export default function PressThisEditor( {
@@ -234,7 +248,11 @@ export default function PressThisEditor( {
 	const [ blocks, setBlocks ] = useState( [] );
 	const [ title, setTitle ] = useState( post.title || '' );
 	// Post format priority: override > PHP suggestion > default > empty (standard)
-	const initialFormat = settings.postFormatOverride || settings.suggestedPostFormat || settings.postFormatDefault || '';
+	const initialFormat =
+		settings.postFormatOverride ||
+		settings.suggestedPostFormat ||
+		settings.postFormatDefault ||
+		'';
 	const [ postFormat, setPostFormat ] = useState( initialFormat );
 	const [ selectedCategories, setSelectedCategories ] = useState( [] );
 	const [ tags, setTags ] = useState( [] );
@@ -312,66 +330,83 @@ export default function PressThisEditor( {
 	 * @param {string} status  Post status (draft, publish).
 	 * @param {Object} options Save options.
 	 */
-	const handleSave = useCallback( async ( status = 'draft', options = {} ) => {
-		setIsSaving( true );
+	const handleSave = useCallback(
+		async ( status = 'draft', options = {} ) => {
+			setIsSaving( true );
 
-		try {
-			const { serialize } = await import( '@wordpress/blocks' );
-			const content = serialize( blocks );
+			try {
+				const { serialize } = await import( '@wordpress/blocks' );
+				const content = serialize( blocks );
 
-			const response = await fetch( `${ restConfig.restUrl }save`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					'X-WP-Nonce': restConfig.restNonce,
-				},
-				body: JSON.stringify( {
-					post_id: post.id,
-					title,
-					content,
-					status,
-					format: postFormat,
-					categories: selectedCategories,
-					tags,
-					featured_image: featuredImageId,
-					force_redirect: options.forceRedirect || false,
-				} ),
-			} );
+				const response = await fetch( `${ restConfig.restUrl }save`, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'X-WP-Nonce': restConfig.restNonce,
+					},
+					body: JSON.stringify( {
+						post_id: post.id,
+						title,
+						content,
+						status,
+						format: postFormat,
+						categories: selectedCategories,
+						tags,
+						featured_image: featuredImageId,
+						force_redirect: options.forceRedirect || false,
+					} ),
+				} );
 
-			const result = await response.json();
+				const result = await response.json();
 
-			if ( response.ok && result.success ) {
-				if ( result.redirect ) {
-					// Use safe redirect to validate URL.
-					if ( result.force ) {
-						performSafeRedirect( result.redirect, false );
-					} else if ( restConfig.redirInParent && window.opener ) {
-						performSafeRedirect( result.redirect, true );
+				if ( response.ok && result.success ) {
+					if ( result.redirect ) {
+						// Use safe redirect to validate URL.
+						if ( result.force ) {
+							performSafeRedirect( result.redirect, false );
+						} else if (
+							restConfig.redirInParent &&
+							window.opener
+						) {
+							performSafeRedirect( result.redirect, true );
+						} else {
+							performSafeRedirect( result.redirect, false );
+						}
 					} else {
-						performSafeRedirect( result.redirect, false );
+						// No redirect - show success notice.
+						setNotice( {
+							status: 'success',
+							message: __( 'Draft saved.', 'press-this' ),
+						} );
 					}
 				} else {
-					// No redirect - show success notice.
 					setNotice( {
-						status: 'success',
-						message: __( 'Draft saved.', 'press-this' ),
+						status: 'error',
+						message:
+							result.message ||
+							__( 'Error saving post.', 'press-this' ),
 					} );
 				}
-			} else {
+			} catch ( error ) {
 				setNotice( {
 					status: 'error',
-					message: result.message || __( 'Error saving post.', 'press-this' ),
+					message: __( 'Error saving post.', 'press-this' ),
 				} );
+			} finally {
+				setIsSaving( false );
 			}
-		} catch ( error ) {
-			setNotice( {
-				status: 'error',
-				message: __( 'Error saving post.', 'press-this' ),
-			} );
-		} finally {
-			setIsSaving( false );
-		}
-	}, [ blocks, title, postFormat, selectedCategories, tags, featuredImageId, post.id, restConfig ] );
+		},
+		[
+			blocks,
+			title,
+			postFormat,
+			selectedCategories,
+			tags,
+			featuredImageId,
+			post.id,
+			restConfig,
+		]
+	);
 
 	// Publish button label.
 	const publishLabel = capabilities.canPublish
@@ -404,7 +439,9 @@ export default function PressThisEditor( {
 	const handleTitleKeyDown = useCallback( ( event ) => {
 		if ( event.key === 'Enter' ) {
 			event.preventDefault();
-			const blockList = document.querySelector( '.block-editor-block-list__layout' );
+			const blockList = document.querySelector(
+				'.block-editor-block-list__layout'
+			);
 			if ( blockList ) {
 				const firstBlock = blockList.querySelector( '[data-block]' );
 				if ( firstBlock ) {
@@ -462,10 +499,15 @@ export default function PressThisEditor( {
 				setNewCategoryParent( 0 );
 				setIsAddCategoryOpen( false );
 			} else {
-				setCategoryError( result.data?.errorMessage || __( 'Failed to create category.', 'press-this' ) );
+				setCategoryError(
+					result.data?.errorMessage ||
+						__( 'Failed to create category.', 'press-this' )
+				);
 			}
 		} catch ( error ) {
-			setCategoryError( __( 'Failed to create category.', 'press-this' ) );
+			setCategoryError(
+				__( 'Failed to create category.', 'press-this' )
+			);
 		} finally {
 			setIsCreatingCategory( false );
 		}
@@ -503,48 +545,55 @@ export default function PressThisEditor( {
 	 *
 	 * @param {string} search Search string.
 	 */
-	const searchTags = useCallback( ( search ) => {
-		// Clear any pending search.
-		if ( tagSearchTimeout.current ) {
-			clearTimeout( tagSearchTimeout.current );
-		}
-
-		// If search is empty, clear suggestions.
-		if ( ! search || search.length < 2 ) {
-			setTagSuggestions( [] );
-			return;
-		}
-
-		// Debounce the search by 300ms.
-		tagSearchTimeout.current = setTimeout( async () => {
-			setIsLoadingTags( true );
-			try {
-				// Build the correct WordPress REST API URL for tags.
-				const wpRestBase = getWpRestBaseUrl( restConfig.restUrl );
-				const tagsUrl = wpRestBase.includes( 'rest_route=' )
-					? `${ wpRestBase }wp/v2/tags&search=${ encodeURIComponent( search ) }&per_page=10`
-					: `${ wpRestBase }wp/v2/tags?search=${ encodeURIComponent( search ) }&per_page=10`;
-
-				const response = await fetch( tagsUrl, {
-					headers: {
-						'X-WP-Nonce': restConfig.restNonce,
-					},
-				} );
-
-				if ( response.ok ) {
-					const results = await response.json();
-					// Extract tag names for suggestions.
-					const names = results.map( ( tag ) => tag.name );
-					setTagSuggestions( names );
-				}
-			} catch ( error ) {
-				// Silently fail - suggestions are optional.
-				setTagSuggestions( [] );
-			} finally {
-				setIsLoadingTags( false );
+	const searchTags = useCallback(
+		( search ) => {
+			// Clear any pending search.
+			if ( tagSearchTimeout.current ) {
+				clearTimeout( tagSearchTimeout.current );
 			}
-		}, 300 );
-	}, [ restConfig.restUrl, restConfig.restNonce ] );
+
+			// If search is empty, clear suggestions.
+			if ( ! search || search.length < 2 ) {
+				setTagSuggestions( [] );
+				return;
+			}
+
+			// Debounce the search by 300ms.
+			tagSearchTimeout.current = setTimeout( async () => {
+				setIsLoadingTags( true );
+				try {
+					// Build the correct WordPress REST API URL for tags.
+					const wpRestBase = getWpRestBaseUrl( restConfig.restUrl );
+					const tagsUrl = wpRestBase.includes( 'rest_route=' )
+						? `${ wpRestBase }wp/v2/tags&search=${ encodeURIComponent(
+								search
+						  ) }&per_page=10`
+						: `${ wpRestBase }wp/v2/tags?search=${ encodeURIComponent(
+								search
+						  ) }&per_page=10`;
+
+					const response = await fetch( tagsUrl, {
+						headers: {
+							'X-WP-Nonce': restConfig.restNonce,
+						},
+					} );
+
+					if ( response.ok ) {
+						const results = await response.json();
+						// Extract tag names for suggestions.
+						const names = results.map( ( tag ) => tag.name );
+						setTagSuggestions( names );
+					}
+				} catch ( error ) {
+					// Silently fail - suggestions are optional.
+					setTagSuggestions( [] );
+				} finally {
+					setIsLoadingTags( false );
+				}
+			}, 300 );
+		},
+		[ restConfig.restUrl, restConfig.restNonce ]
+	);
 
 	/**
 	 * Handle tag changes from FormTokenField.
@@ -556,23 +605,31 @@ export default function PressThisEditor( {
 	}, [] );
 
 	// Editor settings.
-	const editorSettings = useMemo( () => ( {
-		allowedBlockTypes: settings.allowedBlocks,
-		hasFixedToolbar: true,
-		bodyPlaceholder: __( 'Start writing or press / to choose a block', 'press-this' ),
-		isRTL: settings.isRTL,
-		// Enable media upload for Featured Image panel.
-		mediaUpload: capabilities.canUploadFiles ? ( { onFileChange } ) => {
-			// Default upload handler - uses WordPress media library.
-			onFileChange( [] );
-		} : undefined,
-	} ), [ settings, capabilities.canUploadFiles ] );
+	const editorSettings = useMemo(
+		() => ( {
+			allowedBlockTypes: settings.allowedBlocks,
+			hasFixedToolbar: true,
+			bodyPlaceholder: __(
+				'Start writing or press / to choose a block',
+				'press-this'
+			),
+			isRTL: settings.isRTL,
+			// Enable media upload for Featured Image panel.
+			mediaUpload: capabilities.canUploadFiles
+				? ( { onFileChange } ) => {
+						// Default upload handler - uses WordPress media library.
+						onFileChange( [] );
+				  }
+				: undefined,
+		} ),
+		[ settings, capabilities.canUploadFiles ]
+	);
 
 	if ( ! isReady ) {
 		return (
 			<div className="press-this-loading">
 				<Spinner />
-				{ __( 'Loading editor...', 'press-this' ) }
+				{ __( 'Loading editor…', 'press-this' ) }
 			</div>
 		);
 	}
@@ -602,8 +659,14 @@ export default function PressThisEditor( {
 									value={ title }
 									onChange={ handleTitleChange }
 									onKeyDown={ handleTitleKeyDown }
-									placeholder={ __( 'Add title', 'press-this' ) }
-									aria-label={ __( 'Post title', 'press-this' ) }
+									placeholder={ __(
+										'Add title',
+										'press-this'
+									) }
+									aria-label={ __(
+										'Post title',
+										'press-this'
+									) }
 								/>
 							</div>
 
@@ -618,7 +681,7 @@ export default function PressThisEditor( {
 									</WritingFlow>
 								</BlockTools>
 
-								{/*
+								{ /*
 								 * Block Inserter - Simplified Popover Design
 								 *
 								 * The bottom popover inserter is intentional for Press This.
@@ -626,7 +689,7 @@ export default function PressThisEditor( {
 								 * where users primarily clip content from external sources rather than
 								 * building complex layouts. This differs from the full Gutenberg sidebar
 								 * inserter by design to match Press This's focused use case.
-								 */}
+								 */ }
 								<div
 									className="press-this-editor__inserter"
 									onClickCapture={ ( e ) => {
@@ -635,11 +698,16 @@ export default function PressThisEditor( {
 										// throws an error because onClose isn't provided.
 										// We intercept in capture phase, stop propagation, and
 										// use the toggle instead.
-										const closeButton = e.target.closest( '[aria-label="Close Block Inserter"]' );
+										const closeButton = e.target.closest(
+											'[aria-label="Close Block Inserter"]'
+										);
 										if ( closeButton ) {
 											e.stopPropagation();
 											e.preventDefault();
-											const toggleButton = document.querySelector( '.press-this-editor__inserter-button' );
+											const toggleButton =
+												document.querySelector(
+													'.press-this-editor__inserter-button'
+												);
 											if ( toggleButton ) {
 												toggleButton.click();
 											}
@@ -649,14 +717,20 @@ export default function PressThisEditor( {
 									<Inserter
 										position="bottom center"
 										showInserterHelpPanel={ false }
-										renderToggle={ ( { onToggle, disabled } ) => (
+										renderToggle={ ( {
+											onToggle,
+											disabled,
+										} ) => (
 											<Button
 												variant="primary"
 												className="press-this-editor__inserter-button"
 												onClick={ onToggle }
 												disabled={ disabled }
 												icon="plus"
-												label={ __( 'Add block', 'press-this' ) }
+												label={ __(
+													'Add block',
+													'press-this'
+												) }
 											/>
 										) }
 									/>
@@ -684,8 +758,12 @@ export default function PressThisEditor( {
 										<FeaturedImagePanel
 											featuredImageId={ featuredImageId }
 											onSelect={ setFeaturedImageId }
-											onRemove={ () => setFeaturedImageId( 0 ) }
-											canUpload={ capabilities.canUploadFiles }
+											onRemove={ () =>
+												setFeaturedImageId( 0 )
+											}
+											canUpload={
+												capabilities.canUploadFiles
+											}
 											scrapedImages={ images }
 											restConfig={ restConfig }
 											postId={ post.id }
@@ -695,99 +773,194 @@ export default function PressThisEditor( {
 									{ /* Post Format Panel */ }
 									{ postFormats.length > 0 && (
 										<PanelBody
-											title={ __( 'Format', 'press-this' ) }
+											title={ __(
+												'Format',
+												'press-this'
+											) }
 											initialOpen={ false }
 										>
 											<select
 												value={ postFormat }
-												onChange={ ( e ) => setPostFormat( e.target.value ) }
+												onChange={ ( e ) =>
+													setPostFormat(
+														e.target.value
+													)
+												}
 												className="press-this-editor__format-select"
 											>
-												<option value="">{ __( 'Standard', 'press-this' ) }</option>
-												{ postFormats.map( ( format ) => (
-													<option key={ format } value={ format }>
-														{ format.charAt( 0 ).toUpperCase() + format.slice( 1 ) }
-													</option>
-												) ) }
+												<option value="">
+													{ __(
+														'Standard',
+														'press-this'
+													) }
+												</option>
+												{ postFormats.map(
+													( format ) => (
+														<option
+															key={ format }
+															value={ format }
+														>
+															{ format
+																.charAt( 0 )
+																.toUpperCase() +
+																format.slice(
+																	1
+																) }
+														</option>
+													)
+												) }
 											</select>
 										</PanelBody>
 									) }
 
 									{ /* Categories Panel */ }
-									{ capabilities.canAssignCategories && categories.length > 0 && (
-										<PanelBody
-											title={ __( 'Categories', 'press-this' ) }
-											initialOpen={ false }
-										>
-											<div className="press-this-editor__categories">
-												{ categories.map( ( cat ) => (
-													<label key={ cat.id } className="press-this-editor__category">
-														<input
-															type="checkbox"
-															checked={ selectedCategories.includes( cat.id ) }
-															onChange={ ( e ) => {
-																if ( e.target.checked ) {
-																	setSelectedCategories( [ ...selectedCategories, cat.id ] );
-																} else {
-																	setSelectedCategories( selectedCategories.filter( ( id ) => id !== cat.id ) );
-																}
-															} }
-														/>
-														{ cat.name }
-													</label>
-												) ) }
-											</div>
-
-											{ /* Add New Category - only show if user can edit categories */ }
-											{ capabilities.canEditCategories && categoryNonce && (
-												<div className="press-this-editor__add-category">
-													<Button
-														variant="link"
-														onClick={ () => setIsAddCategoryOpen( ! isAddCategoryOpen ) }
-														className="press-this-editor__add-category-toggle"
-													>
-														{ isAddCategoryOpen
-															? __( '— Close —', 'press-this' )
-															: __( '+ Add New Category', 'press-this' )
-														}
-													</Button>
-
-													{ isAddCategoryOpen && (
-														<div className="press-this-editor__add-category-form">
-															<TextControl
-																value={ newCategoryName }
-																onChange={ setNewCategoryName }
-																placeholder={ __( 'New Category Name', 'press-this' ) }
-																__nextHasNoMarginBottom
-																__next40pxDefaultSize
-															/>
-															<SelectControl
-																value={ newCategoryParent }
-																onChange={ ( value ) => setNewCategoryParent( parseInt( value, 10 ) ) }
-																options={ parentCategoryOptions }
-																__nextHasNoMarginBottom
-																__next40pxDefaultSize
-															/>
-															{ categoryError && (
-																<p className="press-this-editor__add-category-error">
-																	{ categoryError }
-																</p>
-															) }
-															<Button
-																variant="secondary"
-																onClick={ handleAddCategory }
-																disabled={ ! newCategoryName.trim() || isCreatingCategory }
-																isBusy={ isCreatingCategory }
-																className="press-this-editor__add-category-button"
+									{ capabilities.canAssignCategories &&
+										categories.length > 0 && (
+											<PanelBody
+												title={ __(
+													'Categories',
+													'press-this'
+												) }
+												initialOpen={ false }
+											>
+												<div className="press-this-editor__categories">
+													{ categories.map(
+														( cat ) => (
+															// eslint-disable-next-line jsx-a11y/label-has-associated-control
+															<label
+																key={ cat.id }
+																className="press-this-editor__category"
 															>
-																{ __( 'Add New Category', 'press-this' ) }
-															</Button>
-														</div>
+																<input
+																	type="checkbox"
+																	checked={ selectedCategories.includes(
+																		cat.id
+																	) }
+																	onChange={ (
+																		e
+																	) => {
+																		if (
+																			e
+																				.target
+																				.checked
+																		) {
+																			setSelectedCategories(
+																				[
+																					...selectedCategories,
+																					cat.id,
+																				]
+																			);
+																		} else {
+																			setSelectedCategories(
+																				selectedCategories.filter(
+																					(
+																						id
+																					) =>
+																						id !==
+																						cat.id
+																				)
+																			);
+																		}
+																	} }
+																/>
+																{ cat.name }
+															</label>
+														)
 													) }
 												</div>
-											) }
-										</PanelBody>
-									) }
+
+												{ /* Add New Category - only show if user can edit categories */ }
+												{ capabilities.canEditCategories &&
+													categoryNonce && (
+														<div className="press-this-editor__add-category">
+															<Button
+																variant="link"
+																onClick={ () =>
+																	setIsAddCategoryOpen(
+																		! isAddCategoryOpen
+																	)
+																}
+																className="press-this-editor__add-category-toggle"
+															>
+																{ isAddCategoryOpen
+																	? __(
+																			'— Close —',
+																			'press-this'
+																	  )
+																	: __(
+																			'+ Add New Category',
+																			'press-this'
+																	  ) }
+															</Button>
+
+															{ isAddCategoryOpen && (
+																<div className="press-this-editor__add-category-form">
+																	<TextControl
+																		value={
+																			newCategoryName
+																		}
+																		onChange={
+																			setNewCategoryName
+																		}
+																		placeholder={ __(
+																			'New Category Name',
+																			'press-this'
+																		) }
+																		__nextHasNoMarginBottom
+																		__next40pxDefaultSize
+																	/>
+																	<SelectControl
+																		value={
+																			newCategoryParent
+																		}
+																		onChange={ (
+																			value
+																		) =>
+																			setNewCategoryParent(
+																				parseInt(
+																					value,
+																					10
+																				)
+																			)
+																		}
+																		options={
+																			parentCategoryOptions
+																		}
+																		__nextHasNoMarginBottom
+																		__next40pxDefaultSize
+																	/>
+																	{ categoryError && (
+																		<p className="press-this-editor__add-category-error">
+																			{
+																				categoryError
+																			}
+																		</p>
+																	) }
+																	<Button
+																		variant="secondary"
+																		onClick={
+																			handleAddCategory
+																		}
+																		disabled={
+																			! newCategoryName.trim() ||
+																			isCreatingCategory
+																		}
+																		isBusy={
+																			isCreatingCategory
+																		}
+																		className="press-this-editor__add-category-button"
+																	>
+																		{ __(
+																			'Add New Category',
+																			'press-this'
+																		) }
+																	</Button>
+																</div>
+															) }
+														</div>
+													) }
+											</PanelBody>
+										) }
 
 									{ /* Tags Panel */ }
 									{ capabilities.canAssignTags && (
@@ -796,19 +969,30 @@ export default function PressThisEditor( {
 											initialOpen={ false }
 										>
 											<FormTokenField
-												label={ __( 'Add tags', 'press-this' ) }
+												label={ __(
+													'Add tags',
+													'press-this'
+												) }
 												value={ tags }
 												suggestions={ tagSuggestions }
 												onChange={ handleTagsChange }
 												onInputChange={ searchTags }
-												placeholder={ __( 'Add tags', 'press-this' ) }
+												placeholder={ __(
+													'Add tags',
+													'press-this'
+												) }
 												__experimentalExpandOnFocus
-												__experimentalShowHowTo={ false }
+												__experimentalShowHowTo={
+													false
+												}
 												__next40pxDefaultSize
 												__nextHasNoMarginBottom
 											/>
 											<p className="press-this-tags-panel__help">
-												{ __( 'Separate with commas or the Enter key.', 'press-this' ) }
+												{ __(
+													'Separate with commas or the Enter key.',
+													'press-this'
+												) }
 											</p>
 											{ isLoadingTags && (
 												<div className="press-this-editor__tags-loading">

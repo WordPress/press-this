@@ -256,7 +256,11 @@ export default function MediaThumbnail( {
 					<span
 						className={ `dashicons ${ mediaIcon }` }
 						aria-hidden="true"
-						style={ { fontSize: '32px', width: '32px', height: '32px' } }
+						style={ {
+							fontSize: '32px',
+							width: '32px',
+							height: '32px',
+						} }
 					/>
 				</span>
 			) }
@@ -267,7 +271,11 @@ export default function MediaThumbnail( {
 					<span
 						className={ `dashicons ${ mediaIcon }` }
 						aria-hidden="true"
-						style={ { fontSize: '20px', width: '20px', height: '20px' } }
+						style={ {
+							fontSize: '20px',
+							width: '20px',
+							height: '20px',
+						} }
 					/>
 				</span>
 			) }

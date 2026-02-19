@@ -6,6 +6,8 @@
  * @package
  */
 
+/* global DOMParser */
+
 /**
  * Escape HTML special characters.
  *
@@ -88,7 +90,8 @@ function extractMetaTags( doc ) {
 	const metaTags = doc.querySelectorAll( 'meta[property], meta[name]' );
 
 	metaTags.forEach( ( tag ) => {
-		const key = tag.getAttribute( 'property' ) || tag.getAttribute( 'name' );
+		const key =
+			tag.getAttribute( 'property' ) || tag.getAttribute( 'name' );
 		const content = tag.getAttribute( 'content' );
 		if ( key && content ) {
 			meta[ key.toLowerCase() ] = content;
@@ -105,8 +108,10 @@ function extractMetaTags( doc ) {
  * @return {Object} JSON-LD data or empty object.
  */
 function extractJsonLd( doc ) {
-	const scripts = doc.querySelectorAll( 'script[type="application/ld+json"]' );
-	let result = {};
+	const scripts = doc.querySelectorAll(
+		'script[type="application/ld+json"]'
+	);
+	const result = {};
 
 	scripts.forEach( ( script ) => {
 		try {
@@ -116,7 +121,12 @@ function extractJsonLd( doc ) {
 
 			items.forEach( ( item ) => {
 				// Look for Article, NewsArticle, BlogPosting, WebPage types.
-				if ( item[ '@type' ] && /Article|BlogPosting|WebPage|NewsArticle/i.test( item[ '@type' ] ) ) {
+				if (
+					item[ '@type' ] &&
+					/Article|BlogPosting|WebPage|NewsArticle/i.test(
+						item[ '@type' ]
+					)
+				) {
 					if ( item.headline ) {
 						result.headline = item.headline;
 					}
@@ -129,14 +139,21 @@ function extractJsonLd( doc ) {
 							result.image = item.image;
 						} else if ( item.image.url ) {
 							result.image = item.image.url;
-						} else if ( Array.isArray( item.image ) && item.image[ 0 ] ) {
-							result.image = typeof item.image[ 0 ] === 'string' ? item.image[ 0 ] : item.image[ 0 ].url;
+						} else if (
+							Array.isArray( item.image ) &&
+							item.image[ 0 ]
+						) {
+							result.image =
+								typeof item.image[ 0 ] === 'string'
+									? item.image[ 0 ]
+									: item.image[ 0 ].url;
 						}
 					}
 					if ( item.mainEntityOfPage ) {
-						result.canonical = typeof item.mainEntityOfPage === 'string'
-							? item.mainEntityOfPage
-							: item.mainEntityOfPage[ '@id' ];
+						result.canonical =
+							typeof item.mainEntityOfPage === 'string'
+								? item.mainEntityOfPage
+								: item.mainEntityOfPage[ '@id' ];
 					}
 				}
 			} );
@@ -220,7 +237,9 @@ function normalizeEmbedUrl( src ) {
 	}
 
 	// YouTube embed to watch URL.
-	let match = src.match( /(?:youtube\.com|youtube-nocookie\.com)\/embed\/([^?/]+)/ );
+	let match = src.match(
+		/(?:youtube\.com|youtube-nocookie\.com)\/embed\/([^?/]+)/
+	);
 	if ( match ) {
 		return `https://www.youtube.com/watch?v=${ match[ 1 ] }`;
 	}
@@ -378,7 +397,9 @@ function extractFirstParagraph( doc ) {
 			// Skip very short paragraphs (likely not real content).
 			if ( text && text.length > 50 ) {
 				// Limit to reasonable length.
-				return text.length > 300 ? text.substring( 0, 297 ) + '...' : text;
+				return text.length > 300
+					? text.substring( 0, 297 ) + '...'
+					: text;
 			}
 		}
 	}
@@ -423,11 +444,7 @@ function getMainImage( meta, jsonLd ) {
  */
 function getCanonical( doc, meta ) {
 	const linkCanonical = doc.querySelector( 'link[rel="canonical"]' );
-	return (
-		linkCanonical?.getAttribute( 'href' ) ||
-		meta[ 'og:url' ] ||
-		''
-	);
+	return linkCanonical?.getAttribute( 'href' ) || meta[ 'og:url' ] || '';
 }
 
 /**
@@ -477,7 +494,9 @@ ${ escapeHtml( sourceUrl ) }
 	// Escape link text.
 	const linkText = data.title || data.siteName || sourceUrl;
 	content += `<!-- wp:paragraph -->
-<p>Source: <em><a href="${ escapeAttr( sourceUrl ) }">${ escapeHtml( linkText ) }</a></em></p>
+<p>Source: <em><a href="${ escapeAttr( sourceUrl ) }">${ escapeHtml(
+		linkText
+	) }</a></em></p>
 <!-- /wp:paragraph -->`;
 
 	return content;
@@ -504,7 +523,9 @@ export function buildSuggestedContentFromMetadata( data ) {
  * @return {boolean} True if embeddable.
  */
 function isEmbeddableUrl( url ) {
-	return /youtube\.com|youtu\.be|vimeo\.com|dailymotion\.com|twitter\.com|x\.com/i.test( url );
+	return /youtube\.com|youtu\.be|vimeo\.com|dailymotion\.com|twitter\.com|x\.com/i.test(
+		url
+	);
 }
 
 /**
