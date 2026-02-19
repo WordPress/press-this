@@ -5,7 +5,7 @@
  * Plugin Name: Press This
  * Plugin URI:  https://wordpress.org
  * Description: A little tool that lets you grab bits of the web and create new posts with ease. Now powered by the Gutenberg block editor.
- * Version:     2.0.0
+ * Version:     2.0.1
  * Author:      WordPress Contributors
  * Author URI:  https://wordpress.org
  * License:     GPL-2.0+
@@ -32,21 +32,21 @@
  * Plugin version constant.
  *
  * @since 1.0.0
- * @since 2.0.0 Updated for Gutenberg block editor integration.
+ * @since 2.0.1 Updated for Gutenberg block editor integration.
  */
-define( 'PRESS_THIS__VERSION', '2.0.0' );
+define( 'PRESS_THIS__VERSION', '2.0.1' );
 
 /**
  * Minimum WordPress version required for the Gutenberg features.
  *
- * @since 2.0.0
+ * @since 2.0.1
  */
 define( 'PRESS_THIS__MIN_WP_VERSION', '6.9' );
 
 /**
  * Check if the current WordPress version is compatible.
  *
- * @since 2.0.0
+ * @since 2.0.1
  *
  * @return bool True if compatible, false otherwise.
  */
@@ -58,7 +58,7 @@ function press_this_is_compatible() {
 /**
  * Display admin notice for incompatible WordPress version.
  *
- * @since 2.0.0
+ * @since 2.0.1
  */
 function press_this_incompatible_notice() {
 	?>
@@ -101,7 +101,7 @@ add_action( 'init', 'press_this_load_textdomain' );
 /**
  * Load plugin text domain for translations.
  *
- * @since 2.0.0
+ * @since 2.0.1
  */
 function press_this_load_textdomain() {
 	load_plugin_textdomain( 'press-this', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
@@ -136,7 +136,7 @@ function wp_ajax_press_this_plugin_add_category() {
 /**
  * Register REST API routes for Press This.
  *
- * @since 2.0.0
+ * @since 2.0.1
  */
 function press_this_register_rest_routes() {
 	// URL scraping endpoint for Direct Access Mode.
@@ -259,7 +259,7 @@ function press_this_register_rest_routes() {
 /**
  * Permission callback for REST save endpoint.
  *
- * @since 2.0.0
+ * @since 2.0.1
  *
  * @param WP_REST_Request $request Request object.
  * @return bool|WP_Error True if the user can edit the post, WP_Error otherwise.
@@ -289,7 +289,7 @@ function press_this_rest_save_permission( $request ) {
 /**
  * REST API handler for saving a post from Press This.
  *
- * @since 2.0.0
+ * @since 2.0.1
  *
  * @param WP_REST_Request $request Request object.
  * @return WP_REST_Response|WP_Error Response object on success, WP_Error on failure.
@@ -447,7 +447,7 @@ function press_this_rest_save_post( $request ) {
 /**
  * Permission callback for REST sideload endpoint.
  *
- * @since 2.0.0
+ * @since 2.0.1
  *
  * @return bool|WP_Error True if the user can upload files, WP_Error otherwise.
  */
@@ -466,7 +466,7 @@ function press_this_rest_sideload_permission() {
 /**
  * Permission callback for REST validate-embeds endpoint.
  *
- * @since 2.0.0
+ * @since 2.0.1
  *
  * @return bool|WP_Error True if the user can edit posts, WP_Error otherwise.
  */
@@ -488,7 +488,7 @@ function press_this_rest_validate_embeds_permission() {
  * Takes an array of URLs and returns only those that are valid oEmbed providers.
  * Uses WordPress's built-in oEmbed provider list plus known video platforms.
  *
- * @since 2.0.0
+ * @since 2.0.1
  *
  * @param WP_REST_Request $request Request object.
  * @return WP_REST_Response Response with valid embed URLs.
@@ -541,7 +541,7 @@ function press_this_rest_validate_embeds( $request ) {
  *
  * Validates content types for image sideloading.
  *
- * @since 2.0.0
+ * @since 2.0.1
  *
  * @return array Array of allowed MIME types for image sideloading.
  */
@@ -559,7 +559,7 @@ function press_this_get_sideload_allowed_types() {
 	 *
 	 * Allows customization of accepted image MIME types.
 	 *
-	 * @since 2.0.0
+	 * @since 2.0.1
 	 *
 	 * @param array $allowed_types Array of allowed MIME types.
 	 */
@@ -571,7 +571,7 @@ function press_this_get_sideload_allowed_types() {
  *
  * Configurable max file size for sideloading.
  *
- * @since 2.0.0
+ * @since 2.0.1
  *
  * @return int Maximum file size in bytes (default 10MB).
  */
@@ -581,7 +581,7 @@ function press_this_get_sideload_max_size() {
 	/**
 	 * Filters the maximum file size for image sideloading.
 	 *
-	 * @since 2.0.0
+	 * @since 2.0.1
 	 *
 	 * @param int $max_size Maximum file size in bytes.
 	 */
@@ -593,7 +593,7 @@ function press_this_get_sideload_max_size() {
  *
  * Validates content-type via HEAD request before download.
  *
- * @since 2.0.0
+ * @since 2.0.1
  *
  * @param WP_REST_Request $request Request object.
  * @return WP_REST_Response|WP_Error Response object on success, WP_Error on failure.
@@ -746,7 +746,7 @@ function press_this_rest_sideload_image( $request ) {
  * Adds metabox on wp-admin/tools.php
  *
  * @since 1.0.0
- * @since 2.0.0 Updated description to mention block editor.
+ * @since 2.0.1 Updated description to mention block editor.
  */
 function press_this_tool_box() {
 	if ( current_user_can( 'edit_posts' ) ) {
@@ -823,7 +823,7 @@ function press_this_tool_box() {
  *
  * @since Core/2.6.0
  * @since 1.1.0 Added to Press This plugin.
- * @since 2.0.0 Updated for modern bookmarklet with enhanced data extraction.
+ * @since 2.0.1 Updated for modern bookmarklet with enhanced data extraction.
  *
  * @global bool $is_IE Whether the browser matches an Internet Explorer user agent.
  *
@@ -881,7 +881,7 @@ function press_this_get_shortcut_link() {
 /**
  * Get the Press This editor page URL.
  *
- * @since 2.0.0
+ * @since 2.0.1
  *
  * @param string $url Optional. URL to press. Default empty.
  * @return string Press This editor URL.
@@ -903,7 +903,7 @@ function press_this_get_editor_url( $url = '' ) {
  * Disabled by default to only fetch content from known external URLs.
  * Site owners can enable it via the 'press_this_enable_url_proxy' filter.
  *
- * @since 2.0.0
+ * @since 2.0.1
  *
  * @return bool True if URL proxy is enabled, false otherwise.
  */
@@ -914,7 +914,7 @@ function press_this_is_proxy_enabled() {
 	 * When enabled, Press This can fetch URLs server-side for Direct Access Mode.
 	 * Disabled by default to limit URL fetching to known sources.
 	 *
-	 * @since 2.0.0
+	 * @since 2.0.1
 	 *
 	 * @param bool $enabled Whether the proxy is enabled. Default false.
 	 */
@@ -924,7 +924,7 @@ function press_this_is_proxy_enabled() {
 /**
  * Permission callback for REST scrape endpoint.
  *
- * @since 2.0.0
+ * @since 2.0.1
  *
  * @param WP_REST_Request $request Request object (unused but required by REST API).
  * @return bool|WP_Error True if allowed, WP_Error otherwise.
@@ -957,7 +957,7 @@ function press_this_rest_scrape_permission( $request ) { // phpcs:ignore Generic
  * Returns an array of hostname patterns that resolve to localhost,
  * including IPv4, IPv6, and IPv4-mapped IPv6 variants.
  *
- * @since 2.0.0
+ * @since 2.0.1
  *
  * @return array Array of localhost hostname patterns.
  */
@@ -981,7 +981,7 @@ function press_this_get_localhost_patterns() {
  * Checks for common localhost patterns including IPv4, IPv6,
  * bracketed IPv6, IPv4-mapped IPv6, and the 127.x.x.x range.
  *
- * @since 2.0.0
+ * @since 2.0.1
  *
  * @param string $host Hostname to check.
  * @return bool True if localhost, false otherwise.
@@ -1017,7 +1017,7 @@ function press_this_is_localhost( $host ) {
  * - Link-local addresses (169.254.x)
  * - Non-HTTP(S) schemes
  *
- * @since 2.0.0
+ * @since 2.0.1
  *
  * @param string $url URL to validate.
  * @return bool|WP_Error True if safe, WP_Error with reason if not.
@@ -1078,7 +1078,7 @@ function press_this_validate_url_for_proxy( $url ) {
 	 *
 	 * Allows site owners to add additional URL restrictions.
 	 *
-	 * @since 2.0.0
+	 * @since 2.0.1
 	 *
 	 * @param bool|WP_Error $allowed True if allowed, WP_Error if blocked.
 	 * @param string        $url     The URL being validated.
@@ -1090,7 +1090,7 @@ function press_this_validate_url_for_proxy( $url ) {
 /**
  * Check if an IP address is private or reserved.
  *
- * @since 2.0.0
+ * @since 2.0.1
  *
  * @param string $ip IP address to check.
  * @return bool True if private/reserved, false if public.
@@ -1110,7 +1110,7 @@ function press_this_is_private_ip( $ip ) {
  * Used to track when Press This is making HTTP requests so we can
  * apply URL validations only to our requests.
  *
- * @since 2.0.0
+ * @since 2.0.1
  *
  * @param bool|null $enable True to enable context, false to disable, null to query.
  * @return bool Current context state.
@@ -1135,7 +1135,7 @@ function press_this_http_request_context( $enable = null ) {
  * This function is added via add_filter and can be removed with:
  * remove_filter( 'pre_http_request', 'press_this_validate_http_request_ip', 10 );
  *
- * @since 2.0.0
+ * @since 2.0.1
  *
  * @param false|array|WP_Error $preempt     A preemptive return value.
  * @param array                $parsed_args HTTP request arguments.
@@ -1177,7 +1177,7 @@ function press_this_validate_http_request_ip( $preempt, $parsed_args, $url ) {
 	 * Allows site owners to add additional IP restrictions or bypass
 	 * the default private IP blocking.
 	 *
-	 * @since 2.0.0
+	 * @since 2.0.1
 	 *
 	 * @param false|WP_Error $result False to allow, WP_Error to block.
 	 * @param string         $host   The request hostname.
@@ -1198,7 +1198,7 @@ function press_this_validate_http_request_ip( $preempt, $parsed_args, $url ) {
  * Wraps wp_remote_get with context tracking and reject_unsafe_urls
  * to leverage WordPress 5.9+ built-in URL validation.
  *
- * @since 2.0.0
+ * @since 2.0.1
  *
  * @param string $url  URL to fetch.
  * @param array  $args Optional. Request arguments.
@@ -1222,7 +1222,7 @@ function press_this_remote_get( $url, $args = array() ) {
  * filter can validate resolved IPs. The download_url function will
  * use reject_unsafe_urls internally when available.
  *
- * @since 2.0.0
+ * @since 2.0.1
  *
  * @param string $url     URL to download.
  * @param int    $timeout Optional. Timeout in seconds. Default 300.
@@ -1245,7 +1245,7 @@ function press_this_download_url( $url, $timeout = 300 ) {
  *
  * Returns generic error messages and logs detailed errors when WP_DEBUG is enabled.
  *
- * @since 2.0.0
+ * @since 2.0.1
  *
  * @param WP_REST_Request $request Request object.
  * @return WP_REST_Response|WP_Error Response with parsed metadata or error.
@@ -1334,7 +1334,7 @@ function press_this_rest_scrape_url( $request ) {
  * - Root-relative URLs (prepend scheme://host)
  * - Relative paths (resolve against base path)
  *
- * @since 2.0.0
+ * @since 2.0.1
  *
  * @param string $url      The URL to resolve (may be relative).
  * @param string $base_url The base URL for resolution.
@@ -1390,7 +1390,7 @@ function press_this_resolve_url( $url, $base_url ) {
  * - Avatar images (detected by src or class containing "avatar")
  * - Data URLs
  *
- * @since 2.0.0
+ * @since 2.0.1
  *
  * @param string $src       Image source URL.
  * @param string $classname Image CSS class attribute.
@@ -1436,7 +1436,7 @@ function press_this_is_filtered_image( $src, $classname, $width, $height ) {
  * - Title: og:title > twitter:title > <title>
  * - Description: og:description > twitter:description > meta description
  *
- * @since 2.0.0
+ * @since 2.0.1
  *
  * @param string $html     Raw HTML content.
  * @param string $base_url Base URL for resolving relative URLs.

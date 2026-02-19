@@ -17,7 +17,7 @@ class WP_Press_This_Plugin {
 	 * Used to trigger the bookmarklet update notice.
 	 * Increment when bookmarklet functionality changes.
 	 *
-	 * @since 2.0.0
+	 * @since 2.0.1
 	 */
 	const VERSION = 11;
 
@@ -122,7 +122,7 @@ class WP_Press_This_Plugin {
 	 * Ajax handler for saving the post as draft or published.
 	 *
 	 * @since 1.0.0
-	 * @since 2.0.0 Added input sanitization for categories and taxonomies.
+	 * @since 2.0.1 Added input sanitization for categories and taxonomies.
 	 */
 	public function save_post() {
 		// Verify a post ID is set first, then process the nonce since it uses the post ID.
@@ -402,7 +402,7 @@ class WP_Press_This_Plugin {
 	 *
 	 * @ignore
 	 * @since 1.0.0
-	 * @since 2.0.0 Enhanced validation with wp_http_validate_url() and strict scheme checking.
+	 * @since 2.0.1 Enhanced validation with wp_http_validate_url() and strict scheme checking.
 	 *
 	 * @param string $url URL to check for length and validity.
 	 * @return string Escaped URL if valid. Empty string otherwise.
@@ -594,7 +594,7 @@ class WP_Press_This_Plugin {
 	 *
 	 * Supports both legacy 'v' parameter (from URL) and new 'pt_version' (from POST).
 	 *
-	 * @since 2.0.0
+	 * @since 2.0.1
 	 *
 	 * @return int|null Bookmarklet version number or null if not provided.
 	 */
@@ -622,12 +622,12 @@ class WP_Press_This_Plugin {
 	/**
 	 * Handles backward-compat with the legacy version of Press This by supporting its query string params.
 	 *
-	 * Server-side scraping has been removed in v2.0.0. All content extraction is now handled
+	 * Server-side scraping has been removed in v2.0.1. All content extraction is now handled
 	 * client-side by the bookmarklet. Legacy GET parameters (u, t, s, v) are still supported
 	 * for backward compatibility with older bookmarklets.
 	 *
 	 * @since 1.0.0
-	 * @since 2.0.0 Removed server-side scraping fallback. Added support for pt_version,
+	 * @since 2.0.1 Removed server-side scraping fallback. Added support for pt_version,
 	 *              _og_video, _jsonld, and alternate_canonical from enhanced bookmarklet.
 	 *
 	 * @return array
@@ -1020,10 +1020,10 @@ class WP_Press_This_Plugin {
 	/**
 	 * Gets the source page's canonical link, based on passed location and meta data.
 	 *
-	 * Enhanced in v2.0.0 to also check JSON-LD structured data and alternate canonical links.
+	 * Enhanced in v2.0.1 to also check JSON-LD structured data and alternate canonical links.
 	 *
 	 * @since 1.0.0
-	 * @since 2.0.0 Added JSON-LD and alternate canonical support.
+	 * @since 2.0.1 Added JSON-LD and alternate canonical support.
 	 *
 	 * @param array $data The site's data.
 	 * @return string Discovered canonical URL, or empty
@@ -1084,10 +1084,10 @@ class WP_Press_This_Plugin {
 	/**
 	 * Gets the source page's title, based on passed title and meta data.
 	 *
-	 * Enhanced in v2.0.0 to also check JSON-LD structured data.
+	 * Enhanced in v2.0.1 to also check JSON-LD structured data.
 	 *
 	 * @since 1.0.0
-	 * @since 2.0.0 Added JSON-LD headline support.
+	 * @since 2.0.1 Added JSON-LD headline support.
 	 *
 	 * @param array $data The site's data.
 	 * @return string Discovered page title, or empty
@@ -1122,14 +1122,14 @@ class WP_Press_This_Plugin {
 	 * Gets the source page's suggested content, based on passed data (description, selection, etc).
 	 *
 	 * Features a blockquoted excerpt, as well as content attribution, if any.
-	 * Enhanced in v2.0.0 to also check JSON-LD structured data for description.
+	 * Enhanced in v2.0.1 to also check JSON-LD structured data for description.
 	 *
 	 * All dynamic values are properly escaped:
 	 * - URLs use esc_url()
 	 * - Text content uses esc_html()
 	 *
 	 * @since 1.0.0
-	 * @since 2.0.0 Added JSON-LD support and escaping for all dynamic content.
+	 * @since 2.0.1 Added JSON-LD support and escaping for all dynamic content.
 	 *
 	 * @param array $data The site's data.
 	 * @return string Discovered content, or empty
@@ -1243,7 +1243,7 @@ class WP_Press_This_Plugin {
 	/**
 	 * Get the allowed blocks for the block editor.
 	 *
-	 * @since 2.0.0
+	 * @since 2.0.1
 	 *
 	 * @return array Array of allowed block type names.
 	 */
@@ -1262,7 +1262,7 @@ class WP_Press_This_Plugin {
 		/**
 		 * Filters the allowed blocks in Press This.
 		 *
-		 * @since 2.0.0
+		 * @since 2.0.1
 		 *
 		 * @param string[] $allowed_blocks Array of allowed block type names.
 		 */
@@ -1327,7 +1327,7 @@ class WP_Press_This_Plugin {
 	 *           return $format;
 	 *       }, 10, 2 );
 	 *
-	 * @since 2.0.0
+	 * @since 2.0.1
 	 *
 	 * @param array $data The site's data including:
 	 *                    - 'u'       (string) Source URL.
@@ -1348,7 +1348,7 @@ class WP_Press_This_Plugin {
 		 * behavior between server-side (PHP) and client-side (JavaScript) contexts.
 		 * For conditional logic based on content, use `press_this_post_format_suggestion`.
 		 *
-		 * @since 2.0.0
+		 * @since 2.0.1
 		 *
 		 * @param string $format Empty string by default. Return a format to override.
 		 */
@@ -1399,7 +1399,7 @@ class WP_Press_This_Plugin {
 		/**
 		 * Filters the suggested post format for Press This.
 		 *
-		 * @since 2.0.0
+		 * @since 2.0.1
 		 *
 		 * @param string $suggested_format The suggested post format.
 		 * @param array  $data             The site's data.
@@ -1410,7 +1410,7 @@ class WP_Press_This_Plugin {
 	/**
 	 * Get editor settings for the block editor.
 	 *
-	 * @since 2.0.0
+	 * @since 2.0.1
 	 *
 	 * @param array $data The site's data.
 	 * @return array Editor settings.
@@ -1451,7 +1451,7 @@ class WP_Press_This_Plugin {
 	 * - Asset enqueueing
 	 *
 	 * @since 1.0.0
-	 * @since 2.0.0 Converted to minimal shell with Gutenberg block editor - all UI rendered by React.
+	 * @since 2.0.1 Converted to minimal shell with Gutenberg block editor - all UI rendered by React.
 	 *
 	 * @global WP_Locale $wp_locale
 	 */
@@ -1506,7 +1506,7 @@ class WP_Press_This_Plugin {
 		 * This allows other plugins to change the default post type from 'post'
 		 * to a custom post type (e.g., 'jetpack-social-note' for microblogging).
 		 *
-		 * @since 2.0.0
+		 * @since 2.0.1
 		 *
 		 * @param string $post_type The post type to create. Default 'post'.
 		 * @param array  $data      The scraped data from the source URL.
@@ -1590,7 +1590,7 @@ class WP_Press_This_Plugin {
 			/**
 			 * Filters to force a specific post format, bypassing all detection logic.
 			 *
-			 * @since 2.0.0
+			 * @since 2.0.1
 			 *
 			 * @param string $format Empty string by default. Return a format to override.
 			 */
@@ -1600,7 +1600,7 @@ class WP_Press_This_Plugin {
 			 *
 			 * Applied after both PHP and JS detection have run and found nothing.
 			 *
-			 * @since 2.0.0
+			 * @since 2.0.1
 			 *
 			 * @param string $default_format Empty string by default (standard format).
 			 */
@@ -1726,7 +1726,7 @@ class WP_Press_This_Plugin {
 	/**
 	 * Enqueue block editor assets for Press This.
 	 *
-	 * @since 2.0.0
+	 * @since 2.0.1
 	 *
 	 * @param int    $post_id      Post ID.
 	 * @param string $post_title   Post title.

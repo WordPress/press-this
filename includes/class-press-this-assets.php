@@ -5,13 +5,13 @@
  * Handles registration and enqueueing of Gutenberg block editor assets.
  *
  * @package Press_This_Plugin
- * @since 2.0.0
+ * @since 2.0.1
  */
 
 /**
  * Press This Assets class.
  *
- * @since 2.0.0
+ * @since 2.0.1
  */
 class Press_This_Assets {
 
@@ -42,7 +42,7 @@ class Press_This_Assets {
 	/**
 	 * Register block editor scripts and styles.
 	 *
-	 * @since 2.0.0
+	 * @since 2.0.1
 	 */
 	public function register_assets() {
 		$asset_file = $this->plugin_dir . 'build/press-this-editor.asset.php';
@@ -106,7 +106,7 @@ class Press_This_Assets {
 	/**
 	 * Enqueue block editor scripts and styles.
 	 *
-	 * @since 2.0.0
+	 * @since 2.0.1
 	 *
 	 * @param array $data Data to localize for the editor.
 	 */
@@ -130,7 +130,7 @@ class Press_This_Assets {
 	/**
 	 * Localize editor data for JavaScript.
 	 *
-	 * @since 2.0.0
+	 * @since 2.0.1
 	 *
 	 * @param array $data Data to pass to the editor.
 	 */
@@ -165,7 +165,7 @@ class Press_This_Assets {
 	/**
 	 * Get editor settings.
 	 *
-	 * @since 2.0.0
+	 * @since 2.0.1
 	 *
 	 * @return array Editor settings.
 	 */
@@ -183,7 +183,7 @@ class Press_This_Assets {
 		/**
 		 * Filters the allowed blocks in Press This.
 		 *
-		 * @since 2.0.0
+		 * @since 2.0.1
 		 *
 		 * @param string[] $allowed_blocks Array of allowed block type names.
 		 */
@@ -202,7 +202,7 @@ class Press_This_Assets {
 	/**
 	 * Get the script dependencies for the editor.
 	 *
-	 * @since 2.0.0
+	 * @since 2.0.1
 	 *
 	 * @return array Array of script handles.
 	 */

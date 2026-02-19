@@ -124,7 +124,7 @@ All existing hooks continue to work:
 
 == Upgrade Notice ==
 
-= 2.0.0 =
+= 2.0.1 =
 Major update: Gutenberg block editor integration, enhanced content extraction, new developer hooks. Backward compatible with existing bookmarklets.
 
 = 1.1.2 =
@@ -135,7 +135,7 @@ Restores bookmarklet functionality.
 
 == Changelog ==
 
-= 2.0.0 =
+= 2.0.1 =
 * **New:** Gutenberg block editor replaces TinyMCE for modern editing experience
 * **New:** Smart post format auto-suggestion based on content type
 * **New:** `press_this_allowed_blocks` filter for customizing available blocks
