@@ -8,6 +8,8 @@
  * @package
  */
 
+/* global Image */
+
 /**
  * WordPress dependencies
  */
@@ -58,9 +60,9 @@ function filterValidImages( images, onFiltered ) {
 /**
  * Sideload an external image and return attachment data.
  *
- * @param {string} url       Image URL to sideload.
+ * @param {string} url        Image URL to sideload.
  * @param {Object} restConfig REST API configuration.
- * @param {number} postId    Post ID to attach image to.
+ * @param {number} postId     Post ID to attach image to.
  * @return {Promise<Object>} Attachment data with id and url.
  */
 async function sideloadImage( url, restConfig, postId = 0 ) {
@@ -114,21 +116,17 @@ function openMediaLibrary( onSelect ) {
 /**
  * Featured Image Panel component.
  *
- * @param {Object}   props                  Component props.
- * @param {number}   props.featuredImageId  Current featured image ID.
- * @param {Function} props.onSelect         Callback when image is selected.
- * @param {Function} props.onRemove         Callback when image is removed.
- * @param {boolean}  props.canUpload        Whether user can upload files.
- * @param {Array}    props.scrapedImages    Array of scraped image URLs.
- * @param {Object}   props.restConfig       REST API configuration.
- * @param {number}   props.postId           Current post ID.
+ * @param {Object}   props               Component props.
+ * @param {Function} props.onSelect      Callback when image is selected.
+ * @param {Function} props.onRemove      Callback when image is removed.
+ * @param {Array}    props.scrapedImages Array of scraped image URLs.
+ * @param {Object}   props.restConfig    REST API configuration.
+ * @param {number}   props.postId        Current post ID.
  * @return {JSX.Element} Panel component.
  */
 export default function FeaturedImagePanel( {
-	featuredImageId = 0,
 	onSelect,
 	onRemove,
-	canUpload = true,
 	scrapedImages = [],
 	restConfig = {},
 	postId = 0,
@@ -159,16 +157,22 @@ export default function FeaturedImagePanel( {
 	 *
 	 * @param {Object} media Selected media object.
 	 */
-	const handleSelect = useCallback( ( media ) => {
-		if ( media && media.id ) {
-			setImageData( {
-				id: media.id,
-				url: media.url || media.sizes?.medium?.url || media.sizes?.full?.url,
-				alt: media.alt || '',
-			} );
-			onSelect( media.id );
-		}
-	}, [ onSelect ] );
+	const handleSelect = useCallback(
+		( media ) => {
+			if ( media && media.id ) {
+				setImageData( {
+					id: media.id,
+					url:
+						media.url ||
+						media.sizes?.medium?.url ||
+						media.sizes?.full?.url,
+					alt: media.alt || '',
+				} );
+				onSelect( media.id );
+			}
+		},
+		[ onSelect ]
+	);
 
 	/**
 	 * Handle image removal.
@@ -190,29 +194,37 @@ export default function FeaturedImagePanel( {
 	 *
 	 * @param {string} url Scraped image URL.
 	 */
-	const handleScrapedImageSelect = useCallback( async ( url ) => {
-		if ( ! restConfig.restUrl || ! restConfig.restNonce ) {
-			setSideloadError( __( 'REST API configuration missing.', 'press-this' ) );
-			return;
-		}
+	const handleScrapedImageSelect = useCallback(
+		async ( url ) => {
+			if ( ! restConfig.restUrl || ! restConfig.restNonce ) {
+				setSideloadError(
+					__( 'REST API configuration missing.', 'press-this' )
+				);
+				return;
+			}
 
-		setIsSideloading( true );
-		setSideloadError( null );
+			setIsSideloading( true );
+			setSideloadError( null );
 
-		try {
-			const result = await sideloadImage( url, restConfig, postId );
-			setImageData( {
-				id: result.id,
-				url: result.url,
-				alt: '',
-			} );
-			onSelect( result.id );
-		} catch ( error ) {
-			setSideloadError( error.message || __( 'Failed to set featured image.', 'press-this' ) );
-		} finally {
-			setIsSideloading( false );
-		}
-	}, [ restConfig, postId, onSelect ] );
+			try {
+				const result = await sideloadImage( url, restConfig, postId );
+				setImageData( {
+					id: result.id,
+					url: result.url,
+					alt: '',
+				} );
+				onSelect( result.id );
+			} catch ( error ) {
+				setSideloadError(
+					error.message ||
+						__( 'Failed to set featured image.', 'press-this' )
+				);
+			} finally {
+				setIsSideloading( false );
+			}
+		},
+		[ restConfig, postId, onSelect ]
+	);
 
 	return (
 		<PanelBody
@@ -224,7 +236,10 @@ export default function FeaturedImagePanel( {
 					<div className="press-this-featured-image__preview">
 						<img
 							src={ imageData.url }
-							alt={ imageData.alt || __( 'Featured image', 'press-this' ) }
+							alt={
+								imageData.alt ||
+								__( 'Featured image', 'press-this' )
+							}
 							className="press-this-featured-image__image"
 						/>
 						<div className="press-this-featured-image__actions">
@@ -256,43 +271,59 @@ export default function FeaturedImagePanel( {
 				) }
 
 				{ /* Scraped Images Section */ }
-				{ ( validScrapedImages.length > 0 || isFilteringImages ) && ! imageData && (
-					<div className="press-this-featured-image__scraped">
-						<h4 className="press-this-featured-image__scraped-title">
-							{ __( 'From Source', 'press-this' ) }
-						</h4>
-						{ ( isSideloading || isFilteringImages ) && (
-							<div className="press-this-featured-image__loading">
-								<Spinner />
-								<span>{ isSideloading ? __( 'Uploading...', 'press-this' ) : __( 'Loading...', 'press-this' ) }</span>
-							</div>
-						) }
-						{ sideloadError && (
-							<p className="press-this-featured-image__error">
-								{ sideloadError }
-							</p>
-						) }
-						{ ! isSideloading && ! isFilteringImages && validScrapedImages.length > 0 && (
-							<div className="press-this-featured-image__scraped-grid">
-								{ validScrapedImages.slice( 0, 6 ).map( ( src, index ) => (
-									<button
-										key={ index }
-										type="button"
-										className="press-this-featured-image__scraped-item"
-										onClick={ () => handleScrapedImageSelect( src ) }
-										title={ __( 'Set as featured image', 'press-this' ) }
-									>
-										<img
-											src={ src }
-											alt=""
-											loading="lazy"
-										/>
-									</button>
-								) ) }
-							</div>
-						) }
-					</div>
-				) }
+				{ ( validScrapedImages.length > 0 || isFilteringImages ) &&
+					! imageData && (
+						<div className="press-this-featured-image__scraped">
+							<h4 className="press-this-featured-image__scraped-title">
+								{ __( 'From Source', 'press-this' ) }
+							</h4>
+							{ ( isSideloading || isFilteringImages ) && (
+								<div className="press-this-featured-image__loading">
+									<Spinner />
+									<span>
+										{ isSideloading
+											? __( 'Uploading…', 'press-this' )
+											: __( 'Loading…', 'press-this' ) }
+									</span>
+								</div>
+							) }
+							{ sideloadError && (
+								<p className="press-this-featured-image__error">
+									{ sideloadError }
+								</p>
+							) }
+							{ ! isSideloading &&
+								! isFilteringImages &&
+								validScrapedImages.length > 0 && (
+									<div className="press-this-featured-image__scraped-grid">
+										{ validScrapedImages
+											.slice( 0, 6 )
+											.map( ( src, index ) => (
+												<button
+													key={ index }
+													type="button"
+													className="press-this-featured-image__scraped-item"
+													onClick={ () =>
+														handleScrapedImageSelect(
+															src
+														)
+													}
+													title={ __(
+														'Set as featured image',
+														'press-this'
+													) }
+												>
+													<img
+														src={ src }
+														alt=""
+														loading="lazy"
+													/>
+												</button>
+											) ) }
+									</div>
+								) }
+						</div>
+					) }
 			</div>
 		</PanelBody>
 	);

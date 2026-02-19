@@ -48,49 +48,82 @@ export default function App() {
 	} );
 
 	// Build initial post object for editor.
-	const post = useMemo( () => ( {
-		id: data.postId,
-		title: data.title || '',
-		content: data.content || '',
-	} ), [ data.postId, data.title, data.content ] );
+	const post = useMemo(
+		() => ( {
+			id: data.postId,
+			title: data.title || '',
+			content: data.content || '',
+		} ),
+		[ data.postId, data.title, data.content ]
+	);
 
 	// Track additional scraped images/embeds.
-	const [ additionalMedia, setAdditionalMedia ] = useState( { images: [], embeds: [] } );
+	const [ additionalMedia, setAdditionalMedia ] = useState( {
+		images: [],
+		embeds: [],
+	} );
 
 	// Build editor settings.
-	const settings = useMemo( () => ( {
-		allowedBlocks: data.allowedBlocks || [],
-		isRTL: data.isRTL,
-		suggestedPostFormat: data.suggestedFormat || '',
-		postFormatOverride: data.postFormatOverride || '',
-		postFormatDefault: data.postFormatDefault || '',
-	} ), [ data.allowedBlocks, data.isRTL, data.suggestedFormat, data.postFormatOverride, data.postFormatDefault ] );
+	const settings = useMemo(
+		() => ( {
+			allowedBlocks: data.allowedBlocks || [],
+			isRTL: data.isRTL,
+			suggestedPostFormat: data.suggestedFormat || '',
+			postFormatOverride: data.postFormatOverride || '',
+			postFormatDefault: data.postFormatDefault || '',
+		} ),
+		[
+			data.allowedBlocks,
+			data.isRTL,
+			data.suggestedFormat,
+			data.postFormatOverride,
+			data.postFormatDefault,
+		]
+	);
 
 	// Build capabilities object.
-	const capabilities = useMemo( () => ( {
-		canPublish: data.canPublish,
-		canUploadFiles: data.canUploadFiles,
-		canAssignCategories: data.canAssignCategories,
-		canEditCategories: data.canEditCategories,
-		canAssignTags: data.canAssignTags,
-	} ), [ data.canPublish, data.canUploadFiles, data.canAssignCategories, data.canEditCategories, data.canAssignTags ] );
+	const capabilities = useMemo(
+		() => ( {
+			canPublish: data.canPublish,
+			canUploadFiles: data.canUploadFiles,
+			canAssignCategories: data.canAssignCategories,
+			canEditCategories: data.canEditCategories,
+			canAssignTags: data.canAssignTags,
+		} ),
+		[
+			data.canPublish,
+			data.canUploadFiles,
+			data.canAssignCategories,
+			data.canEditCategories,
+			data.canAssignTags,
+		]
+	);
 
 	// Build REST config object.
-	const restConfig = useMemo( () => ( {
-		restUrl: data.restUrl,
-		restNonce: data.restNonce,
-		redirInParent: data.redirInParent,
-	} ), [ data.restUrl, data.restNonce, data.redirInParent ] );
+	const restConfig = useMemo(
+		() => ( {
+			restUrl: data.restUrl,
+			restNonce: data.restNonce,
+			redirInParent: data.redirInParent,
+		} ),
+		[ data.restUrl, data.restNonce, data.redirInParent ]
+	);
 
 	// Combine initial and additional scraped media.
 	const images = useMemo( () => {
-		const combined = [ ...( data.images || [] ), ...additionalMedia.images ];
+		const combined = [
+			...( data.images || [] ),
+			...additionalMedia.images,
+		];
 		// Deduplicate by URL.
 		return [ ...new Set( combined ) ];
 	}, [ data.images, additionalMedia.images ] );
 
 	const embeds = useMemo( () => {
-		const combined = [ ...( data.embeds || [] ), ...additionalMedia.embeds ];
+		const combined = [
+			...( data.embeds || [] ),
+			...additionalMedia.embeds,
+		];
 		return [ ...new Set( combined ) ];
 	}, [ data.embeds, additionalMedia.embeds ] );
 
@@ -108,33 +141,39 @@ export default function App() {
 	 * @param {Array} urls Array of embed URLs to validate.
 	 * @return {Promise<Array>} Promise resolving to array of valid embed URLs.
 	 */
-	const validateEmbeds = useCallback( async ( urls ) => {
-		if ( ! urls || urls.length === 0 ) {
-			return [];
-		}
-
-		try {
-			const response = await fetch( `${ data.restUrl }validate-embeds`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					'X-WP-Nonce': data.restNonce,
-				},
-				body: JSON.stringify( { urls } ),
-			} );
-
-			if ( ! response.ok ) {
-				// On error, return empty array (fail safe).
+	const validateEmbeds = useCallback(
+		async ( urls ) => {
+			if ( ! urls || urls.length === 0 ) {
 				return [];
 			}
 
-			const result = await response.json();
-			return result.embeds || [];
-		} catch {
-			// On network error, return empty array.
-			return [];
-		}
-	}, [ data.restUrl, data.restNonce ] );
+			try {
+				const response = await fetch(
+					`${ data.restUrl }validate-embeds`,
+					{
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							'X-WP-Nonce': data.restNonce,
+						},
+						body: JSON.stringify( { urls } ),
+					}
+				);
+
+				if ( ! response.ok ) {
+					// On error, return empty array (fail safe).
+					return [];
+				}
+
+				const result = await response.json();
+				return result.embeds || [];
+			} catch {
+				// On network error, return empty array.
+				return [];
+			}
+		},
+		[ data.restUrl, data.restNonce ]
+	);
 
 	/**
 	 * Listen for postMessage data from bookmarklet.
@@ -182,13 +221,15 @@ export default function App() {
 			// Build suggested content from bookmarklet metadata.
 			// Extract description from meta tags.
 			const meta = messageData._meta || {};
-			const description = messageData.s || // User selection takes priority.
+			const description =
+				messageData.s || // User selection takes priority.
 				meta[ 'twitter:description' ] ||
 				meta[ 'og:description' ] ||
 				meta.description ||
 				'';
 
-			const title = messageData.t ||
+			const title =
+				messageData.t ||
 				meta[ 'twitter:title' ] ||
 				meta[ 'og:title' ] ||
 				meta.title ||
@@ -224,7 +265,14 @@ export default function App() {
 		return () => {
 			window.removeEventListener( 'message', handleMessage );
 		};
-	}, [ data.postMessageMode, data.restUrl, data.restNonce, data.sourceUrl, postMessageReceived, validateEmbeds ] );
+	}, [
+		data.postMessageMode,
+		data.restUrl,
+		data.restNonce,
+		data.sourceUrl,
+		postMessageReceived,
+		validateEmbeds,
+	] );
 
 	/**
 	 * Handle scrape completion from Header.
@@ -270,7 +318,9 @@ export default function App() {
 				sourceUrl={ data.sourceUrl }
 				isLegacyBookmarklet={ data.isLegacyBookmarklet }
 				hasBookmarkletContent={ !! data.content }
-				hasBookmarkletMedia={ !! ( data.images?.length || data.embeds?.length ) }
+				hasBookmarkletMedia={
+					!! ( data.images?.length || data.embeds?.length )
+				}
 				proxyEnabled={ data.proxyEnabled }
 				restUrl={ data.restUrl }
 				restNonce={ data.restNonce }
