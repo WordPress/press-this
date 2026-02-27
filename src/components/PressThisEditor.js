@@ -17,7 +17,7 @@ import {
 	useEffect,
 	useRef,
 } from '@wordpress/element';
-import { useSelect, useDispatch } from '@wordpress/data';
+import { useSelect } from '@wordpress/data';
 import { parse } from '@wordpress/blocks';
 import {
 	BlockEditorProvider,
@@ -219,6 +219,7 @@ function getWpRestBaseUrl( pressThisRestUrl ) {
  * @param {Object}   props.pendingScrape     Pending scraped content to append.
  * @param {Function} props.onScrapeProcessed Callback after scrape is processed.
  * @param {Function} props.onSaveReady       Callback when save handler is ready (receives { handleSave, isSaving, publishLabel }).
+ * @param {Function} props.onUndoReady       Callback when undo/redo handlers are ready (receives { handleUndo, handleRedo, hasUndo, hasRedo }).
  * @param {string}   props.categoryNonce
  * @param {string}   props.ajaxUrl
  * @return {JSX.Element} Press This Editor component.
@@ -236,6 +237,7 @@ export default function PressThisEditor( {
 	pendingScrape = null,
 	onScrapeProcessed = () => {},
 	onSaveReady = () => {},
+	onUndoReady = () => {},
 	categoryNonce = '',
 	ajaxUrl = '',
 } ) {
@@ -276,12 +278,57 @@ export default function PressThisEditor( {
 	const [ isLoadingTags, setIsLoadingTags ] = useState( false );
 	const tagSearchTimeout = useRef( null );
 
-	// Undo/Redo keyboard shortcuts.
-	// BlockEditorKeyboardShortcuts handles block-level shortcuts but not undo/redo.
-	// In full Gutenberg, EditorKeyboardShortcuts from @wordpress/editor registers these,
-	// but Press This uses BlockEditorProvider directly.
-	const { undo, redo } = useDispatch( blockEditorStore );
+	// Undo/Redo stack.
+	// The core/block-editor store does not provide undo/redo actions.
+	// In full Gutenberg, EditorProvider manages undo via core-data entity edits,
+	// but Press This uses BlockEditorProvider directly with React state.
+	const undoStackRef = useRef( [] );
+	const redoStackRef = useRef( [] );
+	const blocksRef = useRef( blocks );
+	const isUndoingRef = useRef( false );
+	const [ hasUndo, setHasUndo ] = useState( false );
+	const [ hasRedo, setHasRedo ] = useState( false );
 
+	// Keep blocksRef in sync.
+	useEffect( () => {
+		blocksRef.current = blocks;
+	}, [ blocks ] );
+
+	const syncUndoRedoState = useCallback( () => {
+		setHasUndo( undoStackRef.current.length > 0 );
+		setHasRedo( redoStackRef.current.length > 0 );
+	}, [] );
+
+	const handleUndo = useCallback( () => {
+		if ( undoStackRef.current.length === 0 ) {
+			return;
+		}
+		const previousBlocks = undoStackRef.current.pop();
+		redoStackRef.current.push( blocksRef.current );
+		isUndoingRef.current = true;
+		setBlocks( previousBlocks );
+		syncUndoRedoState();
+	}, [ syncUndoRedoState ] );
+
+	const handleRedo = useCallback( () => {
+		if ( redoStackRef.current.length === 0 ) {
+			return;
+		}
+		const nextBlocks = redoStackRef.current.pop();
+		undoStackRef.current.push( blocksRef.current );
+		isUndoingRef.current = true;
+		setBlocks( nextBlocks );
+		syncUndoRedoState();
+	}, [ syncUndoRedoState ] );
+
+	// Expose undo/redo to parent (for Header buttons).
+	useEffect( () => {
+		if ( onUndoReady ) {
+			onUndoReady( { handleUndo, handleRedo, hasUndo, hasRedo } );
+		}
+	}, [ onUndoReady, handleUndo, handleRedo, hasUndo, hasRedo ] ); // eslint-disable-line react-hooks/exhaustive-deps
+
+	// Keyboard shortcuts for undo/redo.
 	useEffect( () => {
 		function handleKeyDown( event ) {
 			// Don't override native undo in regular form fields (title, URL input, etc.).
@@ -305,9 +352,9 @@ export default function PressThisEditor( {
 			if ( key === 'z' ) {
 				event.preventDefault();
 				if ( event.shiftKey ) {
-					redo();
+					handleRedo();
 				} else {
-					undo();
+					handleUndo();
 				}
 			}
 
@@ -319,13 +366,13 @@ export default function PressThisEditor( {
 				! event.metaKey
 			) {
 				event.preventDefault();
-				redo();
+				handleRedo();
 			}
 		}
 
 		document.addEventListener( 'keydown', handleKeyDown );
 		return () => document.removeEventListener( 'keydown', handleKeyDown );
-	}, [ undo, redo ] );
+	}, [ handleUndo, handleRedo ] );
 
 	// Parse initial content.
 	useEffect( () => {
@@ -347,10 +394,16 @@ export default function PressThisEditor( {
 			setTitle( pendingScrape.title );
 		}
 
-		// Parse and append the scraped content blocks.
+		// Parse and append the scraped content blocks (with undo level).
 		if ( pendingScrape.content ) {
 			const newBlocks = parse( pendingScrape.content );
+			undoStackRef.current = [
+				...undoStackRef.current,
+				blocksRef.current,
+			];
+			redoStackRef.current = [];
 			setBlocks( ( prevBlocks ) => [ ...prevBlocks, ...newBlocks ] );
+			syncUndoRedoState();
 		}
 
 		// Notify parent that we've processed the scrape.
@@ -358,13 +411,39 @@ export default function PressThisEditor( {
 	}, [ pendingScrape, onScrapeProcessed ] ); // eslint-disable-line react-hooks/exhaustive-deps
 
 	/**
-	 * Handle block changes.
+	 * Handle non-persistent block changes (e.g. typing).
+	 * Updates blocks without creating an undo level.
 	 *
 	 * @param {Array} newBlocks Updated blocks.
 	 */
-	const handleBlocksChange = useCallback( ( newBlocks ) => {
+	const handleBlocksInput = useCallback( ( newBlocks ) => {
 		setBlocks( newBlocks );
 	}, [] );
+
+	/**
+	 * Handle persistent block changes (e.g. paste, block operations).
+	 * Creates an undo level before applying the change.
+	 *
+	 * @param {Array} newBlocks Updated blocks.
+	 */
+	const handleBlocksChange = useCallback(
+		( newBlocks ) => {
+			// Don't create undo levels for undo/redo operations.
+			if ( isUndoingRef.current ) {
+				isUndoingRef.current = false;
+				setBlocks( newBlocks );
+				return;
+			}
+			undoStackRef.current = [
+				...undoStackRef.current,
+				blocksRef.current,
+			];
+			redoStackRef.current = [];
+			setBlocks( newBlocks );
+			syncUndoRedoState();
+		},
+		[ syncUndoRedoState ]
+	);
 
 	/**
 	 * Insert a block into the editor.
@@ -690,7 +769,7 @@ export default function PressThisEditor( {
 			<div className="press-this-editor">
 				<BlockEditorProvider
 					value={ blocks }
-					onInput={ handleBlocksChange }
+					onInput={ handleBlocksInput }
 					onChange={ handleBlocksChange }
 					settings={ editorSettings }
 				>

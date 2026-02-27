@@ -310,6 +310,18 @@ export default function App() {
 		setSaveState( state );
 	}, [] );
 
+	// State for undo/redo from editor.
+	const [ undoState, setUndoState ] = useState( {
+		handleUndo: null,
+		handleRedo: null,
+		hasUndo: false,
+		hasRedo: false,
+	} );
+
+	const handleUndoReady = useCallback( ( state ) => {
+		setUndoState( state );
+	}, [] );
+
 	return (
 		<div className="press-this-app">
 			<Header
@@ -328,6 +340,10 @@ export default function App() {
 				onSave={ saveState.handleSave }
 				isSaving={ saveState.isSaving }
 				publishLabel={ saveState.publishLabel }
+				onUndo={ undoState.handleUndo }
+				onRedo={ undoState.handleRedo }
+				hasUndo={ undoState.hasUndo }
+				hasRedo={ undoState.hasRedo }
 			/>
 
 			<div className="press-this-app__body">
@@ -344,6 +360,7 @@ export default function App() {
 					pendingScrape={ pendingScrape }
 					onScrapeProcessed={ handleScrapeProcessed }
 					onSaveReady={ handleSaveReady }
+					onUndoReady={ handleUndoReady }
 					categoryNonce={ data.categoryNonce || '' }
 					ajaxUrl={ data.ajaxUrl || '' }
 				/>
