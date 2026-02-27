@@ -17,7 +17,7 @@ import {
 	useEffect,
 	useRef,
 } from '@wordpress/element';
-import { useSelect } from '@wordpress/data';
+import { useSelect, useDispatch } from '@wordpress/data';
 import { parse } from '@wordpress/blocks';
 import {
 	BlockEditorProvider,
@@ -316,13 +316,19 @@ export default function PressThisEditor( {
 	}, [] );
 
 	/**
-	 * Insert a block into the editor.
+	 * Insert a block into the editor at the current selection point.
 	 *
-	 * @param {Object} block Block to insert.
+	 * Uses the block editor store's insertBlock action so the block is placed
+	 * after the currently selected block rather than always at the end.
 	 */
-	const insertBlock = useCallback( ( block ) => {
-		setBlocks( ( prev ) => [ ...prev, block ] );
-	}, [] );
+	const { insertBlock: dispatchInsertBlock } =
+		useDispatch( blockEditorStore );
+	const insertBlock = useCallback(
+		( block ) => {
+			dispatchInsertBlock( block );
+		},
+		[ dispatchInsertBlock ]
+	);
 
 	/**
 	 * Handle save operation.
