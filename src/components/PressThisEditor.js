@@ -306,6 +306,7 @@ export default function PressThisEditor( {
 		const previousBlocks = undoStackRef.current.pop();
 		redoStackRef.current.push( blocksRef.current );
 		isUndoingRef.current = true;
+		blocksRef.current = previousBlocks;
 		setBlocks( previousBlocks );
 		syncUndoRedoState();
 	}, [ syncUndoRedoState ] );
@@ -317,6 +318,7 @@ export default function PressThisEditor( {
 		const nextBlocks = redoStackRef.current.pop();
 		undoStackRef.current.push( blocksRef.current );
 		isUndoingRef.current = true;
+		blocksRef.current = nextBlocks;
 		setBlocks( nextBlocks );
 		syncUndoRedoState();
 	}, [ syncUndoRedoState ] );
