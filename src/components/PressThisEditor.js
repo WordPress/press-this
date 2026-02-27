@@ -311,8 +311,13 @@ export default function PressThisEditor( {
 				}
 			}
 
-			// Ctrl+Y / Cmd+Y = Redo (Windows/Linux convention).
-			if ( key === 'y' && ! event.shiftKey ) {
+			// Ctrl+Y = Redo (Windows/Linux convention). Do not use Cmd+Y on macOS.
+			if (
+				key === 'y' &&
+				! event.shiftKey &&
+				event.ctrlKey &&
+				! event.metaKey
+			) {
 				event.preventDefault();
 				redo();
 			}
