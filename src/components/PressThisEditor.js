@@ -39,8 +39,6 @@ import {
 	Snackbar,
 	Panel,
 	PanelBody,
-	TextControl,
-	SelectControl,
 	FormTokenField,
 } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
@@ -51,6 +49,7 @@ import { registerCoreBlocks } from '@wordpress/block-library';
  */
 import ScrapedMediaPanel from './ScrapedMediaPanel';
 import FeaturedImagePanel from './FeaturedImagePanel';
+import CategoryPanel from './CategoryPanel';
 
 /**
  * Sidebar Block Inspector component.
@@ -264,13 +263,6 @@ export default function PressThisEditor( {
 	// State for dynamic categories list (can be updated when new categories are added).
 	const [ categories, setCategories ] = useState( initialCategories );
 
-	// State for Add New Category form.
-	const [ isAddCategoryOpen, setIsAddCategoryOpen ] = useState( false );
-	const [ newCategoryName, setNewCategoryName ] = useState( '' );
-	const [ newCategoryParent, setNewCategoryParent ] = useState( 0 );
-	const [ isCreatingCategory, setIsCreatingCategory ] = useState( false );
-	const [ categoryError, setCategoryError ] = useState( '' );
-
 	// State for tag suggestions (autocomplete).
 	const [ tagSuggestions, setTagSuggestions ] = useState( [] );
 	const [ isLoadingTags, setIsLoadingTags ] = useState( false );
@@ -450,94 +442,6 @@ export default function PressThisEditor( {
 			}
 		}
 	}, [] );
-
-	/**
-	 * Handle creating a new category via AJAX.
-	 */
-	const handleAddCategory = useCallback( async () => {
-		if ( ! newCategoryName.trim() || ! categoryNonce || ! ajaxUrl ) {
-			return;
-		}
-
-		setIsCreatingCategory( true );
-		setCategoryError( '' );
-
-		try {
-			const params = new URLSearchParams();
-			params.append( 'action', 'press-this-plugin-add-category' );
-			params.append( 'new_cat_nonce', categoryNonce );
-			params.append( 'name', newCategoryName.trim() );
-			params.append( 'parent', newCategoryParent.toString() );
-
-			const response = await fetch( ajaxUrl, {
-				method: 'POST',
-				credentials: 'same-origin',
-				headers: {
-					'Content-Type': 'application/x-www-form-urlencoded',
-				},
-				body: params.toString(),
-			} );
-
-			const result = await response.json();
-
-			if ( result.success && result.data && result.data.length > 0 ) {
-				// Add new categories to the list.
-				const newCats = result.data.map( ( cat ) => ( {
-					id: cat.term_id,
-					name: cat.name,
-					parent: cat.parent,
-				} ) );
-
-				setCategories( ( prev ) => [ ...prev, ...newCats ] );
-
-				// Auto-select the newly created categories.
-				const newCatIds = newCats.map( ( cat ) => cat.id );
-				setSelectedCategories( ( prev ) => [ ...prev, ...newCatIds ] );
-
-				// Clear form and close.
-				setNewCategoryName( '' );
-				setNewCategoryParent( 0 );
-				setIsAddCategoryOpen( false );
-			} else {
-				setCategoryError(
-					result.data?.errorMessage ||
-						__( 'Failed to create category.', 'press-this' )
-				);
-			}
-		} catch ( error ) {
-			setCategoryError(
-				__( 'Failed to create category.', 'press-this' )
-			);
-		} finally {
-			setIsCreatingCategory( false );
-		}
-	}, [ newCategoryName, newCategoryParent, categoryNonce, ajaxUrl ] );
-
-	/**
-	 * Build parent category options for the dropdown.
-	 */
-	const parentCategoryOptions = useMemo( () => {
-		const options = [
-			{ value: 0, label: __( '— Parent Category —', 'press-this' ) },
-		];
-
-		// Build hierarchical options.
-		const buildOptions = ( items, parentId = 0, depth = 0 ) => {
-			items
-				.filter( ( cat ) => ( cat.parent || 0 ) === parentId )
-				.forEach( ( cat ) => {
-					const prefix = '\u00A0'.repeat( depth * 3 ); // Non-breaking spaces for indentation.
-					options.push( {
-						value: cat.id,
-						label: prefix + cat.name,
-					} );
-					buildOptions( items, cat.id, depth + 1 );
-				} );
-		};
-
-		buildOptions( categories );
-		return options;
-	}, [ categories ] );
 
 	/**
 	 * Search for tag suggestions via REST API.
@@ -816,150 +720,23 @@ export default function PressThisEditor( {
 									{ /* Categories Panel */ }
 									{ capabilities.canAssignCategories &&
 										categories.length > 0 && (
-											<PanelBody
-												title={ __(
-													'Categories',
-													'press-this'
-												) }
-												initialOpen={ false }
-											>
-												<div className="press-this-editor__categories">
-													{ categories.map(
-														( cat ) => (
-															// eslint-disable-next-line jsx-a11y/label-has-associated-control
-															<label
-																key={ cat.id }
-																className="press-this-editor__category"
-															>
-																<input
-																	type="checkbox"
-																	checked={ selectedCategories.includes(
-																		cat.id
-																	) }
-																	onChange={ (
-																		e
-																	) => {
-																		if (
-																			e
-																				.target
-																				.checked
-																		) {
-																			setSelectedCategories(
-																				[
-																					...selectedCategories,
-																					cat.id,
-																				]
-																			);
-																		} else {
-																			setSelectedCategories(
-																				selectedCategories.filter(
-																					(
-																						id
-																					) =>
-																						id !==
-																						cat.id
-																				)
-																			);
-																		}
-																	} }
-																/>
-																{ cat.name }
-															</label>
-														)
-													) }
-												</div>
-
-												{ /* Add New Category - only show if user can edit categories */ }
-												{ capabilities.canEditCategories &&
-													categoryNonce && (
-														<div className="press-this-editor__add-category">
-															<Button
-																variant="link"
-																onClick={ () =>
-																	setIsAddCategoryOpen(
-																		! isAddCategoryOpen
-																	)
-																}
-																className="press-this-editor__add-category-toggle"
-															>
-																{ isAddCategoryOpen
-																	? __(
-																			'— Close —',
-																			'press-this'
-																	  )
-																	: __(
-																			'+ Add New Category',
-																			'press-this'
-																	  ) }
-															</Button>
-
-															{ isAddCategoryOpen && (
-																<div className="press-this-editor__add-category-form">
-																	<TextControl
-																		value={
-																			newCategoryName
-																		}
-																		onChange={
-																			setNewCategoryName
-																		}
-																		placeholder={ __(
-																			'New Category Name',
-																			'press-this'
-																		) }
-																		__nextHasNoMarginBottom
-																		__next40pxDefaultSize
-																	/>
-																	<SelectControl
-																		value={
-																			newCategoryParent
-																		}
-																		onChange={ (
-																			value
-																		) =>
-																			setNewCategoryParent(
-																				parseInt(
-																					value,
-																					10
-																				)
-																			)
-																		}
-																		options={
-																			parentCategoryOptions
-																		}
-																		__nextHasNoMarginBottom
-																		__next40pxDefaultSize
-																	/>
-																	{ categoryError && (
-																		<p className="press-this-editor__add-category-error">
-																			{
-																				categoryError
-																			}
-																		</p>
-																	) }
-																	<Button
-																		variant="secondary"
-																		onClick={
-																			handleAddCategory
-																		}
-																		disabled={
-																			! newCategoryName.trim() ||
-																			isCreatingCategory
-																		}
-																		isBusy={
-																			isCreatingCategory
-																		}
-																		className="press-this-editor__add-category-button"
-																	>
-																		{ __(
-																			'Add New Category',
-																			'press-this'
-																		) }
-																	</Button>
-																</div>
-															) }
-														</div>
-													) }
-											</PanelBody>
+											<CategoryPanel
+												categories={ categories }
+												selectedCategories={
+													selectedCategories
+												}
+												onSelectionChange={
+													setSelectedCategories
+												}
+												onCategoriesChange={
+													setCategories
+												}
+												canEditCategories={
+													capabilities.canEditCategories
+												}
+												categoryNonce={ categoryNonce }
+												ajaxUrl={ ajaxUrl }
+											/>
 										) }
 
 									{ /* Tags Panel */ }
