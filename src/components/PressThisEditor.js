@@ -17,7 +17,7 @@ import {
 	useEffect,
 	useRef,
 } from '@wordpress/element';
-import { useSelect } from '@wordpress/data';
+import { useSelect, useDispatch } from '@wordpress/data';
 import { parse } from '@wordpress/blocks';
 import {
 	BlockEditorProvider,
@@ -275,6 +275,52 @@ export default function PressThisEditor( {
 	const [ tagSuggestions, setTagSuggestions ] = useState( [] );
 	const [ isLoadingTags, setIsLoadingTags ] = useState( false );
 	const tagSearchTimeout = useRef( null );
+
+	// Undo/Redo keyboard shortcuts.
+	// BlockEditorKeyboardShortcuts handles block-level shortcuts but not undo/redo.
+	// In full Gutenberg, EditorKeyboardShortcuts from @wordpress/editor registers these,
+	// but Press This uses BlockEditorProvider directly.
+	const { undo, redo } = useDispatch( blockEditorStore );
+
+	useEffect( () => {
+		function handleKeyDown( event ) {
+			// Don't override native undo in regular form fields (title, URL input, etc.).
+			const tagName = event.target.tagName.toLowerCase();
+			if (
+				tagName === 'input' ||
+				tagName === 'textarea' ||
+				tagName === 'select'
+			) {
+				return;
+			}
+
+			const isModKey = event.ctrlKey || event.metaKey;
+			if ( ! isModKey ) {
+				return;
+			}
+
+			const key = event.key.toLowerCase();
+
+			// Ctrl+Z / Cmd+Z = Undo, Ctrl+Shift+Z / Cmd+Shift+Z = Redo.
+			if ( key === 'z' ) {
+				event.preventDefault();
+				if ( event.shiftKey ) {
+					redo();
+				} else {
+					undo();
+				}
+			}
+
+			// Ctrl+Y / Cmd+Y = Redo (Windows/Linux convention).
+			if ( key === 'y' && ! event.shiftKey ) {
+				event.preventDefault();
+				redo();
+			}
+		}
+
+		document.addEventListener( 'keydown', handleKeyDown );
+		return () => document.removeEventListener( 'keydown', handleKeyDown );
+	}, [ undo, redo ] );
 
 	// Parse initial content.
 	useEffect( () => {
