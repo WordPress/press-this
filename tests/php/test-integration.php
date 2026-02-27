@@ -204,4 +204,83 @@ class Test_Press_This_Integration extends BaseTestCase {
 
 		$this->assertArrayHasKey( 'redirInParent', $settings );
 	}
+
+	/**
+	 * Test 11: REST save handler includes admin files for image sideloading.
+	 *
+	 * Regression test for GitHub issue #74.
+	 *
+	 * The REST save handler calls side_load_images() which uses
+	 * media_sideload_image() from wp-admin/includes/media.php. In a
+	 * real REST API request, admin includes are NOT loaded by default,
+	 * so the function must explicitly require them. Without these
+	 * includes, saving a post with external images causes a PHP fatal
+	 * error: "Call to undefined function media_sideload_image()".
+	 *
+	 * Note: WorDBless preloads admin includes, so we cannot reproduce
+	 * the fatal error directly. Instead we verify the function source
+	 * contains the required require_once statements.
+	 *
+	 * @covers ::press_this_rest_save_post
+	 */
+	public function test_rest_save_requires_admin_media_includes() {
+		$func       = new ReflectionFunction( 'press_this_rest_save_post' );
+		$file_lines = file( $func->getFileName() );
+		$body       = implode( '', array_slice( $file_lines, $func->getStartLine() - 1, $func->getEndLine() - $func->getStartLine() + 1 ) );
+
+		$this->assertStringContainsString( "wp-admin/includes/file.php", $body, 'Missing require for file.php (provides download_url)' );
+		$this->assertStringContainsString( "wp-admin/includes/media.php", $body, 'Missing require for media.php (provides media_sideload_image)' );
+		$this->assertStringContainsString( "wp-admin/includes/image.php", $body, 'Missing require for image.php (provides wp_generate_attachment_metadata)' );
+	}
+
+	/**
+	 * Test 12: REST save with external images in content succeeds.
+	 *
+	 * Functional companion to test 11. Exercises the full save code path
+	 * with content containing an external image and a featured_image set,
+	 * matching the scenario from GitHub issue #74.
+	 *
+	 * @covers ::press_this_rest_save_post
+	 */
+	public function test_rest_save_with_external_images_succeeds() {
+		// Block HTTP requests to prevent actual image downloads.
+		$block_http = function () {
+			return new WP_Error( 'http_blocked', 'Blocked in test' );
+		};
+		add_filter( 'pre_http_request', $block_http, 1 );
+
+		// Create a draft post owned by the test user.
+		$post_id = wp_insert_post(
+			array(
+				'post_author'  => $this->editor_user_id,
+				'post_status'  => 'draft',
+				'post_title'   => 'Test Post',
+				'post_content' => '',
+			)
+		);
+
+		// Build a REST request whose content contains an external image.
+		$request = new WP_REST_Request( 'POST', '/press-this/v1/save' );
+		$request->set_param( 'post_id', $post_id );
+		$request->set_param( 'title', 'Test Save With Image' );
+		$request->set_param(
+			'content',
+			'<!-- wp:image -->'
+			. '<figure class="wp-block-image"><img src="https://example.com/photo.jpg" alt=""/></figure>'
+			. '<!-- /wp:image -->'
+		);
+		$request->set_param( 'featured_image', 1 );
+
+		$response = press_this_rest_save_post( $request );
+
+		$this->assertInstanceOf( WP_REST_Response::class, $response );
+		$data = $response->get_data();
+		$this->assertTrue( $data['success'] );
+
+		// Verify the post was actually updated.
+		$post = get_post( $post_id );
+		$this->assertEquals( 'Test Save With Image', $post->post_title );
+
+		remove_filter( 'pre_http_request', $block_http, 1 );
+	}
 }
