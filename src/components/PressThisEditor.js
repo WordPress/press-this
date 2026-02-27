@@ -79,6 +79,31 @@ function SidebarBlockInspector() {
 	);
 }
 
+/**
+ * Connected Scraped Media Panel.
+ *
+ * Must be rendered inside BlockEditorProvider to access the block editor store.
+ * Uses the store's insertBlock action so media is inserted at the cursor
+ * position rather than always appended at the end.
+ *
+ * @param {Object} props Props passed through to ScrapedMediaPanel.
+ * @return {JSX.Element|null} ScrapedMediaPanel with store-connected insertion.
+ */
+function ConnectedScrapedMediaPanel( props ) {
+	const { insertBlock } = useDispatch( blockEditorStore );
+
+	const handleInsertBlock = useCallback(
+		( block ) => {
+			insertBlock( block );
+		},
+		[ insertBlock ]
+	);
+
+	return (
+		<ScrapedMediaPanel { ...props } onInsertBlock={ handleInsertBlock } />
+	);
+}
+
 // Ensure core blocks are registered.
 let blocksRegistered = false;
 function ensureBlocksRegistered() {
@@ -314,21 +339,6 @@ export default function PressThisEditor( {
 	const handleBlocksChange = useCallback( ( newBlocks ) => {
 		setBlocks( newBlocks );
 	}, [] );
-
-	/**
-	 * Insert a block into the editor at the current selection point.
-	 *
-	 * Uses the block editor store's insertBlock action so the block is placed
-	 * after the currently selected block rather than always at the end.
-	 */
-	const { insertBlock: dispatchInsertBlock } =
-		useDispatch( blockEditorStore );
-	const insertBlock = useCallback(
-		( block ) => {
-			dispatchInsertBlock( block );
-		},
-		[ dispatchInsertBlock ]
-	);
 
 	/**
 	 * Handle save operation.
@@ -752,10 +762,9 @@ export default function PressThisEditor( {
 									<SidebarBlockInspector />
 
 									{ /* Scraped Media Panel */ }
-									<ScrapedMediaPanel
+									<ConnectedScrapedMediaPanel
 										images={ images }
 										embeds={ embeds }
-										onInsertBlock={ insertBlock }
 										sourceUrl={ sourceUrl }
 									/>
 

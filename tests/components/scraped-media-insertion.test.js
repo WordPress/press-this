@@ -25,35 +25,38 @@ describe( 'Scraped media insertion respects cursor position', () => {
 	} );
 
 	test( 'useDispatch is imported from @wordpress/data', () => {
-		expect( editorContent ).toContain( 'useDispatch' );
 		expect( editorContent ).toMatch(
 			/import\s*\{[^}]*useDispatch[^}]*\}\s*from\s*['"]@wordpress\/data['"]/
 		);
 	} );
 
-	test( 'insertBlock is obtained from useDispatch( blockEditorStore )', () => {
+	test( 'a wrapper component uses useDispatch( blockEditorStore ) for insertion', () => {
+		// The store dispatch must happen inside a child component rendered
+		// within BlockEditorProvider, not in PressThisEditor itself.
+		expect( editorContent ).toMatch(
+			/function\s+ConnectedScrapedMediaPanel/
+		);
 		expect( editorContent ).toMatch(
 			/useDispatch\(\s*blockEditorStore\s*\)/
 		);
-		expect( editorContent ).toContain( 'dispatchInsertBlock' );
 	} );
 
-	test( 'insertBlock callback delegates to dispatchInsertBlock', () => {
-		// The insertBlock callback should call dispatchInsertBlock, not setBlocks.
-		// Extract the insertBlock callback definition.
-		const insertBlockMatch = editorContent.match(
-			/const\s+insertBlock\s*=\s*useCallback\(\s*\n?\s*\(\s*block\s*\)\s*=>\s*\{([\s\S]*?)\},/
+	test( 'ConnectedScrapedMediaPanel is used inside BlockEditorProvider JSX', () => {
+		// The connected wrapper should appear in the rendered JSX.
+		expect( editorContent ).toMatch( /<ConnectedScrapedMediaPanel/ );
+
+		// The raw ScrapedMediaPanel should NOT be rendered directly with
+		// a manual onInsertBlock in the main component's JSX.
+		expect( editorContent ).not.toMatch(
+			/<ScrapedMediaPanel[\s\S]*?onInsertBlock=\{[^}]*setBlocks/
 		);
-		expect( insertBlockMatch ).not.toBeNull();
-
-		const callbackBody = insertBlockMatch[ 1 ];
-		expect( callbackBody ).toContain( 'dispatchInsertBlock' );
-		expect( callbackBody ).not.toContain( 'setBlocks' );
 	} );
 
-	test( 'ScrapedMediaPanel receives insertBlock as onInsertBlock prop', () => {
-		expect( editorContent ).toMatch(
-			/ScrapedMediaPanel[\s\S]*?onInsertBlock=\{\s*insertBlock\s*\}/
+	test( 'no manual array-append insertion pattern exists', () => {
+		// The old bug: setBlocks( ( prev ) => [ ...prev, block ] ) for insertion.
+		// This pattern should not appear tied to an insertBlock callback.
+		expect( editorContent ).not.toMatch(
+			/insertBlock[\s\S]*?setBlocks\s*\(\s*\(\s*prev\s*\)\s*=>\s*\[\s*\.\.\.prev\s*,\s*block\s*\]/
 		);
 	} );
 } );
