@@ -1,0 +1,78 @@
+# Keyboard Shortcuts
+
+Press This uses `BlockEditorProvider` directly rather than the full Gutenberg `EditorProvider`. This means not all keyboard shortcuts from the standard WordPress editor are available. This document tracks what's supported and what isn't.
+
+Modifier key conventions: "Primary" is Ctrl on Windows/Linux, Cmd on macOS. "Access" is Ctrl+Alt on Windows/Linux, Ctrl+Option on macOS. "Secondary" is Ctrl+Shift on Windows/Linux, Cmd+Shift on macOS.
+
+## Block Transform Shortcuts
+
+Provided by Press This's `BlockTransformShortcuts` component. These mirror Gutenberg's internal block-library shortcuts with the addition of a quote toggle.
+
+| Shortcut | Action | Status |
+|----------|--------|--------|
+| Access+1 through Access+6 | Transform paragraph/heading to heading level 1-6 | Available |
+| Access+0 | Transform heading to paragraph | Available |
+| Access+7 | Transform heading to paragraph (alias) | Available |
+| Access+Q | Toggle between paragraph and quote | Available |
+
+## Block Editing Shortcuts
+
+Provided by `BlockEditorKeyboardShortcuts` from `@wordpress/block-editor`. These operate on selected blocks.
+
+| Shortcut | Action | Status |
+|----------|--------|--------|
+| Primary+A | Select all text, then all blocks | Available |
+| Primary+C | Copy selected block(s) | Available |
+| Primary+X | Cut selected block(s) | Available |
+| Primary+V | Paste | Available |
+| Primary+Shift+D | Duplicate selected block(s) | Available |
+| Access+Z | Remove selected block(s) | Available |
+| Primary+Alt+V | Paste styles | Available |
+| Primary+Alt+T | Insert block before | Available |
+| Primary+Alt+Y | Insert block after | Available |
+| Secondary+T | Move block up | Available |
+| Secondary+Y | Move block down | Available |
+| Primary+G | Group selected blocks | Available |
+| Primary+Shift+H | Toggle block visibility | Available |
+| Primary+Alt+R | Rename block | Available |
+| Escape | Clear selection / stop editing | Available |
+| Alt+F10 | Focus toolbar | Available |
+| / | Open block inserter (in empty paragraph) | Available |
+
+## Rich Text Format Shortcuts
+
+Provided by `@wordpress/format-library` (see PR #83). These work inside any rich text block (paragraphs, headings, quotes, lists).
+
+| Shortcut | Action | Status |
+|----------|--------|--------|
+| Primary+B | Bold | See [PR #83](https://github.com/WordPress/press-this/pull/83) |
+| Primary+I | Italic | See [PR #83](https://github.com/WordPress/press-this/pull/83) |
+| Primary+K | Insert/edit link | See [PR #83](https://github.com/WordPress/press-this/pull/83) |
+| Primary+Shift+K | Remove link | See [PR #83](https://github.com/WordPress/press-this/pull/83) |
+| Primary+U | Underline | See [PR #83](https://github.com/WordPress/press-this/pull/83) |
+| Access+D | Strikethrough | See [PR #83](https://github.com/WordPress/press-this/pull/83) |
+| Access+X | Inline code | See [PR #83](https://github.com/WordPress/press-this/pull/83) |
+
+## Editor-Level Shortcuts (Not Available)
+
+These shortcuts are registered by `EditorKeyboardShortcuts` in `@wordpress/editor`, which Press This doesn't use. Some are being addressed through alternative implementations.
+
+| Shortcut | Action | Status | Notes |
+|----------|--------|--------|-------|
+| Primary+Z | Undo | Not available | See [#75](https://github.com/WordPress/press-this/issues/75), [PR #78](https://github.com/WordPress/press-this/pull/78) |
+| Primary+Shift+Z | Redo | Not available | See [#75](https://github.com/WordPress/press-this/issues/75), [PR #78](https://github.com/WordPress/press-this/pull/78) |
+| Primary+Y | Redo (Windows/Linux) | Not available | See [#75](https://github.com/WordPress/press-this/issues/75), [PR #78](https://github.com/WordPress/press-this/pull/78) |
+| Primary+S | Save | Not available | |
+| Secondary+M | Toggle code editor | Not available | Not applicable to Press This |
+| Access+O | Toggle list view | Not available | |
+| Primary+Shift+, | Toggle settings panel | Not available | |
+| Primary+Shift+\ | Distraction-free mode | Not available | |
+| Access+H | Show keyboard shortcuts | Not available | |
+
+## Legacy Shortcuts (Not Available)
+
+These shortcuts existed in the classic TinyMCE editor but were never part of the block editor.
+
+| Shortcut | Action | Notes |
+|----------|--------|-------|
+| Ctrl+Alt+Q | Toggle blockquote | Classic editor only. Use Access+Q instead (see Block Transform Shortcuts above). |
