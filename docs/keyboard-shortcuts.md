@@ -4,6 +4,17 @@ Press This uses `BlockEditorProvider` directly rather than the full Gutenberg `E
 
 Modifier key conventions: "Primary" is Ctrl on Windows/Linux, Cmd on macOS. "Access" is Ctrl+Alt on Windows/Linux, Ctrl+Option on macOS. "Secondary" is Ctrl+Shift on Windows/Linux, Cmd+Shift on macOS.
 
+## Block Transform Shortcuts
+
+Provided by Press This's `BlockTransformShortcuts` component. These mirror Gutenberg's internal block-library shortcuts with the addition of a quote toggle.
+
+| Shortcut | Action | Status |
+|----------|--------|--------|
+| Access+1 through Access+6 | Transform paragraph/heading to heading level 1-6 | Available |
+| Access+0 | Transform heading to paragraph | Available |
+| Access+7 | Transform heading to paragraph (alias) | Available |
+| Access+Q | Toggle between paragraph and quote | Available |
+
 ## Rich Text Format Shortcuts
 
 Provided by `@wordpress/format-library`. These work inside any rich text block (paragraphs, headings, quotes, lists).
@@ -42,19 +53,9 @@ Provided by `BlockEditorKeyboardShortcuts` from `@wordpress/block-editor`. These
 | Alt+F10 | Focus toolbar | Available |
 | / | Open block inserter (in empty paragraph) | Available |
 
-## Block Transform Shortcuts
-
-Provided by `@wordpress/block-library`. These convert between block types.
-
-| Shortcut | Action | Status |
-|----------|--------|--------|
-| Access+0 | Transform to paragraph | Available |
-| Access+1 through Access+6 | Transform to heading (level 1-6) | Available |
-| Access+7 | Transform to paragraph (alias) | Available |
-
 ## Editor-Level Shortcuts (Not Available)
 
-These shortcuts are registered by `EditorKeyboardShortcuts` in `@wordpress/editor`, which Press This doesn't use. Some are handled through alternative implementations.
+These shortcuts are registered by `EditorKeyboardShortcuts` in `@wordpress/editor`, which Press This doesn't use. Some are being addressed through alternative implementations.
 
 | Shortcut | Action | Status | Notes |
 |----------|--------|--------|-------|
@@ -74,4 +75,4 @@ These shortcuts existed in the classic TinyMCE editor but were never part of the
 
 | Shortcut | Action | Notes |
 |----------|--------|-------|
-| Ctrl+Alt+Q | Toggle blockquote | Classic editor only. In the block editor, use Access+0 to transform to paragraph or the block toolbar to convert to a quote block. See [#81](https://github.com/WordPress/press-this/issues/81). |
+| Ctrl+Alt+Q | Toggle blockquote | Classic editor only. Use Access+Q instead (see Block Transform Shortcuts above). |
