@@ -469,6 +469,7 @@ export default function PressThisEditor( {
 				blocksRef.current,
 			];
 			redoStackRef.current = [];
+			blocksRef.current = newBlocks;
 			setBlocks( newBlocks );
 			syncUndoRedoState();
 		},
