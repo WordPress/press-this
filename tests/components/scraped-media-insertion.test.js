@@ -30,14 +30,14 @@ describe( 'Scraped media insertion respects cursor position', () => {
 		);
 	} );
 
-	test( 'a wrapper component uses useDispatch( blockEditorStore ) for insertion', () => {
+	test( 'ConnectedScrapedMediaPanel dispatches insertBlock via blockEditorStore', () => {
 		// The store dispatch must happen inside a child component rendered
 		// within BlockEditorProvider, not in PressThisEditor itself.
 		expect( editorContent ).toMatch(
 			/function\s+ConnectedScrapedMediaPanel/
 		);
 		expect( editorContent ).toMatch(
-			/useDispatch\(\s*blockEditorStore\s*\)/
+			/const\s+\{\s*insertBlock\s*\}\s*=\s*useDispatch\(\s*blockEditorStore\s*\)/
 		);
 	} );
 
