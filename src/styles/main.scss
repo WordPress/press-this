@@ -26,6 +26,9 @@
 // Block editor overrides.
 @use "partials/editor";
 
+// CategoryPanel: hierarchical category selector with search.
+@use "partials/categories-panel";
+
 // WordPress component overrides.
 @use "partials/wordpress-overrides";
 

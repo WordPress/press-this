@@ -58,7 +58,6 @@ export default function CategoryPanel( {
 } ) {
 	// Search/filter state.
 	const [ filterValue, setFilterValue ] = useState( '' );
-	const [ filteredTermsTree, setFilteredTermsTree ] = useState( [] );
 
 	// Add New Category form state.
 	const [ isAddCategoryOpen, setIsAddCategoryOpen ] = useState( false );
@@ -93,25 +92,33 @@ export default function CategoryPanel( {
 		return count;
 	}, [] );
 
+	// Derive filtered tree from termsTree + filterValue so it stays
+	// in sync when categories change while a filter is active.
+	const filteredTermsTree = useMemo( () => {
+		if ( filterValue === '' ) {
+			return [];
+		}
+		return termsTree
+			.map( getFilterMatcher( filterValue ) )
+			.filter( ( term ) => term );
+	}, [ termsTree, filterValue ] );
+
 	/**
 	 * Handle filter value changes.
-	 * Applies tree-aware filtering and announces results.
+	 * Updates the filter and announces results to screen readers.
 	 */
 	const setFilter = useCallback(
 		( value ) => {
 			setFilterValue( value );
 
 			if ( value === '' ) {
-				setFilteredTermsTree( [] );
 				return;
 			}
 
-			const newFilteredTermsTree = termsTree
+			const filtered = termsTree
 				.map( getFilterMatcher( value ) )
 				.filter( ( term ) => term );
-			setFilteredTermsTree( newFilteredTermsTree );
-
-			const resultCount = countTerms( newFilteredTermsTree );
+			const resultCount = countTerms( filtered );
 			const message = sprintf(
 				/* translators: %d: number of results */
 				_n(
