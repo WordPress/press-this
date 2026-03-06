@@ -215,15 +215,22 @@ class Press_This_Assets {
 		}
 
 		// Fallback dependencies if asset file doesn't exist.
+		// Keep in sync with build/press-this-editor.asset.php.
 		return array(
+			'react-jsx-runtime',
+			'wp-a11y',
 			'wp-block-editor',
+			'wp-block-library',
 			'wp-blocks',
 			'wp-components',
 			'wp-compose',
 			'wp-data',
+			'wp-dom-ready',
 			'wp-element',
+			'wp-format-library',
+			'wp-html-entities',
 			'wp-i18n',
-			'wp-rich-text',
+			'wp-primitives',
 		);
 	}
 }
