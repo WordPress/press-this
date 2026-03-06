@@ -20,8 +20,8 @@ async function navigateWithScrapedImages( page ) {
 	).toBeVisible( { timeout: 10000 } );
 
 	// Intercept the scrape API to return images (regex matches both permalink formats).
-	await page.route( /press-this\/v1\/scrape/, ( route ) => {
-		route.fulfill( {
+	await page.route( /press-this\/v1\/scrape/, async ( route ) => {
+		await route.fulfill( {
 			status: 200,
 			contentType: 'application/json',
 			body: JSON.stringify( {

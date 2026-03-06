@@ -332,7 +332,11 @@ class Test_Press_This_REST_Endpoints extends BaseTestCase {
 		wp_set_current_user( $this->editor_user_id );
 
 		$cat_id = wp_insert_term( 'REST Test Category', 'category' );
-		$cat_id = $cat_id['term_id'];
+		if ( is_wp_error( $cat_id ) ) {
+			$cat_id = $cat_id->get_error_data()['term_id'];
+		} else {
+			$cat_id = $cat_id['term_id'];
+		}
 
 		$request = new WP_REST_Request( 'POST', '/press-this/v1/save' );
 		$request->set_param( 'post_id', $this->test_post_id );

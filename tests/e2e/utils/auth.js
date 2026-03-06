@@ -19,7 +19,7 @@ const ADMIN_AUTH_FILE = path.join( AUTH_DIR, 'admin.json' );
  */
 async function wpLogin( page, username = 'admin', password = 'password' ) {
 	await page.goto( '/wp-login.php' );
-	await page.getByLabel( 'Username or Email Address' ).fill( username );
+	await page.locator( '#user_login' ).fill( username );
 	await page.locator( '#user_pass' ).fill( password );
 	await page.getByRole( 'button', { name: 'Log In' } ).click();
 	await page.waitForURL( /wp-admin/ );

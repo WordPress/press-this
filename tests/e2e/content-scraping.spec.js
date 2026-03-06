@@ -49,8 +49,8 @@ test.describe( 'Content Scraping', () => {
 		await scanInput.fill( 'https://example.com' );
 
 		// Intercept the scrape API call (matches both pretty and ugly permalinks).
-		await page.route( /press-this\/v1\/scrape/, ( route ) => {
-			route.fulfill( {
+		await page.route( /press-this\/v1\/scrape/, async ( route ) => {
+			await route.fulfill( {
 				status: 200,
 				contentType: 'application/json',
 				body: JSON.stringify( {
@@ -84,8 +84,8 @@ test.describe( 'Content Scraping', () => {
 		await scanInput.fill( 'https://invalid.test.example' );
 
 		// Intercept and return an error.
-		await page.route( /press-this\/v1\/scrape/, ( route ) => {
-			route.fulfill( {
+		await page.route( /press-this\/v1\/scrape/, async ( route ) => {
+			await route.fulfill( {
 				status: 500,
 				contentType: 'application/json',
 				body: JSON.stringify( {
