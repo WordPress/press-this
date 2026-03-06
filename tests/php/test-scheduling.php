@@ -43,7 +43,7 @@ class Test_Scheduling extends BaseTestCase {
 		populate_roles();
 
 		// Block HTTP requests to prevent actual image downloads during save.
-		add_filter( 'pre_http_request', array( $this, 'block_http' ), 1 );
+		add_filter( 'pre_http_request', array( $this, 'block_http' ), 1, 0 );
 
 		// Create an editor user (has publish_posts).
 		$this->editor_user_id = wp_insert_user(

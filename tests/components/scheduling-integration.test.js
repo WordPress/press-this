@@ -116,9 +116,9 @@ describe( 'Scheduling Integration', () => {
 			/timeZone:\s*'UTC'/
 		);
 
-		// It derives the timezone abbreviation using timeZoneName: 'short'.
+		// It appends the timezone identifier to the formatted date.
 		expect( editorContent ).toMatch(
-			/timeZoneName:\s*'short'/
+			/formatted\s*\}\s*\$\{\s*timezone\s*\}/
 		);
 
 		// The formatted result is used in the snackbar message via sprintf.

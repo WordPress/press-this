@@ -71,7 +71,25 @@ function getTimezoneAbbreviation( tz, date ) {
 			timeZone: tz,
 			timeZoneName: 'short',
 		} );
-		const refDate = date ? new Date( date ) : new Date();
+		// Parse date parts to build a UTC instant matching the wall-clock time,
+		// so DST lookup is correct for the selected date, not the browser's interpretation.
+		let refDate = new Date();
+		if ( date ) {
+			const m = date.match(
+				/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/
+			);
+			if ( m ) {
+				refDate = new Date(
+					Date.UTC(
+						Number( m[ 1 ] ),
+						Number( m[ 2 ] ) - 1,
+						Number( m[ 3 ] ),
+						Number( m[ 4 ] ),
+						Number( m[ 5 ] )
+					)
+				);
+			}
+		}
 		const parts = formatter.formatToParts( refDate );
 		const tzPart = parts.find( ( p ) => p.type === 'timeZoneName' );
 		return tzPart ? tzPart.value : tz;

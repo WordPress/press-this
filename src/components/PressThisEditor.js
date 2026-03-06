@@ -270,27 +270,9 @@ function formatScheduleDate( dateString, timezone ) {
 		const formatted = new Intl.DateTimeFormat( undefined, options ).format(
 			utcDate
 		);
-		// Append timezone abbreviation if available.
+		// Append timezone identifier if available.
 		if ( timezone ) {
-			try {
-				let abbr = timezone;
-				if ( ! /^UTC[+-]?\d*$/.test( timezone ) ) {
-					const tzFormatter = new Intl.DateTimeFormat( 'en-US', {
-						timeZone: timezone,
-						timeZoneName: 'short',
-					} );
-					const tzParts = tzFormatter.formatToParts( utcDate );
-					const tzPart = tzParts.find(
-						( p ) => p.type === 'timeZoneName'
-					);
-					if ( tzPart ) {
-						abbr = tzPart.value;
-					}
-				}
-				return `${ formatted } ${ abbr }`;
-			} catch {
-				// Fall through to return formatted without abbreviation.
-			}
+			return `${ formatted } ${ timezone }`;
 		}
 		return formatted;
 	} catch {
