@@ -230,6 +230,7 @@ class Press_This_Assets {
 			'wp-format-library',
 			'wp-html-entities',
 			'wp-i18n',
+			'wp-keyboard-shortcuts',
 			'wp-primitives',
 		);
 	}

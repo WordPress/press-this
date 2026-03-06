@@ -184,7 +184,25 @@ function press_this_register_rest_routes() {
 					'type'              => 'string',
 					'sanitize_callback' => 'sanitize_text_field',
 					'default'           => 'draft',
-					'enum'              => array( 'draft', 'publish' ),
+					'enum'              => array( 'draft', 'publish', 'future' ),
+				),
+				'date'           => array(
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+					'validate_callback' => function ( $value ) {
+						if ( empty( $value ) ) {
+							return true;
+						}
+						if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/', $value ) ) {
+							return new WP_Error(
+								'invalid_date_format',
+								__( 'Date must be in ISO 8601 format.', 'press-this' ),
+								array( 'status' => 400 )
+							);
+						}
+						return true;
+					},
+					'default'           => '',
 				),
 				'format'         => array(
 					'type'              => 'string',
@@ -337,6 +355,30 @@ function press_this_rest_save_post( $request ) {
 	if ( 'publish' === $status ) {
 		if ( current_user_can( 'publish_posts' ) ) {
 			$post_data['post_status'] = 'publish';
+		} else {
+			$post_data['post_status'] = 'pending';
+		}
+	}
+
+	// Handle future (scheduled) status.
+	if ( 'future' === $status ) {
+		if ( current_user_can( 'publish_posts' ) ) {
+			$date = $request->get_param( 'date' );
+			if ( empty( $date ) || false === strtotime( $date ) ) {
+				return new WP_Error(
+					'press_this_invalid_date',
+					__( 'A valid date is required to schedule a post.', 'press-this' ),
+					array( 'status' => 400 )
+				);
+			}
+			// The frontend sends a naive datetime in the site's local timezone (no TZ qualifier).
+			// WordPress sets PHP's timezone to UTC, so strtotime() interprets the string as UTC
+			// and gmdate() formats it back as UTC -- the round-trip preserves the original value.
+			// The result is the site-local time string we need for post_date.
+			$post_data['post_date']     = gmdate( 'Y-m-d H:i:s', strtotime( $date ) );
+			$post_data['post_date_gmt'] = get_gmt_from_date( $post_data['post_date'] );
+			$post_data['post_status']   = 'future';
+			$post_data['edit_date']     = true;
 		} else {
 			$post_data['post_status'] = 'pending';
 		}

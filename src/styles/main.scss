@@ -32,6 +32,9 @@
 // WordPress component overrides.
 @use "partials/wordpress-overrides";
 
+// Header schedule popover.
+@use "partials/header-schedule";
+
 // ==========================================================================
 // WordPress Block Editor Styles
 // ==========================================================================

@@ -41,7 +41,7 @@ import {
 	PanelBody,
 	FormTokenField,
 } from '@wordpress/components';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import { registerCoreBlocks } from '@wordpress/block-library';
 
 /**
@@ -229,22 +229,54 @@ function getWpRestBaseUrl( pressThisRestUrl ) {
 }
 
 /**
+ * Format a date string for display in the schedule snackbar.
+ *
+ * Uses the browser's default locale for formatting so the date is displayed
+ * in the user's preferred language rather than hardcoded to English.
+ *
+ * @param {string} dateString ISO date string to format.
+ * @param {string} timezone   IANA timezone string (e.g., "America/New_York").
+ * @return {string} Human-readable formatted date.
+ */
+function formatScheduleDate( dateString, timezone ) {
+	try {
+		const date = new Date( dateString );
+		const options = {
+			year: 'numeric',
+			month: 'long',
+			day: 'numeric',
+			hour: 'numeric',
+			minute: '2-digit',
+			timeZoneName: 'short',
+		};
+		if ( timezone ) {
+			options.timeZone = timezone;
+		}
+		return new Intl.DateTimeFormat( undefined, options ).format( date );
+	} catch {
+		return dateString;
+	}
+}
+
+/**
  * Press This Editor component.
  *
- * @param {Object}   props                   Component props.
- * @param {Object}   props.post              Post object with ID, title, content.
- * @param {Object}   props.settings          Editor settings.
- * @param {Array}    props.images            Scraped images from source.
- * @param {Array}    props.embeds            Scraped embeds from source.
- * @param {Object}   props.categories        Available categories.
- * @param {Array}    props.postFormats       Available post formats.
- * @param {Object}   props.capabilities      User capabilities.
- * @param {Object}   props.restConfig        REST API configuration.
- * @param {string}   props.sourceUrl         Source URL being clipped.
- * @param {Object}   props.pendingScrape     Pending scraped content to append.
- * @param {Function} props.onScrapeProcessed Callback after scrape is processed.
- * @param {Function} props.onSaveReady       Callback when save handler is ready (receives { handleSave, isSaving, publishLabel }).
- * @param {Function} props.onUndoReady       Callback when undo/redo handlers are ready (receives { handleUndo, handleRedo, hasUndo, hasRedo }).
+ * @param {Object}   props                      Component props.
+ * @param {Object}   props.post                 Post object with ID, title, content.
+ * @param {Object}   props.settings             Editor settings.
+ * @param {Array}    props.images               Scraped images from source.
+ * @param {Array}    props.embeds               Scraped embeds from source.
+ * @param {Object}   props.categories           Available categories.
+ * @param {Array}    props.postFormats          Available post formats.
+ * @param {Object}   props.capabilities         User capabilities.
+ * @param {Object}   props.restConfig           REST API configuration.
+ * @param {string}   props.sourceUrl            Source URL being clipped.
+ * @param {Object}   props.pendingScrape        Pending scraped content to append.
+ * @param {Function} props.onScrapeProcessed    Callback after scrape is processed.
+ * @param {Function} props.onSaveReady          Callback when save handler is ready (receives { handleSave, isSaving, publishLabel }).
+ * @param {Function} props.onUndoReady          Callback when undo/redo handlers are ready (receives { handleUndo, handleRedo, hasUndo, hasRedo }).
+ * @param {string}   props.timezone             Site timezone string from wp_timezone_string().
+ * @param {Function} props.onPostStatusChange   Callback when post status changes after save (receives { status, date }).
  * @param {string}   props.categoryNonce
  * @param {string}   props.ajaxUrl
  * @return {JSX.Element} Press This Editor component.
@@ -263,6 +295,8 @@ export default function PressThisEditor( {
 	onScrapeProcessed = () => {},
 	onSaveReady = () => {},
 	onUndoReady = () => {},
+	timezone = '',
+	onPostStatusChange = () => {},
 	categoryNonce = '',
 	ajaxUrl = '',
 } ) {
@@ -472,7 +506,7 @@ export default function PressThisEditor( {
 	/**
 	 * Handle save operation.
 	 *
-	 * @param {string} status  Post status (draft, publish).
+	 * @param {string} status  Post status (draft, publish, future).
 	 * @param {Object} options Save options.
 	 */
 	const handleSave = useCallback(
@@ -499,6 +533,7 @@ export default function PressThisEditor( {
 						tags,
 						featured_image: featuredImageId,
 						force_redirect: options.forceRedirect || false,
+						date: options.date || '',
 					} ),
 				} );
 
@@ -517,6 +552,26 @@ export default function PressThisEditor( {
 						} else {
 							performSafeRedirect( result.redirect, false );
 						}
+					} else if ( status === 'future' && options.date ) {
+						// Scheduled post -- show formatted date in snackbar.
+						const formatted = formatScheduleDate(
+							options.date,
+							timezone
+						);
+						setNotice( {
+							status: 'success',
+							message: sprintf(
+								/* translators: %s: formatted date and time */
+								__( 'Post scheduled for %s.', 'press-this' ),
+								formatted
+							),
+						} );
+
+						// Notify parent that post status has changed.
+						onPostStatusChange( {
+							status: 'future',
+							date: options.date,
+						} );
 					} else {
 						// No redirect - show success notice.
 						setNotice( {
@@ -550,6 +605,8 @@ export default function PressThisEditor( {
 			featuredImageId,
 			post.id,
 			restConfig,
+			timezone,
+			onPostStatusChange,
 		]
 	);
 

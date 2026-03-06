@@ -1556,6 +1556,8 @@ class WP_Press_This_Plugin {
 			'postId'              => $post_ID,
 			'title'               => $post_title,
 			'content'             => $post_content,
+			'postStatus'          => get_post_status( $post_ID ),
+			'postDate'            => get_post( $post_ID )->post_date,
 			'nonce'               => wp_create_nonce( 'update-post_' . $post_ID ),
 			'categoryNonce'       => wp_create_nonce( 'add-category' ),
 
@@ -1619,6 +1621,7 @@ class WP_Press_This_Plugin {
 			// Config.
 			'redirInParent'       => $site_settings['redirInParent'],
 			'isRTL'               => is_rtl(),
+			'timezone'            => wp_timezone_string(),
 
 			// Allowed blocks.
 			'allowedBlocks'       => $this->get_allowed_blocks(),
