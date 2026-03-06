@@ -2,9 +2,9 @@ name: Tests
 
 on:
   push:
-    branches: [trunk, main, modernize/v2]
+    branches: [trunk, modernize/v2]
   pull_request:
-    branches: [trunk, main]
+    branches: [trunk]
 
 jobs:
   js-tests:
