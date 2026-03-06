@@ -10,6 +10,7 @@
 /**
  * WordPress dependencies
  */
+import '@wordpress/format-library';
 import { createRoot, StrictMode } from '@wordpress/element';
 import domReady from '@wordpress/dom-ready';
 
