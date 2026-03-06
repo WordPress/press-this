@@ -446,6 +446,7 @@ export default function PressThisEditor( {
 	 * @param {Array} newBlocks Updated blocks.
 	 */
 	const handleBlocksInput = useCallback( ( newBlocks ) => {
+		blocksRef.current = newBlocks;
 		setBlocks( newBlocks );
 	}, [] );
 
