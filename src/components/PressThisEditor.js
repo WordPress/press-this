@@ -244,6 +244,7 @@ function getWpRestBaseUrl( pressThisRestUrl ) {
  * @param {Object}   props.pendingScrape     Pending scraped content to append.
  * @param {Function} props.onScrapeProcessed Callback after scrape is processed.
  * @param {Function} props.onSaveReady       Callback when save handler is ready (receives { handleSave, isSaving, publishLabel }).
+ * @param {Function} props.onUndoReady       Callback when undo/redo handlers are ready (receives { handleUndo, handleRedo, hasUndo, hasRedo }).
  * @param {string}   props.categoryNonce
  * @param {string}   props.ajaxUrl
  * @return {JSX.Element} Press This Editor component.
@@ -261,6 +262,7 @@ export default function PressThisEditor( {
 	pendingScrape = null,
 	onScrapeProcessed = () => {},
 	onSaveReady = () => {},
+	onUndoReady = () => {},
 	categoryNonce = '',
 	ajaxUrl = '',
 } ) {
@@ -294,6 +296,106 @@ export default function PressThisEditor( {
 	const [ isLoadingTags, setIsLoadingTags ] = useState( false );
 	const tagSearchTimeout = useRef( null );
 
+	// Undo/Redo stack.
+	// The core/block-editor store does not provide undo/redo actions.
+	// In full Gutenberg, EditorProvider manages undo via core-data entity edits,
+	// but Press This uses BlockEditorProvider directly with React state.
+	const undoStackRef = useRef( [] );
+	const redoStackRef = useRef( [] );
+	const blocksRef = useRef( blocks );
+	const isUndoingRef = useRef( false );
+	const [ hasUndo, setHasUndo ] = useState( false );
+	const [ hasRedo, setHasRedo ] = useState( false );
+
+	// Keep blocksRef in sync.
+	useEffect( () => {
+		blocksRef.current = blocks;
+	}, [ blocks ] );
+
+	const syncUndoRedoState = useCallback( () => {
+		setHasUndo( undoStackRef.current.length > 0 );
+		setHasRedo( redoStackRef.current.length > 0 );
+	}, [] );
+
+	const handleUndo = useCallback( () => {
+		if ( undoStackRef.current.length === 0 ) {
+			return;
+		}
+		const previousBlocks = undoStackRef.current.pop();
+		redoStackRef.current.push( blocksRef.current );
+		isUndoingRef.current = true;
+		blocksRef.current = previousBlocks;
+		setBlocks( previousBlocks );
+		isUndoingRef.current = false;
+		syncUndoRedoState();
+	}, [ syncUndoRedoState ] );
+
+	const handleRedo = useCallback( () => {
+		if ( redoStackRef.current.length === 0 ) {
+			return;
+		}
+		const nextBlocks = redoStackRef.current.pop();
+		undoStackRef.current.push( blocksRef.current );
+		isUndoingRef.current = true;
+		blocksRef.current = nextBlocks;
+		setBlocks( nextBlocks );
+		isUndoingRef.current = false;
+		syncUndoRedoState();
+	}, [ syncUndoRedoState ] );
+
+	// Expose undo/redo to parent (for Header buttons).
+	useEffect( () => {
+		if ( onUndoReady ) {
+			onUndoReady( { handleUndo, handleRedo, hasUndo, hasRedo } );
+		}
+	}, [ onUndoReady, handleUndo, handleRedo, hasUndo, hasRedo ] );
+
+	// Keyboard shortcuts for undo/redo.
+	useEffect( () => {
+		function handleKeyDown( event ) {
+			// Don't override native undo in regular form fields (title, URL input, etc.).
+			const tagName = event.target.tagName.toLowerCase();
+			if (
+				tagName === 'input' ||
+				tagName === 'textarea' ||
+				tagName === 'select'
+			) {
+				return;
+			}
+
+			const isModKey = event.ctrlKey || event.metaKey;
+			if ( ! isModKey ) {
+				return;
+			}
+
+			const key = event.key.toLowerCase();
+
+			// Ctrl+Z / Cmd+Z = Undo, Ctrl+Shift+Z / Cmd+Shift+Z = Redo.
+			if ( key === 'z' ) {
+				event.preventDefault();
+				if ( event.shiftKey ) {
+					handleRedo();
+				} else {
+					handleUndo();
+				}
+			}
+
+			// Ctrl+Y = Redo (Windows/Linux convention). Do not use Cmd+Y on macOS.
+			if (
+				key === 'y' &&
+				! event.shiftKey &&
+				event.ctrlKey &&
+				! event.metaKey
+			) {
+				event.preventDefault();
+				handleRedo();
+			}
+		}
+
+		document.addEventListener( 'keydown', handleKeyDown );
+		return () => document.removeEventListener( 'keydown', handleKeyDown );
+	}, [ handleUndo, handleRedo ] );
+
 	// Parse initial content.
 	useEffect( () => {
 		if ( post.content ) {
@@ -314,10 +416,16 @@ export default function PressThisEditor( {
 			setTitle( pendingScrape.title );
 		}
 
-		// Parse and append the scraped content blocks.
+		// Parse and append the scraped content blocks (with undo level).
 		if ( pendingScrape.content ) {
 			const newBlocks = parse( pendingScrape.content );
+			undoStackRef.current = [
+				...undoStackRef.current,
+				blocksRef.current,
+			];
+			redoStackRef.current = [];
 			setBlocks( ( prevBlocks ) => [ ...prevBlocks, ...newBlocks ] );
+			syncUndoRedoState();
 		}
 
 		// Notify parent that we've processed the scrape.
@@ -325,13 +433,41 @@ export default function PressThisEditor( {
 	}, [ pendingScrape, onScrapeProcessed ] ); // eslint-disable-line react-hooks/exhaustive-deps
 
 	/**
-	 * Handle block changes.
+	 * Handle non-persistent block changes (e.g. typing).
+	 * Updates blocks without creating an undo level.
 	 *
 	 * @param {Array} newBlocks Updated blocks.
 	 */
-	const handleBlocksChange = useCallback( ( newBlocks ) => {
+	const handleBlocksInput = useCallback( ( newBlocks ) => {
+		blocksRef.current = newBlocks;
 		setBlocks( newBlocks );
 	}, [] );
+
+	/**
+	 * Handle persistent block changes (e.g. paste, block operations).
+	 * Creates an undo level before applying the change.
+	 *
+	 * @param {Array} newBlocks Updated blocks.
+	 */
+	const handleBlocksChange = useCallback(
+		( newBlocks ) => {
+			// Don't create undo levels for undo/redo operations.
+			if ( isUndoingRef.current ) {
+				isUndoingRef.current = false;
+				setBlocks( newBlocks );
+				return;
+			}
+			undoStackRef.current = [
+				...undoStackRef.current,
+				blocksRef.current,
+			];
+			redoStackRef.current = [];
+			blocksRef.current = newBlocks;
+			setBlocks( newBlocks );
+			syncUndoRedoState();
+		},
+		[ syncUndoRedoState ]
+	);
 
 	/**
 	 * Handle save operation.
@@ -560,7 +696,7 @@ export default function PressThisEditor( {
 			<div className="press-this-editor">
 				<BlockEditorProvider
 					value={ blocks }
-					onInput={ handleBlocksChange }
+					onInput={ handleBlocksInput }
 					onChange={ handleBlocksChange }
 					settings={ editorSettings }
 				>

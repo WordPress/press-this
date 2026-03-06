@@ -12,7 +12,6 @@
  * WordPress dependencies
  */
 import { useState, useCallback, useEffect, useRef } from '@wordpress/element';
-import { useSelect, useDispatch } from '@wordpress/data';
 import {
 	Button,
 	TextControl,
@@ -28,7 +27,6 @@ import {
 	redo as redoIcon,
 	moreVertical,
 } from '@wordpress/icons';
-import { store as blockEditorStore } from '@wordpress/block-editor';
 
 /**
  * Internal dependencies
@@ -64,6 +62,10 @@ function isMacOS() {
  * @param {Function} props.onSave                Callback for save operations (status, options).
  * @param {boolean}  props.isSaving              Whether a save operation is in progress.
  * @param {string}   props.publishLabel          Label for the publish button.
+ * @param {Function} props.onUndo                Undo callback.
+ * @param {Function} props.onRedo                Redo callback.
+ * @param {boolean}  props.hasUndo               Whether undo is available.
+ * @param {boolean}  props.hasRedo               Whether redo is available.
  * @return {JSX.Element} Header component.
  */
 export default function Header( {
@@ -80,6 +82,10 @@ export default function Header( {
 	onSave,
 	isSaving = false,
 	publishLabel = __( 'Publish', 'press-this' ),
+	onUndo,
+	onRedo,
+	hasUndo = false,
+	hasRedo = false,
 } ) {
 	const [ scanUrl, setScanUrl ] = useState( sourceUrl || '' );
 	const [ isScanning, setIsScanning ] = useState( false );
@@ -89,25 +95,6 @@ export default function Header( {
 
 	// Track if initial auto-scan has been performed.
 	const hasAutoScanned = useRef( false );
-
-	// Undo/Redo state from block editor store.
-	// Note: These selectors require BlockEditorProvider context.
-	// If called outside context, they will return false/noop.
-	const { hasUndo, hasRedo } = useSelect( ( select ) => {
-		const store = select( blockEditorStore );
-		// Check if hasUndo/hasRedo exist (they might not if outside BlockEditorProvider context).
-		const canUndo =
-			typeof store.hasUndo === 'function' ? store.hasUndo() : false;
-		const canRedo =
-			typeof store.hasRedo === 'function' ? store.hasRedo() : false;
-		return {
-			hasUndo: canUndo,
-			hasRedo: canRedo,
-		};
-	}, [] );
-
-	// Undo/Redo actions from block editor store.
-	const { undo, redo } = useDispatch( blockEditorStore );
 
 	// Keyboard shortcut hints based on platform.
 	const undoShortcut = isMacOS() ? '\u2318Z' : 'Ctrl+Z';
@@ -329,7 +316,7 @@ export default function Header( {
 						<Button
 							className="press-this-header__toolbar-button"
 							icon={ undoIcon }
-							onClick={ undo }
+							onClick={ onUndo }
 							disabled={ ! hasUndo }
 							aria-label={ __( 'Undo', 'press-this' ) }
 						/>
@@ -343,7 +330,7 @@ export default function Header( {
 						<Button
 							className="press-this-header__toolbar-button"
 							icon={ redoIcon }
-							onClick={ redo }
+							onClick={ onRedo }
 							disabled={ ! hasRedo }
 							aria-label={ __( 'Redo', 'press-this' ) }
 						/>

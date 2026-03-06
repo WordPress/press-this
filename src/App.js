@@ -310,6 +310,28 @@ export default function App() {
 		setSaveState( state );
 	}, [] );
 
+	// State for undo/redo from editor.
+	// Split into primitive values so React can skip re-renders when values
+	// haven't changed (Object.is comparison). The handlers are stable refs
+	// from useCallback, so setUndoHandler/setRedoHandler rarely trigger
+	// re-renders. The booleans only toggle on undo/redo stack transitions.
+	const [ undoHandler, setUndoHandler ] = useState( null );
+	const [ redoHandler, setRedoHandler ] = useState( null );
+	const [ hasUndo, setHasUndo ] = useState( false );
+	const [ hasRedo, setHasRedo ] = useState( false );
+
+	/**
+	 * Handle undo/redo state updates from PressThisEditor.
+	 *
+	 * @param {Object} state Undo state with handleUndo, handleRedo, hasUndo, hasRedo.
+	 */
+	const handleUndoReady = useCallback( ( state ) => {
+		setUndoHandler( () => state.handleUndo );
+		setRedoHandler( () => state.handleRedo );
+		setHasUndo( state.hasUndo );
+		setHasRedo( state.hasRedo );
+	}, [] );
+
 	return (
 		<div className="press-this-app">
 			<Header
@@ -328,6 +350,10 @@ export default function App() {
 				onSave={ saveState.handleSave }
 				isSaving={ saveState.isSaving }
 				publishLabel={ saveState.publishLabel }
+				onUndo={ undoHandler }
+				onRedo={ redoHandler }
+				hasUndo={ hasUndo }
+				hasRedo={ hasRedo }
 			/>
 
 			<div className="press-this-app__body">
@@ -344,6 +370,7 @@ export default function App() {
 					pendingScrape={ pendingScrape }
 					onScrapeProcessed={ handleScrapeProcessed }
 					onSaveReady={ handleSaveReady }
+					onUndoReady={ handleUndoReady }
 					categoryNonce={ data.categoryNonce || '' }
 					ajaxUrl={ data.ajaxUrl || '' }
 				/>
