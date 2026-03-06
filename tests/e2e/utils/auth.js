@@ -20,7 +20,7 @@ const ADMIN_AUTH_FILE = path.join( AUTH_DIR, 'admin.json' );
 async function wpLogin( page, username = 'admin', password = 'password' ) {
 	await page.goto( '/wp-login.php' );
 	await page.getByLabel( 'Username or Email Address' ).fill( username );
-	await page.getByLabel( 'Password' ).fill( password );
+	await page.locator( '#user_pass' ).fill( password );
 	await page.getByRole( 'button', { name: 'Log In' } ).click();
 	await page.waitForURL( /wp-admin/ );
 }
@@ -65,7 +65,8 @@ async function createUser( username, email, role, password = 'password' ) {
 		);
 	} catch ( error ) {
 		// User may already exist — that's fine.
-		if ( ! error.stderr?.toString().includes( 'already exists' ) ) {
+		const output = ( error.stderr?.toString() || '' ) + ( error.stdout?.toString() || '' );
+		if ( ! output.includes( 'already exists' ) ) {
 			console.warn( `Could not create user ${ username }:`, error.message );
 		}
 	}
