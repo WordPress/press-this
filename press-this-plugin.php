@@ -949,8 +949,8 @@ function press_this_is_proxy_enabled() {
  */
 function press_this_rest_manifest() {
 	$manifest = array(
-		'name'             => 'Press This',
-		'short_name'       => 'Press This',
+		'name'             => __( 'Press This', 'press-this' ),
+		'short_name'       => __( 'Press This', 'press-this' ),
 		'start_url'        => admin_url( 'press-this.php' ),
 		'display'          => 'standalone',
 		'theme_color'      => '#2271b1',
@@ -977,7 +977,10 @@ function press_this_rest_manifest() {
 		),
 	);
 
-	return new WP_REST_Response( $manifest, 200 );
+	$response = new WP_REST_Response( $manifest, 200 );
+	$response->header( 'Content-Type', 'application/manifest+json; charset=utf-8' );
+
+	return $response;
 }
 
 /**
