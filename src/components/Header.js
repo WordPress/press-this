@@ -131,20 +131,41 @@ function getCurrentDateInTimezone( tz ) {
 }
 
 /**
+ * Parse a naive datetime string to UTC milliseconds by extracting parts directly,
+ * avoiding browser-local timezone interpretation via new Date().
+ *
+ * @param {string} dateString Naive ISO date string (e.g., "2026-03-07T15:00:00").
+ * @return {number} Milliseconds (as if the wall-clock time were in UTC).
+ */
+function parseNaiveToMs( dateString ) {
+	const m = dateString.match( /(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/ );
+	if ( ! m ) {
+		return new Date( dateString ).getTime();
+	}
+	return Date.UTC(
+		Number( m[ 1 ] ),
+		Number( m[ 2 ] ) - 1,
+		Number( m[ 3 ] ),
+		Number( m[ 4 ] ),
+		Number( m[ 5 ] )
+	);
+}
+
+/**
  * Check whether a date string represents a future date using a 1-minute buffer.
  * Matches Gutenberg's isEditedPostBeingScheduled pattern.
  *
- * Both dateString and the current time are compared as naive wall-clock times
- * in the site timezone, so the browser's local timezone does not affect the result.
+ * Both dateString and the current time are parsed as wall-clock parts via
+ * parseNaiveToMs to avoid browser-local timezone reinterpretation at DST boundaries.
  *
  * @param {string} dateString ISO date string to check (naive, in site timezone).
  * @param {string} tz         Site timezone string.
  * @return {boolean} True if the date is more than 1 minute in the future.
  */
 function isFutureDate( dateString, tz ) {
-	const selectedMs = new Date( dateString ).getTime();
+	const selectedMs = parseNaiveToMs( dateString );
 	const nowInSiteTz = getCurrentDateInTimezone( tz );
-	const nowMs = new Date( nowInSiteTz ).getTime();
+	const nowMs = parseNaiveToMs( nowInSiteTz );
 	return selectedMs - nowMs > ONE_MINUTE;
 }
 
