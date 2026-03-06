@@ -129,15 +129,14 @@ export default function CategoryPanel( {
 	 */
 	const handleCategoryToggle = useCallback(
 		( termId ) => {
-			if ( selectedCategories.includes( termId ) ) {
-				onSelectionChange(
-					selectedCategories.filter( ( id ) => id !== termId )
-				);
-			} else {
-				onSelectionChange( [ ...selectedCategories, termId ] );
-			}
+			onSelectionChange( ( prev ) => {
+				if ( prev.includes( termId ) ) {
+					return prev.filter( ( id ) => id !== termId );
+				}
+				return [ ...prev, termId ];
+			} );
 		},
-		[ selectedCategories, onSelectionChange ]
+		[ onSelectionChange ]
 	);
 
 	/**
