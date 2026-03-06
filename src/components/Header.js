@@ -11,7 +11,13 @@
 /**
  * WordPress dependencies
  */
-import { useState, useCallback, useEffect, useRef } from '@wordpress/element';
+import {
+	useState,
+	useCallback,
+	useEffect,
+	useRef,
+	useMemo,
+} from '@wordpress/element';
 import {
 	Button,
 	TextControl,
@@ -92,6 +98,14 @@ export default function Header( {
 	const [ scanError, setScanError ] = useState( '' );
 	const [ showUpgradeNotice, setShowUpgradeNotice ] =
 		useState( isLegacyBookmarklet );
+
+	// Detect standalone display mode (added to home screen).
+	const isStandalone = useMemo(
+		() =>
+			window.matchMedia( '(display-mode: standalone)' ).matches ||
+			window.navigator.standalone === true,
+		[]
+	);
 
 	// Track if initial auto-scan has been performed.
 	const hasAutoScanned = useRef( false );
@@ -404,6 +418,32 @@ export default function Header( {
 											'press-this'
 										) }
 									</MenuItem>
+									{ isStandalone && (
+										<>
+											<MenuItem
+												href={ siteUrl }
+												onClick={ onClose }
+											>
+												{ __(
+													'View Site',
+													'press-this'
+												) }
+											</MenuItem>
+											<MenuItem
+												onClick={ () => {
+													// Reload without query params for a blank post.
+													window.location.href =
+														window.location.pathname;
+													onClose();
+												} }
+											>
+												{ __(
+													'New Post',
+													'press-this'
+												) }
+											</MenuItem>
+										</>
+									) }
 								</MenuGroup>
 							) }
 						</DropdownMenu>

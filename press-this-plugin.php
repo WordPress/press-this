@@ -139,6 +139,17 @@ function wp_ajax_press_this_plugin_add_category() {
  * @since 2.0.1
  */
 function press_this_register_rest_routes() {
+	// Web App Manifest for Add to Home Screen / PWA support.
+	register_rest_route(
+		'press-this/v1',
+		'/manifest',
+		array(
+			'methods'             => 'GET',
+			'callback'            => 'press_this_rest_manifest',
+			'permission_callback' => '__return_true',
+		)
+	);
+
 	// URL scraping endpoint for Direct Access Mode.
 	register_rest_route(
 		'press-this/v1',
@@ -924,6 +935,49 @@ function press_this_is_proxy_enabled() {
 	 * @param bool $enabled Whether the proxy is enabled. Default false.
 	 */
 	return apply_filters( 'press_this_enable_url_proxy', false );
+}
+
+/**
+ * REST callback for Web App Manifest.
+ *
+ * Returns a JSON manifest for Add to Home Screen / PWA support.
+ * Must be publicly accessible so the browser can fetch it without authentication.
+ *
+ * @since 2.0.1
+ *
+ * @return WP_REST_Response Manifest JSON.
+ */
+function press_this_rest_manifest() {
+	$manifest = array(
+		'name'             => 'Press This',
+		'short_name'       => 'Press This',
+		'start_url'        => admin_url( 'press-this.php' ),
+		'display'          => 'standalone',
+		'theme_color'      => '#2271b1',
+		'background_color' => '#ffffff',
+		'icons'            => array(
+			array(
+				'src'   => plugins_url( 'assets/icon-192.png', __FILE__ ),
+				'sizes' => '192x192',
+				'type'  => 'image/png',
+			),
+			array(
+				'src'   => plugins_url( 'assets/icon-512.png', __FILE__ ),
+				'sizes' => '512x512',
+				'type'  => 'image/png',
+			),
+		),
+		'share_target'     => array(
+			'action' => admin_url( 'press-this.php' ),
+			'method' => 'GET',
+			'params' => array(
+				'url'   => 'u',
+				'title' => 't',
+			),
+		),
+	);
+
+	return new WP_REST_Response( $manifest, 200 );
 }
 
 /**

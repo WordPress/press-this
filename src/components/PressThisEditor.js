@@ -179,8 +179,27 @@ function safeRedirect( url, options = {} ) {
  * @param {string}  url            URL to redirect to.
  * @param {boolean} inParentWindow Whether to redirect in parent window.
  */
+
+/**
+ * Check if running in standalone display mode (added to home screen).
+ *
+ * @return {boolean} True if standalone mode.
+ */
+function isStandaloneMode() {
+	return (
+		window.matchMedia( '(display-mode: standalone)' ).matches ||
+		window.navigator.standalone === true
+	);
+}
+
 function performSafeRedirect( url, inParentWindow = false ) {
 	const safeUrl = safeRedirect( url );
+
+	// In standalone mode there's no opener window, so always redirect self.
+	if ( isStandaloneMode() ) {
+		window.location.href = safeUrl;
+		return;
+	}
 
 	if ( inParentWindow && window.opener ) {
 		try {
