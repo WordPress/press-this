@@ -223,15 +223,15 @@ export default function App() {
 			const meta = messageData._meta || {};
 
 			// HTML selection takes highest priority (preserves formatting).
-			// Plain-text selection is a fallback, then meta descriptions.
+			// Always compute plain-text description as a fallback; buildSuggestedContent
+			// will use it if htmlToBlocks() produces no blocks from selectionHtml.
 			const selectionHtml = messageData.sel_html || '';
-			const description = selectionHtml
-				? '' // HTML selection is used directly; skip plain-text fallback.
-				: messageData.s || // Plain-text user selection.
-				  meta[ 'twitter:description' ] ||
-				  meta[ 'og:description' ] ||
-				  meta.description ||
-				  '';
+			const description =
+				messageData.s || // Plain-text user selection.
+				meta[ 'twitter:description' ] ||
+				meta[ 'og:description' ] ||
+				meta.description ||
+				'';
 
 			const title =
 				messageData.t ||

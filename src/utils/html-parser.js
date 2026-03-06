@@ -448,40 +448,61 @@ function getCanonical( doc, meta ) {
 }
 
 /**
- * Sanitize inline HTML, keeping only safe formatting elements.
+ * Sanitize inline HTML, keeping only a safe allowlist of formatting elements.
  *
- * Strips script/style elements and event handler attributes.
- * Preserves safe inline elements: strong, em, b, i, u, s, a (href only),
+ * Allowlisted inline elements: strong, em, b, i, u, s, a (href only),
  * code, mark, sub, sup, span, br.
+ * All other elements are unwrapped (their children are preserved).
+ * Dangerous elements (script, style, object, embed, iframe) are fully removed.
+ * All attributes are stripped except `href` on `<a>` elements.
+ * URI schemes `javascript:`, `data:`, and `vbscript:` are blocked in `href`.
  *
  * @param {Element} element DOM element to sanitize (in-place).
  */
 function sanitizeInlineContent( element ) {
-	// Remove script and style elements.
+	// Completely remove dangerous elements (do not preserve children).
 	const dangerous = element.querySelectorAll(
 		'script, style, object, embed, iframe'
 	);
 	dangerous.forEach( ( el ) => el.remove() );
 
-	// Strip event handlers and javascript: hrefs from all elements.
-	const allEls = element.querySelectorAll( '*' );
-	allEls.forEach( ( el ) => {
-		// Remove all event handler attributes.
+	const ALLOWED_INLINE = new Set( [
+		'strong',
+		'em',
+		'b',
+		'i',
+		'u',
+		's',
+		'a',
+		'code',
+		'mark',
+		'sub',
+		'sup',
+		'span',
+		'br',
+	] );
+
+	// Iterate over a static snapshot — we may mutate the DOM while iterating.
+	Array.from( element.querySelectorAll( '*' ) ).forEach( ( el ) => {
+		const tagName = el.tagName.toLowerCase();
+
+		if ( ! ALLOWED_INLINE.has( tagName ) ) {
+			// Unwrap: replace the element with its child nodes.
+			el.replaceWith( ...el.childNodes );
+			return;
+		}
+
+		// Strip all attributes except allowed ones per element.
 		Array.from( el.attributes ).forEach( ( attr ) => {
-			if ( attr.name.startsWith( 'on' ) ) {
+			if ( tagName === 'a' && attr.name === 'href' ) {
+				// Block dangerous URI schemes.
+				if ( /^\s*(javascript|data|vbscript):/i.test( attr.value ) ) {
+					el.removeAttribute( attr.name );
+				}
+			} else {
 				el.removeAttribute( attr.name );
 			}
 		} );
-
-		// Strip javascript: URLs from href and src.
-		const href = el.getAttribute( 'href' );
-		if ( href && /^\s*javascript:/i.test( href ) ) {
-			el.removeAttribute( 'href' );
-		}
-		const src = el.getAttribute( 'src' );
-		if ( src && /^\s*javascript:/i.test( src ) ) {
-			el.removeAttribute( 'src' );
-		}
 	} );
 }
 
@@ -490,9 +511,14 @@ function sanitizeInlineContent( element ) {
  *
  * @param {Element} listEl  The list element (ul or ol).
  * @param {boolean} ordered Whether this is an ordered list.
+ * @param {number}  depth   Current recursion depth (default 0; max 10).
  * @return {string} Gutenberg list block markup.
  */
-function listElementToBlock( listEl, ordered ) {
+function listElementToBlock( listEl, ordered, depth = 0 ) {
+	if ( depth > 10 ) {
+		return '';
+	}
+
 	const tag = ordered ? 'ol' : 'ul';
 	const attr = ordered ? ' {"ordered":true}' : '';
 	let items = '';
@@ -514,7 +540,8 @@ function listElementToBlock( listEl, ordered ) {
 			const childTag = childEl.tagName.toLowerCase();
 			if ( childTag === 'ul' || childTag === 'ol' ) {
 				const isOrdered = childTag === 'ol';
-				nestedBlocks += '\n' + listElementToBlock( childEl, isOrdered );
+				nestedBlocks +=
+					'\n' + listElementToBlock( childEl, isOrdered, depth + 1 );
 				childEl.remove();
 			}
 		} );
@@ -533,17 +560,25 @@ function listElementToBlock( listEl, ordered ) {
  *
  * Handles block-level elements: paragraphs, headings (h1-h6), unordered and
  * ordered lists with nesting, blockquotes, and preformatted/code blocks.
- * Inline elements (strong, em, a, code, etc.) are preserved within blocks.
- * Script/style elements and event handlers are stripped for safety.
+ * Inline elements are filtered through an allowlist (strong, em, b, i, u, s,
+ * a[href], code, mark, sub, sup, span, br). All other attributes are stripped.
  *
  * Falls back to a paragraph block for unrecognised or purely inline content.
  *
- * @param {string} html HTML string to convert.
+ * @param {string} html  HTML string to convert.
+ * @param {number} depth Internal recursion depth; callers should omit this.
  * @return {string} Gutenberg block markup string, or empty string if no content.
  */
-export function htmlToBlocks( html ) {
+export function htmlToBlocks( html, depth = 0 ) {
 	if ( ! html || typeof html !== 'string' ) {
 		return '';
+	}
+
+	// Guard against deeply nested blockquote structures.
+	if ( depth > 5 ) {
+		return `<!-- wp:paragraph -->\n<p>${ escapeHtml(
+			html
+		) }</p>\n<!-- /wp:paragraph -->\n`;
 	}
 
 	const parser = new DOMParser();
@@ -624,7 +659,9 @@ export function htmlToBlocks( html ) {
 			const tempEl = doc.createElement( 'div' );
 			tempEl.appendChild( clone );
 			sanitizeInlineContent( tempEl );
-			blocks += `<!-- wp:heading {"level":${ level }} -->\n<${ tag } class="wp-block-heading">${ tempEl.firstChild.innerHTML }</${ tag }>\n<!-- /wp:heading -->\n\n`;
+			// After sanitization, block-level wrappers (h-tags) are unwrapped by
+			// the allowlist; tempEl.innerHTML holds the sanitized inner content.
+			blocks += `<!-- wp:heading {"level":${ level }} -->\n<${ tag } class="wp-block-heading">${ tempEl.innerHTML }</${ tag }>\n<!-- /wp:heading -->\n\n`;
 			return;
 		}
 
@@ -640,7 +677,7 @@ export function htmlToBlocks( html ) {
 			const tempEl = doc.createElement( 'div' );
 			tempEl.appendChild( clone );
 			sanitizeInlineContent( tempEl );
-			const inner = htmlToBlocks( tempEl.firstChild.innerHTML );
+			const inner = htmlToBlocks( tempEl.innerHTML, depth + 1 );
 			const innerBlocks =
 				inner ||
 				`<!-- wp:paragraph -->\n<p>${ escapeHtml(
@@ -663,7 +700,9 @@ export function htmlToBlocks( html ) {
 		const tempEl = doc.createElement( 'div' );
 		tempEl.appendChild( clone );
 		sanitizeInlineContent( tempEl );
-		const innerHtml = tempEl.firstChild.innerHTML.trim();
+		// tempEl.innerHTML holds the sanitized inner content after any outer
+		// block-level wrapper has been unwrapped by the allowlist sanitizer.
+		const innerHtml = tempEl.innerHTML.trim();
 		if ( innerHtml ) {
 			blocks += `<!-- wp:paragraph -->\n<p>${ innerHtml }</p>\n<!-- /wp:paragraph -->\n\n`;
 		}
@@ -681,8 +720,17 @@ export function htmlToBlocks( html ) {
  * All dynamic content is escaped.
  * Uses pre-sanitized server data instead of client-side parsing.
  *
- * @param {Object} data      Server-returned metadata object.
- * @param {string} sourceUrl Original source URL.
+ * When `data.selectionHtml` is provided the selected HTML is converted to
+ * formatted Gutenberg blocks via `htmlToBlocks`. If the conversion produces
+ * no blocks (e.g. the selection contained only script tags), the function
+ * falls back to `data.description` in a plain-text quote block.
+ *
+ * @param {Object} data               Server-returned metadata object.
+ * @param {string} data.selectionHtml Optional HTML string of the user's selection.
+ * @param {string} data.description   Optional plain-text description / meta excerpt.
+ * @param {string} data.title         Optional page title.
+ * @param {string} data.siteName      Optional site name.
+ * @param {string} sourceUrl          Original source URL.
  * @return {string} Gutenberg block content.
  */
 export function buildSuggestedContent( data, sourceUrl ) {
@@ -706,15 +754,17 @@ ${ escapeHtml( sourceUrl ) }
 `;
 	}
 
-	// Add HTML selection as formatted blocks when available.
-	// Falls back to a plain-text quote block for meta descriptions.
+	// Prefer formatted HTML selection; fall back to plain-text description.
+	let selectionBlocks = '';
 	if ( data.selectionHtml ) {
-		const selectionBlocks = htmlToBlocks( data.selectionHtml );
-		if ( selectionBlocks ) {
-			content += selectionBlocks + '\n\n';
-		}
+		selectionBlocks = htmlToBlocks( data.selectionHtml );
+	}
+
+	if ( selectionBlocks ) {
+		// HTML selection converted successfully to blocks.
+		content += selectionBlocks + '\n\n';
 	} else if ( data.description ) {
-		// Escape description.
+		// No HTML selection (or it produced no blocks) – use plain-text quote.
 		content += `<!-- wp:quote -->
 <blockquote class="wp-block-quote"><!-- wp:paragraph -->
 <p>${ escapeHtml( data.description ) }</p>

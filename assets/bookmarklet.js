@@ -36,11 +36,17 @@
 		if ( sel && sel.rangeCount > 0 ) {
 			selection = sel.toString();
 			// Capture HTML to preserve formatting (bold, lists, headings, etc.).
-			var range = sel.getRangeAt( 0 );
-			var fragment = range.cloneContents();
-			var tempDiv = document.createElement( 'div' );
-			tempDiv.appendChild( fragment );
-			selectionHtml = tempDiv.innerHTML;
+			// Wrapped in try-catch: cloneContents() can throw DOMException in
+			// some browsers or unusual DOM states (e.g. cross-shadow-DOM ranges).
+			try {
+				var range = sel.getRangeAt( 0 );
+				var fragment = range.cloneContents();
+				var tempDiv = document.createElement( 'div' );
+				tempDiv.appendChild( fragment );
+				selectionHtml = tempDiv.innerHTML;
+			} catch ( e ) {
+				// HTML capture failed; plain-text selection is still available.
+			}
 		}
 	} else if ( document.getSelection ) {
 		selection = document.getSelection() + '';
@@ -309,7 +315,7 @@
 	}
 
 	// Add HTML selection to preserve formatting (bold, lists, headings, etc.).
-	if ( selectionHtml && selectionHtml !== selection ) {
+	if ( selectionHtml ) {
 		add( 'sel_html', selectionHtml );
 	}
 

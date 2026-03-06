@@ -143,6 +143,60 @@ describe( 'htmlToBlocks', () => {
 		expect( result ).not.toContain( 'javascript:' );
 	} );
 
+	test( 'strips data: href for safety', () => {
+		const html = '<p><a href="data:text/html,<script>alert(1)</script>">Link</a></p>';
+		const result = htmlToBlocks( html );
+		expect( result ).toContain( 'Link' );
+		expect( result ).not.toContain( 'data:' );
+	} );
+
+	test( 'strips vbscript: href for safety', () => {
+		const html = '<p><a href="vbscript:MsgBox(1)">Link</a></p>';
+		const result = htmlToBlocks( html );
+		expect( result ).toContain( 'Link' );
+		expect( result ).not.toContain( 'vbscript:' );
+	} );
+
+	test( 'unwraps non-allowlist elements but keeps their text', () => {
+		// <form>, <button>, <input>, <svg> are not in the allowlist.
+		const html = '<p>Before <form>form content</form> after</p>';
+		const result = htmlToBlocks( html );
+		expect( result ).toContain( 'Before' );
+		expect( result ).toContain( 'form content' );
+		expect( result ).toContain( 'after' );
+		expect( result ).not.toContain( '<form>' );
+	} );
+
+	test( 'strips all attributes except href on <a>', () => {
+		const html =
+			'<p><a href="https://example.com" class="btn" style="color:red">link</a></p>';
+		const result = htmlToBlocks( html );
+		expect( result ).toContain( '<a href="https://example.com">' );
+		expect( result ).not.toContain( 'class=' );
+		expect( result ).not.toContain( 'style=' );
+	} );
+
+	test( 'does not recurse infinitely on deeply nested blockquotes', () => {
+		// Build deeply nested blockquotes beyond the depth limit.
+		let html = '<p>Deep</p>';
+		for ( let i = 0; i < 8; i++ ) {
+			html = `<blockquote>${ html }</blockquote>`;
+		}
+		// Should not throw or hang; should return some content.
+		expect( () => htmlToBlocks( html ) ).not.toThrow();
+		const result = htmlToBlocks( html );
+		expect( result ).toBeTruthy();
+	} );
+
+	test( 'does not recurse infinitely on deeply nested lists', () => {
+		// Build a list nested beyond the depth limit (depth > 10).
+		let html = '<li>Item</li>';
+		for ( let i = 0; i < 15; i++ ) {
+			html = `<ul><li>Level ${ i }<ul>${ html }</ul></li></ul>`;
+		}
+		expect( () => htmlToBlocks( html ) ).not.toThrow();
+	} );
+
 	test( 'preserves safe inline elements', () => {
 		const html = '<p><strong>bold</strong> and <em>italic</em> and <a href="https://example.com">link</a></p>';
 		const result = htmlToBlocks( html );
@@ -197,6 +251,22 @@ describe( 'buildSuggestedContent with selectionHtml', () => {
 		expect( result ).toContain( 'Source:' );
 	} );
 
+	test( 'falls back to description when selectionHtml produces no blocks', () => {
+		// A selection with only script tags produces empty blocks.
+		const result = buildSuggestedContent(
+			{
+				selectionHtml: '<script>alert(1)</script>',
+				description: 'Plain fallback description',
+				title: 'Article',
+			},
+			sourceUrl
+		);
+
+		// htmlToBlocks returns '' for script-only input, so description is used.
+		expect( result ).toContain( '<!-- wp:quote -->' );
+		expect( result ).toContain( 'Plain fallback description' );
+	} );
+
 	test( 'renders only source attribution when both selectionHtml and description are absent', () => {
 		const result = buildSuggestedContent(
 			{ title: 'Article' },
@@ -212,7 +282,7 @@ describe( 'buildSuggestedContent with selectionHtml', () => {
 		const result = buildSuggestedContent(
 			{
 				selectionHtml: '<ul><li>List item</li></ul>',
-				description: 'Should be ignored',
+				description: 'Should be ignored when blocks are produced',
 			},
 			sourceUrl
 		);
