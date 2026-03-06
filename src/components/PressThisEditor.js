@@ -308,6 +308,7 @@ export default function PressThisEditor( {
 		isUndoingRef.current = true;
 		blocksRef.current = previousBlocks;
 		setBlocks( previousBlocks );
+		isUndoingRef.current = false;
 		syncUndoRedoState();
 	}, [ syncUndoRedoState ] );
 
@@ -320,6 +321,7 @@ export default function PressThisEditor( {
 		isUndoingRef.current = true;
 		blocksRef.current = nextBlocks;
 		setBlocks( nextBlocks );
+		isUndoingRef.current = false;
 		syncUndoRedoState();
 	}, [ syncUndoRedoState ] );
 
@@ -328,7 +330,7 @@ export default function PressThisEditor( {
 		if ( onUndoReady ) {
 			onUndoReady( { handleUndo, handleRedo, hasUndo, hasRedo } );
 		}
-	}, [ onUndoReady, handleUndo, handleRedo, hasUndo, hasRedo ] ); // eslint-disable-line react-hooks/exhaustive-deps
+	}, [ onUndoReady, handleUndo, handleRedo, hasUndo, hasRedo ] );
 
 	// Keyboard shortcuts for undo/redo.
 	useEffect( () => {
