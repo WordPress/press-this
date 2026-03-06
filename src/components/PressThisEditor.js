@@ -17,7 +17,7 @@ import {
 	useEffect,
 	useRef,
 } from '@wordpress/element';
-import { useSelect } from '@wordpress/data';
+import { useSelect, useDispatch } from '@wordpress/data';
 import { parse } from '@wordpress/blocks';
 import {
 	BlockEditorProvider,
@@ -75,6 +75,31 @@ function SidebarBlockInspector() {
 		>
 			<BlockInspector />
 		</PanelBody>
+	);
+}
+
+/**
+ * Connected Scraped Media Panel.
+ *
+ * Must be rendered inside BlockEditorProvider to access the block editor store.
+ * Uses the store's insertBlock action so media is inserted at the cursor
+ * position rather than always appended at the end.
+ *
+ * @param {Object} props Props passed through to ScrapedMediaPanel.
+ * @return {JSX.Element|null} ScrapedMediaPanel with store-connected insertion.
+ */
+function ConnectedScrapedMediaPanel( props ) {
+	const { insertBlock } = useDispatch( blockEditorStore );
+
+	const handleInsertBlock = useCallback(
+		( block ) => {
+			insertBlock( block );
+		},
+		[ insertBlock ]
+	);
+
+	return (
+		<ScrapedMediaPanel { ...props } onInsertBlock={ handleInsertBlock } />
 	);
 }
 
@@ -305,15 +330,6 @@ export default function PressThisEditor( {
 	 */
 	const handleBlocksChange = useCallback( ( newBlocks ) => {
 		setBlocks( newBlocks );
-	}, [] );
-
-	/**
-	 * Insert a block into the editor.
-	 *
-	 * @param {Object} block Block to insert.
-	 */
-	const insertBlock = useCallback( ( block ) => {
-		setBlocks( ( prev ) => [ ...prev, block ] );
 	}, [] );
 
 	/**
@@ -650,10 +666,9 @@ export default function PressThisEditor( {
 									<SidebarBlockInspector />
 
 									{ /* Scraped Media Panel */ }
-									<ScrapedMediaPanel
+									<ConnectedScrapedMediaPanel
 										images={ images }
 										embeds={ embeds }
-										onInsertBlock={ insertBlock }
 										sourceUrl={ sourceUrl }
 									/>
 
