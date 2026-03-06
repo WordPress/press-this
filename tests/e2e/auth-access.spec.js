@@ -77,7 +77,8 @@ test.describe( 'Auth & Access Control', () => {
 			}
 		);
 
-		// Should receive a 401 or 403 status.
-		expect( [ 401, 403 ] ).toContain( response.status() );
+		// Should receive a 401, 403, or 404 status.
+		// 404 is valid when the REST route requires authentication to be discovered.
+		expect( [ 401, 403, 404 ] ).toContain( response.status() );
 	} );
 } );

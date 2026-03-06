@@ -48,8 +48,8 @@ test.describe( 'Content Scraping', () => {
 		const scanInput = page.getByLabel( 'URL to scan' );
 		await scanInput.fill( 'https://example.com' );
 
-		// Intercept the scrape API call.
-		await page.route( '**/wp-json/press-this/v1/scrape', ( route ) => {
+		// Intercept the scrape API call (matches both pretty and ugly permalinks).
+		await page.route( /press-this\/v1\/scrape/, ( route ) => {
 			route.fulfill( {
 				status: 200,
 				contentType: 'application/json',
@@ -84,7 +84,7 @@ test.describe( 'Content Scraping', () => {
 		await scanInput.fill( 'https://invalid.test.example' );
 
 		// Intercept and return an error.
-		await page.route( '**/wp-json/press-this/v1/scrape', ( route ) => {
+		await page.route( /press-this\/v1\/scrape/, ( route ) => {
 			route.fulfill( {
 				status: 500,
 				contentType: 'application/json',
@@ -96,9 +96,9 @@ test.describe( 'Content Scraping', () => {
 
 		await page.getByRole( 'button', { name: 'Scan' } ).click();
 
-		// An error notice should appear.
+		// An error notice should appear (use .first() to avoid a11y live region duplicate).
 		await expect(
-			page.getByText( 'Failed to fetch URL' )
+			page.getByText( 'Failed to fetch URL' ).first()
 		).toBeVisible( { timeout: 10000 } );
 	} );
 } );

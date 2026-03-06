@@ -59,15 +59,24 @@ async function ensureAdminAuth( browser ) {
 async function createUser( username, email, role, password = 'password' ) {
 	const { execSync } = require( 'child_process' );
 	try {
+		// Check if user already exists before attempting to create.
 		execSync(
-			`npx wp-env run cli wp user create ${ username } ${ email } --role=${ role } --user_pass=${ password }`,
+			`npx wp-env run cli wp user get ${ username } --field=ID`,
 			{ stdio: 'pipe' }
 		);
-	} catch ( error ) {
-		// User may already exist — that's fine.
-		const output = ( error.stderr?.toString() || '' ) + ( error.stdout?.toString() || '' );
-		if ( ! output.includes( 'already exists' ) ) {
-			console.warn( `Could not create user ${ username }:`, error.message );
+		// User exists — nothing to do.
+	} catch {
+		// User doesn't exist — create it.
+		try {
+			execSync(
+				`npx wp-env run cli wp user create ${ username } ${ email } --role=${ role } --user_pass=${ password }`,
+				{ stdio: 'pipe' }
+			);
+		} catch ( error ) {
+			const output = ( error.stderr?.toString() || '' ) + ( error.stdout?.toString() || '' );
+			if ( ! output.includes( 'already exists' ) ) {
+				console.warn( `Could not create user ${ username }:`, error.message );
+			}
 		}
 	}
 }

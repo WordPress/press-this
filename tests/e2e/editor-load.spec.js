@@ -83,10 +83,10 @@ test.describe( 'Editor Load', () => {
 	} ) => {
 		await page.goto( '/wp-admin/press-this.php' );
 
-		// The inserter button should be present.
+		// The inserter button should be present (there may be multiple; check first).
 		const inserterButton = page.getByRole( 'button', {
 			name: 'Add block',
 		} );
-		await expect( inserterButton ).toBeVisible();
+		await expect( inserterButton.first() ).toBeVisible();
 	} );
 } );

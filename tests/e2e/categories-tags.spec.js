@@ -74,7 +74,7 @@ test.describe( 'Categories & Tags', () => {
 
 		// The tag token should appear.
 		await expect(
-			page.getByText( 'test-tag' )
+			page.getByText( 'test-tag', { exact: true } )
 		).toBeVisible( { timeout: 5000 } );
 	} );
 
@@ -139,7 +139,7 @@ test.describe( 'Categories & Tags', () => {
 
 		// Intercept save to verify categories are included.
 		let savedPayload = null;
-		await page.route( '**/wp-json/press-this/v1/save', async ( route ) => {
+		await page.route( /press-this\/v1\/save/, async ( route ) => {
 			savedPayload = JSON.parse( route.request().postData() );
 			await route.fulfill( {
 				status: 200,
@@ -148,11 +148,12 @@ test.describe( 'Categories & Tags', () => {
 			} );
 		} );
 
-		await page.getByRole( 'button', { name: 'Save Draft' } ).click();
-
-		await page.waitForResponse( ( resp ) =>
-			resp.url().includes( '/press-this/v1/save' )
-		);
+		await Promise.all( [
+			page.waitForResponse( ( resp ) =>
+				resp.url().includes( 'press-this/v1/save' )
+			),
+			page.getByRole( 'button', { name: 'Save Draft' } ).click(),
+		] );
 
 		// Verify categories were included in the save payload.
 		expect( savedPayload ).not.toBeNull();
