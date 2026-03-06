@@ -15,6 +15,20 @@ Provided by Press This's `BlockTransformShortcuts` component. These mirror Guten
 | Access+7 | Transform heading to paragraph (alias) | Available |
 | Access+Q | Toggle between paragraph and quote | Available |
 
+## Rich Text Format Shortcuts
+
+Provided by `@wordpress/format-library`. These work inside any rich text block (paragraphs, headings, quotes, lists).
+
+| Shortcut | Action | Status |
+|----------|--------|--------|
+| Primary+B | Bold | Available |
+| Primary+I | Italic | Available |
+| Primary+K | Insert/edit link | Available |
+| Primary+Shift+K | Remove link | Available |
+| Primary+U | Underline | Available |
+| Access+D | Strikethrough | Available |
+| Access+X | Inline code | Available |
+
 ## Block Editing Shortcuts
 
 Provided by `BlockEditorKeyboardShortcuts` from `@wordpress/block-editor`. These operate on selected blocks.
@@ -38,20 +52,6 @@ Provided by `BlockEditorKeyboardShortcuts` from `@wordpress/block-editor`. These
 | Escape | Clear selection / stop editing | Available |
 | Alt+F10 | Focus toolbar | Available |
 | / | Open block inserter (in empty paragraph) | Available |
-
-## Rich Text Format Shortcuts
-
-Provided by `@wordpress/format-library` (see PR #83). These work inside any rich text block (paragraphs, headings, quotes, lists).
-
-| Shortcut | Action | Status |
-|----------|--------|--------|
-| Primary+B | Bold | See [PR #83](https://github.com/WordPress/press-this/pull/83) |
-| Primary+I | Italic | See [PR #83](https://github.com/WordPress/press-this/pull/83) |
-| Primary+K | Insert/edit link | See [PR #83](https://github.com/WordPress/press-this/pull/83) |
-| Primary+Shift+K | Remove link | See [PR #83](https://github.com/WordPress/press-this/pull/83) |
-| Primary+U | Underline | See [PR #83](https://github.com/WordPress/press-this/pull/83) |
-| Access+D | Strikethrough | See [PR #83](https://github.com/WordPress/press-this/pull/83) |
-| Access+X | Inline code | See [PR #83](https://github.com/WordPress/press-this/pull/83) |
 
 ## Editor-Level Shortcuts (Not Available)
 
