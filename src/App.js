@@ -311,15 +311,25 @@ export default function App() {
 	}, [] );
 
 	// State for undo/redo from editor.
-	const [ undoState, setUndoState ] = useState( {
-		handleUndo: null,
-		handleRedo: null,
-		hasUndo: false,
-		hasRedo: false,
-	} );
+	// Split into primitive values so React can skip re-renders when values
+	// haven't changed (Object.is comparison). The handlers are stable refs
+	// from useCallback, so setUndoHandler/setRedoHandler rarely trigger
+	// re-renders. The booleans only toggle on undo/redo stack transitions.
+	const [ undoHandler, setUndoHandler ] = useState( null );
+	const [ redoHandler, setRedoHandler ] = useState( null );
+	const [ hasUndo, setHasUndo ] = useState( false );
+	const [ hasRedo, setHasRedo ] = useState( false );
 
+	/**
+	 * Handle undo/redo state updates from PressThisEditor.
+	 *
+	 * @param {Object} state Undo state with handleUndo, handleRedo, hasUndo, hasRedo.
+	 */
 	const handleUndoReady = useCallback( ( state ) => {
-		setUndoState( state );
+		setUndoHandler( () => state.handleUndo );
+		setRedoHandler( () => state.handleRedo );
+		setHasUndo( state.hasUndo );
+		setHasRedo( state.hasRedo );
 	}, [] );
 
 	return (
@@ -340,10 +350,10 @@ export default function App() {
 				onSave={ saveState.handleSave }
 				isSaving={ saveState.isSaving }
 				publishLabel={ saveState.publishLabel }
-				onUndo={ undoState.handleUndo }
-				onRedo={ undoState.handleRedo }
-				hasUndo={ undoState.hasUndo }
-				hasRedo={ undoState.hasRedo }
+				onUndo={ undoHandler }
+				onRedo={ redoHandler }
+				hasUndo={ hasUndo }
+				hasRedo={ hasRedo }
 			/>
 
 			<div className="press-this-app__body">
