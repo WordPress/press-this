@@ -343,6 +343,11 @@ function press_this_rest_save_post( $request ) {
 	}
 
 	// Side-load images from content.
+	// Require admin includes needed by media_sideload_image() (not loaded in REST context).
+	require_once ABSPATH . 'wp-admin/includes/file.php';
+	require_once ABSPATH . 'wp-admin/includes/media.php';
+	require_once ABSPATH . 'wp-admin/includes/image.php';
+
 	$wp_press_this = new WP_Press_This_Plugin();
 	press_this_http_request_context( true );
 	$post_data['post_content'] = $wp_press_this->side_load_images( $post_id, wp_slash( $post_data['post_content'] ) );
