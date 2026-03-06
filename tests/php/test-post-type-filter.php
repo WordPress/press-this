@@ -301,9 +301,15 @@ class Test_Post_Type_Filter extends BaseTestCase {
 		// get_default_post_to_edit will return false for invalid post types.
 		$post = get_default_post_to_edit( $post_type, true );
 
-		// WordPress returns a WP_Error or handles gracefully depending on version.
-		// The important thing is it doesn't crash.
-		$this->assertTrue( true );
+		// In WorDBless, get_default_post_to_edit still returns a WP_Post even for
+		// unregistered types, so verify the returned post uses the filtered type
+		// rather than silently falling back to 'post'.
+		if ( $post instanceof WP_Post ) {
+			$this->assertEquals( 'nonexistent-post-type', $post->post_type, 'Post type should reflect the filter value, not silently fall back' );
+		} else {
+			// In a full WP install, invalid post types return false/null.
+			$this->assertNotInstanceOf( 'WP_Post', $post );
+		}
 	}
 
 	/**

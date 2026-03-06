@@ -225,23 +225,23 @@ class Test_Sanitization_Error_Handling extends BaseTestCase {
 		// The actual fetch will fail, we check the error response structure.
 		$response = press_this_rest_scrape_url( $request );
 
-		if ( is_wp_error( $response ) ) {
-			$error_message = $response->get_error_message();
+		$this->assertInstanceOf( 'WP_Error', $response, 'Scraping an invalid domain should return a WP_Error' );
 
-			// Should not contain internal paths, IP addresses, or stack traces.
-			$this->assertStringNotContainsString( '/var/', $error_message );
-			$this->assertStringNotContainsString( '/home/', $error_message );
-			$this->assertStringNotContainsString( 'Stack trace', $error_message );
-			$this->assertStringNotContainsString( 'Exception', $error_message );
+		$error_message = $response->get_error_message();
 
-			// Should have a generic, user-friendly message.
-			$this->assertTrue(
-				strpos( $error_message, 'Unable to fetch' ) !== false ||
-				strpos( $error_message, 'Failed to fetch' ) !== false ||
-				strpos( $error_message, 'Could not' ) !== false,
-				'Error message should be user-friendly and generic'
-			);
-		}
+		// Should not contain internal paths, IP addresses, or stack traces.
+		$this->assertStringNotContainsString( '/var/', $error_message );
+		$this->assertStringNotContainsString( '/home/', $error_message );
+		$this->assertStringNotContainsString( 'Stack trace', $error_message );
+		$this->assertStringNotContainsString( 'Exception', $error_message );
+
+		// Should have a generic, user-friendly message.
+		$this->assertTrue(
+			strpos( $error_message, 'Unable to fetch' ) !== false ||
+			strpos( $error_message, 'Failed to fetch' ) !== false ||
+			strpos( $error_message, 'Could not' ) !== false,
+			'Error message should be user-friendly and generic'
+		);
 
 		remove_filter( 'press_this_enable_url_proxy', '__return_true' );
 	}
@@ -280,36 +280,4 @@ class Test_Sanitization_Error_Handling extends BaseTestCase {
 		$this->assertEquals( 'press_this_invalid_image_type', $response->get_error_code() );
 	}
 
-	/**
-	 * Test 6: Sideload allows valid image content types (SEC-009).
-	 *
-	 * Verifies that valid image content-types pass validation.
-	 */
-	public function test_sideload_allows_valid_image_types() {
-		$valid_image_types = array(
-			'image/jpeg',
-			'image/jpg',
-			'image/png',
-			'image/gif',
-			'image/webp',
-		);
-
-		foreach ( $valid_image_types as $content_type ) {
-			// The validation logic should accept these types.
-			// We test via the filter mechanism.
-			$allowed_types = apply_filters( 'press_this_sideload_allowed_types', array(
-				'image/jpeg',
-				'image/jpg',
-				'image/png',
-				'image/gif',
-				'image/webp',
-			) );
-
-			$this->assertContains(
-				$content_type,
-				$allowed_types,
-				"Content-type {$content_type} should be allowed"
-			);
-		}
-	}
 }

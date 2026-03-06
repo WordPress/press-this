@@ -21,6 +21,11 @@ composer.lock
 .DS_Store
 Thumbs.db
 
+# Playwright
+.auth/
+test-results/
+playwright-report/
+
 # Debug logs
 *.log
 npm-debug.log*
