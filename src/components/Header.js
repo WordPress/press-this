@@ -52,10 +52,11 @@ function isMacOS() {
 /**
  * Derive a short timezone abbreviation from a timezone string.
  *
- * @param {string} tz Timezone string (e.g., 'America/New_York' or 'UTC+5').
+ * @param {string} tz   Timezone string (e.g., 'America/New_York' or 'UTC+5').
+ * @param {string} date ISO date string to derive abbreviation for (for DST accuracy).
  * @return {string} Timezone abbreviation (e.g., 'EST' or 'UTC+5').
  */
-function getTimezoneAbbreviation( tz ) {
+function getTimezoneAbbreviation( tz, date ) {
 	if ( ! tz ) {
 		return '';
 	}
@@ -70,7 +71,8 @@ function getTimezoneAbbreviation( tz ) {
 			timeZone: tz,
 			timeZoneName: 'short',
 		} );
-		const parts = formatter.formatToParts( new Date() );
+		const refDate = date ? new Date( date ) : new Date();
+		const parts = formatter.formatToParts( refDate );
 		const tzPart = parts.find( ( p ) => p.type === 'timeZoneName' );
 		return tzPart ? tzPart.value : tz;
 	} catch {
@@ -203,7 +205,7 @@ export default function Header( {
 	const undoShortcut = isMacOS() ? '\u2318Z' : 'Ctrl+Z';
 	const redoShortcut = isMacOS() ? '\u21E7\u2318Z' : 'Ctrl+Shift+Z';
 
-	const timezoneAbbreviation = getTimezoneAbbreviation( timezone );
+	const timezoneAbbreviation = getTimezoneAbbreviation( timezone, scheduleDate );
 	const isScheduleFuture = isFutureDate( scheduleDate, timezone );
 	const scheduleButtonLabel = isScheduleFuture
 		? __( 'Schedule', 'press-this' )

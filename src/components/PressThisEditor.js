@@ -240,19 +240,59 @@ function getWpRestBaseUrl( pressThisRestUrl ) {
  */
 function formatScheduleDate( dateString, timezone ) {
 	try {
-		const date = new Date( dateString );
+		// Parse date parts directly to avoid browser-timezone reinterpretation.
+		// dateString is a naive site-timezone string like "2026-03-15T15:00:00".
+		const match = dateString.match(
+			/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/
+		);
+		if ( ! match ) {
+			return dateString;
+		}
+		const [ , year, month, day, hour, minute ] = match;
+		// Build a UTC Date representing the wall-clock time, then format in UTC.
+		const utcDate = new Date(
+			Date.UTC(
+				Number( year ),
+				Number( month ) - 1,
+				Number( day ),
+				Number( hour ),
+				Number( minute )
+			)
+		);
 		const options = {
 			year: 'numeric',
 			month: 'long',
 			day: 'numeric',
 			hour: 'numeric',
 			minute: '2-digit',
-			timeZoneName: 'short',
+			timeZone: 'UTC',
 		};
+		const formatted = new Intl.DateTimeFormat( undefined, options ).format(
+			utcDate
+		);
+		// Append timezone abbreviation if available.
 		if ( timezone ) {
-			options.timeZone = timezone;
+			try {
+				let abbr = timezone;
+				if ( ! /^UTC[+-]?\d*$/.test( timezone ) ) {
+					const tzFormatter = new Intl.DateTimeFormat( 'en-US', {
+						timeZone: timezone,
+						timeZoneName: 'short',
+					} );
+					const tzParts = tzFormatter.formatToParts( utcDate );
+					const tzPart = tzParts.find(
+						( p ) => p.type === 'timeZoneName'
+					);
+					if ( tzPart ) {
+						abbr = tzPart.value;
+					}
+				}
+				return `${ formatted } ${ abbr }`;
+			} catch {
+				// Fall through to return formatted without abbreviation.
+			}
 		}
-		return new Intl.DateTimeFormat( undefined, options ).format( date );
+		return formatted;
 	} catch {
 		return dateString;
 	}

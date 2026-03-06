@@ -195,7 +195,7 @@ function press_this_register_rest_routes() {
 						}
 						if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/', $value ) ) {
 							return new WP_Error(
-								'invalid_date_format',
+								'press_this_invalid_date_format',
 								__( 'Date must be in ISO 8601 format.', 'press-this' ),
 								array( 'status' => 400 )
 							);
