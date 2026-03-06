@@ -8,6 +8,7 @@ export {
 	parseHtmlMetadata,
 	buildSuggestedContent,
 	buildSuggestedContentFromMetadata,
+	htmlToBlocks,
 	escapeHtml,
 	escapeAttr,
 } from './html-parser';

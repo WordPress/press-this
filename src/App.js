@@ -221,12 +221,17 @@ export default function App() {
 			// Build suggested content from bookmarklet metadata.
 			// Extract description from meta tags.
 			const meta = messageData._meta || {};
-			const description =
-				messageData.s || // User selection takes priority.
-				meta[ 'twitter:description' ] ||
-				meta[ 'og:description' ] ||
-				meta.description ||
-				'';
+
+			// HTML selection takes highest priority (preserves formatting).
+			// Plain-text selection is a fallback, then meta descriptions.
+			const selectionHtml = messageData.sel_html || '';
+			const description = selectionHtml
+				? '' // HTML selection is used directly; skip plain-text fallback.
+				: messageData.s || // Plain-text user selection.
+				  meta[ 'twitter:description' ] ||
+				  meta[ 'og:description' ] ||
+				  meta.description ||
+				  '';
 
 			const title =
 				messageData.t ||
@@ -243,6 +248,7 @@ export default function App() {
 			const suggestedContent = buildSuggestedContentFromMetadata( {
 				title,
 				description,
+				selectionHtml,
 				siteName: meta[ 'og:site_name' ] || '',
 				canonical,
 				url: receivedSourceUrl,

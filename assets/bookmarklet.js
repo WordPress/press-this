@@ -15,7 +15,7 @@
 		encURI = window.encodeURIComponent,
 		head = document.getElementsByTagName( 'head' )[0],
 		target = '_press_this_app',
-		windowWidth, windowHeight, selection,
+		windowWidth, windowHeight, selection, selectionHtml,
 		metas, links, content, images, iframes, img, scripts,
 		scrapedData = {},
 		popup;
@@ -32,7 +32,16 @@
 	}
 
 	if ( window.getSelection ) {
-		selection = window.getSelection() + '';
+		var sel = window.getSelection();
+		if ( sel && sel.rangeCount > 0 ) {
+			selection = sel.toString();
+			// Capture HTML to preserve formatting (bold, lists, headings, etc.).
+			var range = sel.getRangeAt( 0 );
+			var fragment = range.cloneContents();
+			var tempDiv = document.createElement( 'div' );
+			tempDiv.appendChild( fragment );
+			selectionHtml = tempDiv.innerHTML;
+		}
 	} else if ( document.getSelection ) {
 		selection = document.getSelection() + '';
 	} else if ( document.selection ) {
@@ -297,6 +306,11 @@
 	// Add text selection.
 	if ( selection ) {
 		add( 's', selection );
+	}
+
+	// Add HTML selection to preserve formatting (bold, lists, headings, etc.).
+	if ( selectionHtml && selectionHtml !== selection ) {
+		add( 'sel_html', selectionHtml );
 	}
 
 	/**
