@@ -1,208 +1,96 @@
 /**
- * CategoriesPanel Component Styles
+ * CategoryPanel Component Styles
  *
- * Styles for the categories selection panel.
+ * Hierarchical category selector with search filtering.
+ * Uses Gutenberg component primitives
+ * (SearchControl, CheckboxControl, TreeSelect).
  *
  * @package press-this
  */
+
+@use "variables" as *;
 
 // ==========================================================================
 // Search Input
 // ==========================================================================
 
-.press-this-categories-panel__search-wrapper {
-	padding: $spacing-md $spacing-lg;
-	border-bottom: 1px solid $color-border-light;
-
-	.components-text-control__input,
-	input[type="search"] {
-		width: 100%;
-		padding: $spacing-sm $spacing-md;
-		border: 1px solid $color-border;
-		border-radius: 4px;
-		font-size: $font-size-base;
-
-		&:focus {
-			border-color: $color-accent;
-			box-shadow: 0 0 0 1px $color-accent;
-			outline: none;
-		}
-	}
+.press-this-editor__categories-search {
+	margin-bottom: $spacing-md;
 }
 
 // ==========================================================================
-// Category List
+// Hierarchical Terms List
 // ==========================================================================
 
-.press-this-categories-panel__list-wrapper {
-	flex: 1 1 auto;
-	overflow-y: auto;
-	max-height: 300px;
-}
-
-.press-this-categories-panel__empty {
-	padding: $spacing-xl $spacing-lg;
-	text-align: center;
-	color: $color-text-light;
-	margin: 0;
-}
-
-.press-this-categories-panel__list {
-	list-style: none;
-	margin: 0;
-	padding: 0;
-}
-
-.press-this-categories-panel__item {
-	border-bottom: 1px solid $color-border-light;
-
-	&:last-child {
-		border-bottom: none;
-	}
-}
-
-// ==========================================================================
-// Category Row
-// ==========================================================================
-
-.press-this-categories-panel__category {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	padding: 10px $spacing-lg;
-	cursor: pointer;
-	transition: background-color $transition-speed-fast ease;
-
-	&:hover {
-		background: $color-bg-light;
-	}
+.press-this-editor__hierarchical-terms-list {
+	max-height: 14em;
+	overflow: auto;
+	padding: $spacing-sm 0;
 
 	&:focus {
 		outline: none;
 		box-shadow: inset 0 0 0 2px $color-accent;
-	}
-
-	&.is-selected {
-		background: rgba($color-accent, 0.05);
+		border-radius: 2px;
 	}
 }
 
-// ==========================================================================
-// Checkbox
-// ==========================================================================
+.press-this-editor__hierarchical-terms-choice {
+	margin-bottom: 4px;
 
-.press-this-categories-panel__checkbox {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	width: 18px;
-	height: 18px;
-	border: 1px solid $color-border;
-	border-radius: 3px;
-	background: $color-white;
-	flex: 0 0 auto;
+	&:last-child {
+		margin-bottom: 0;
+	}
 
-	&.is-checked {
-		background: $color-accent;
-		border-color: $color-accent;
-
-		.dashicons {
-			color: $color-white;
-			font-size: 14px;
-			width: 14px;
-			height: 14px;
-		}
+	// Reduce spacing on CheckboxControl's BaseControl wrapper.
+	.components-base-control {
+		margin-bottom: 0;
 	}
 }
 
-.press-this-categories-panel__name {
-	flex: 1 1 auto;
-	font-size: $font-size-base;
-	color: $color-text;
+.press-this-editor__hierarchical-terms-subchoices {
+	margin-top: 4px;
+	margin-left: 16px;
 }
 
-// ==========================================================================
-// Nested Children
-// ==========================================================================
-
-.press-this-categories-panel__children {
-	list-style: none;
+.press-this-editor__categories-no-results {
+	padding: $spacing-md 0;
+	text-align: center;
+	color: $color-text-light;
 	margin: 0;
-	padding: 0;
+	font-size: $font-size-base;
 }
 
 // ==========================================================================
 // Add New Category
 // ==========================================================================
 
-.press-this-categories-panel__add-new-wrapper {
+.press-this-editor__add-category {
+	margin-top: $spacing-md;
 	border-top: 1px solid $color-border-light;
-	background: $color-bg-light;
+	padding-top: $spacing-md;
 }
 
-.press-this-categories-panel__add-toggle {
-	display: flex;
-	align-items: center;
-	gap: $spacing-sm;
-	width: 100%;
-	padding: $spacing-md $spacing-lg;
-	background: transparent;
-	border: none;
-	cursor: pointer;
-	color: $color-accent;
+.press-this-editor__add-category-toggle {
 	font-size: $font-size-small;
-	font-weight: 500;
-	text-align: left;
-
-	&:hover,
-	&:focus {
-		background: $color-border-light;
-	}
-
-	&:focus {
-		outline: none;
-		box-shadow: inset 0 0 0 2px $color-accent;
-	}
-
-	.dashicons {
-		color: $color-accent;
-	}
 }
 
-.press-this-categories-panel__add-form {
-	padding: $spacing-md $spacing-lg;
-	border-top: 1px solid $color-border-light;
+.press-this-editor__add-category-form {
+	margin-top: $spacing-md;
 
 	.components-base-control {
 		margin-bottom: $spacing-md;
 	}
-
-	.components-text-control__input,
-	.components-select-control__input,
-	input,
-	select {
-		width: 100%;
-		padding: $spacing-sm $spacing-md;
-		border: 1px solid $color-border;
-		border-radius: 4px;
-		font-size: $font-size-base;
-
-		&:focus {
-			border-color: $color-accent;
-			box-shadow: 0 0 0 1px $color-accent;
-			outline: none;
-		}
-	}
 }
 
-.press-this-categories-panel__add-submit {
-	display: flex;
-	align-items: center;
-	gap: $spacing-sm;
+.press-this-editor__add-category-error {
+	color: $color-error;
+	font-size: $font-size-small;
+	margin: 0 0 $spacing-md;
+}
 
-	.components-spinner {
-		margin: 0;
-	}
+.press-this-editor__add-category-button {
+	width: 100%;
+	justify-content: center;
 }
 
 // ==========================================================================
@@ -210,7 +98,7 @@
 // ==========================================================================
 
 @media (max-width: $breakpoint-mobile) {
-	.press-this-categories-panel__list-wrapper {
-		max-height: 250px;
+	.press-this-editor__hierarchical-terms-list {
+		max-height: 10em;
 	}
 }
