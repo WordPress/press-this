@@ -26,6 +26,9 @@ Thumbs.db
 test-results/
 playwright-report/
 
+# PHPUnit
+.phpunit.result.cache
+
 # Debug logs
 *.log
 npm-debug.log*
