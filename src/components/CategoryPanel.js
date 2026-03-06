@@ -10,7 +10,7 @@
 /**
  * WordPress dependencies
  */
-import { useMemo, useState, useCallback } from '@wordpress/element';
+import { useEffect, useMemo, useState, useCallback } from '@wordpress/element';
 import {
 	PanelBody,
 	SearchControl,
@@ -40,8 +40,8 @@ const MIN_TERMS_COUNT_FOR_FILTER = 8;
  * @param {Object}   props                    Component props.
  * @param {Array}    props.categories         Flat array of { id, name, parent, slug }.
  * @param {Array}    props.selectedCategories Array of selected category IDs.
- * @param {Function} props.onSelectionChange  Callback with updated selected IDs.
- * @param {Function} props.onCategoriesChange Callback with updated categories list.
+ * @param {Function} props.onSelectionChange  State updater for selected IDs (React setState dispatcher).
+ * @param {Function} props.onCategoriesChange State updater for the categories list (React setState dispatcher).
  * @param {boolean}  props.canEditCategories  Whether user can create categories.
  * @param {string}   props.categoryNonce      Nonce for add-category AJAX.
  * @param {string}   props.ajaxUrl            WordPress admin-ajax.php URL.
@@ -103,36 +103,24 @@ export default function CategoryPanel( {
 			.filter( ( term ) => term );
 	}, [ termsTree, filterValue ] );
 
-	/**
-	 * Handle filter value changes.
-	 * Updates the filter and announces results to screen readers.
-	 */
-	const setFilter = useCallback(
-		( value ) => {
-			setFilterValue( value );
-
-			if ( value === '' ) {
-				return;
-			}
-
-			const filtered = termsTree
-				.map( getFilterMatcher( value ) )
-				.filter( ( term ) => term );
-			const resultCount = countTerms( filtered );
-			const message = sprintf(
-				/* translators: %d: number of results */
-				_n(
-					'%d result found.',
-					'%d results found.',
-					resultCount,
-					'press-this'
-				),
-				resultCount
-			);
-			debouncedSpeak( message, 'assertive' );
-		},
-		[ termsTree, countTerms, debouncedSpeak ]
-	);
+	// Announce filtered result count to screen readers.
+	useEffect( () => {
+		if ( filterValue === '' ) {
+			return;
+		}
+		const resultCount = countTerms( filteredTermsTree );
+		const message = sprintf(
+			/* translators: %d: number of results */
+			_n(
+				'%d result found.',
+				'%d results found.',
+				resultCount,
+				'press-this'
+			),
+			resultCount
+		);
+		debouncedSpeak( message, 'assertive' );
+	}, [ filterValue, filteredTermsTree, countTerms, debouncedSpeak ] );
 
 	/**
 	 * Toggle a category selection.
@@ -262,7 +250,7 @@ export default function CategoryPanel( {
 					label={ __( 'Search Categories', 'press-this' ) }
 					placeholder={ __( 'Search Categories', 'press-this' ) }
 					value={ filterValue }
-					onChange={ setFilter }
+					onChange={ setFilterValue }
 					className="press-this-editor__categories-search"
 				/>
 			) }
