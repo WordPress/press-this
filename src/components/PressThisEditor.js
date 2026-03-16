@@ -235,7 +235,7 @@ function getWpRestBaseUrl( pressThisRestUrl ) {
  * in the user's preferred language rather than hardcoded to English.
  *
  * @param {string} dateString ISO date string to format.
- * @param {string} timezone   IANA timezone string (e.g., "America/New_York").
+ * @param {string} timezone   Timezone identifier (e.g., "America/New_York" or "UTC+2").
  * @return {string} Human-readable formatted date.
  */
 function formatScheduleDate( dateString, timezone ) {

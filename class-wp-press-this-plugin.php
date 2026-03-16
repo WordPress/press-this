@@ -1556,8 +1556,8 @@ class WP_Press_This_Plugin {
 			'postId'              => $post_ID,
 			'title'               => $post_title,
 			'content'             => $post_content,
-			'postStatus'          => get_post_status( $post_ID ),
-			'postDate'            => mysql_to_rfc3339( get_post( $post_ID )->post_date ),
+			'postStatus'          => $post->post_status,
+			'postDate'            => mysql_to_rfc3339( $post->post_date ),
 			'nonce'               => wp_create_nonce( 'update-post_' . $post_ID ),
 			'categoryNonce'       => wp_create_nonce( 'add-category' ),
 
