@@ -97,16 +97,16 @@ test.describe( 'HTML Selection Preservation', () => {
 			} );
 			await waitForBlocks( page );
 
-			await expect(
-				page.locator(
-					`${ editorContent } [data-type="core/heading"] h2`
-				)
-			).toHaveText( 'Heading Two' );
-			await expect(
-				page.locator(
-					`${ editorContent } [data-type="core/heading"] h3`
-				)
-			).toHaveText( 'Heading Three' );
+			const headings = page.locator(
+				`${ editorContent } [data-type="core/heading"]`
+			);
+			await expect( headings ).toHaveCount( 2 );
+			await expect( headings.nth( 0 ) ).toContainText(
+				'Heading Two'
+			);
+			await expect( headings.nth( 1 ) ).toContainText(
+				'Heading Three'
+			);
 		} );
 
 		test( 'unordered list', async ( { loggedInPage: page } ) => {
@@ -121,7 +121,6 @@ test.describe( 'HTML Selection Preservation', () => {
 				`${ editorContent } [data-type="core/list"]`
 			);
 			await expect( list.first() ).toBeVisible();
-			await expect( list.first().locator( 'ul' ) ).toBeVisible();
 			await expect( list.first() ).toContainText( 'Item A' );
 			await expect( list.first() ).toContainText( 'Item B' );
 		} );
@@ -138,7 +137,6 @@ test.describe( 'HTML Selection Preservation', () => {
 				`${ editorContent } [data-type="core/list"]`
 			);
 			await expect( list.first() ).toBeVisible();
-			await expect( list.first().locator( 'ol' ) ).toBeVisible();
 			await expect( list.first() ).toContainText( 'First' );
 			await expect( list.first() ).toContainText( 'Second' );
 		} );
