@@ -340,6 +340,19 @@
 	// Open popup window directly (GET request sends session cookies).
 	popup = window.open( pt_url, target, 'location,resizable,scrollbars,width=' + windowWidth + ',height=' + windowHeight );
 
-	// Send scraped data via postMessage.
-	sendDataToPopup();
+	if ( popup ) {
+		// Send scraped data via postMessage.
+		sendDataToPopup();
+	} else {
+		// Popup blocked (common on mobile browsers). Navigate current window with inline data.
+		// Trim arrays to limit URL length for the fallback path.
+		if ( scrapedData._images && scrapedData._images.length > 5 ) {
+			scrapedData._images = scrapedData._images.slice( 0, 5 );
+		}
+		if ( scrapedData._embeds && scrapedData._embeds.length > 3 ) {
+			scrapedData._embeds = scrapedData._embeds.slice( 0, 3 );
+		}
+
+		top.location.href = pt_url + '&_data=' + encURI( JSON.stringify( scrapedData ) );
+	}
 } )( window, document, top.location.href, window.pt_url );

@@ -218,6 +218,31 @@ describe( 'Bookmarklet Functionality', () => {
 		).toBe( true );
 	} );
 
+	test( 'Falls back to current-window navigation when popup is blocked', () => {
+		// Check for popup null check (fallback for mobile browsers).
+		expect( bookmarkletSource ).toContain( 'if ( popup )' );
+
+		// Check for inline data encoding via JSON.stringify.
+		expect( bookmarkletSource ).toContain( 'JSON.stringify' );
+
+		// Check for _data URL parameter in fallback path.
+		expect( bookmarkletSource ).toContain( '_data=' );
+
+		// Check for top.location.href fallback navigation.
+		expect( bookmarkletSource ).toContain( 'top.location.href' );
+	} );
+
+	test( 'Trims arrays in popup-blocked fallback to limit URL length', () => {
+		// Check for image array trimming.
+		expect( bookmarkletSource ).toContain( 'scrapedData._images.length > 5' );
+
+		// Check for embed array trimming.
+		expect( bookmarkletSource ).toContain( 'scrapedData._embeds.length > 3' );
+
+		// Check for slice usage.
+		expect( bookmarkletSource ).toContain( '.slice( 0,' );
+	} );
+
 	test( 'Enhanced data extraction - JSON-LD structured data', () => {
 		// Check for JSON-LD script tag query.
 		expect( bookmarkletSource ).toContain( 'application/ld+json' );

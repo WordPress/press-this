@@ -182,7 +182,12 @@ export default function App() {
 	 */
 	useEffect( () => {
 		// Only listen if we're in postMessage mode and haven't received data yet.
-		if ( ! data.postMessageMode || postMessageReceived ) {
+		// Skip if inline data mode — data was passed via URL, not postMessage.
+		if (
+			! data.postMessageMode ||
+			data.inlineDataMode ||
+			postMessageReceived
+		) {
 			return;
 		}
 
@@ -267,6 +272,7 @@ export default function App() {
 		};
 	}, [
 		data.postMessageMode,
+		data.inlineDataMode,
 		data.restUrl,
 		data.restNonce,
 		data.sourceUrl,

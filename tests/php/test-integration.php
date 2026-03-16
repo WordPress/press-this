@@ -283,4 +283,78 @@ class Test_Press_This_Integration extends BaseTestCase {
 
 		remove_filter( 'pre_http_request', $block_http, 1 );
 	}
+
+	/**
+	 * Test: Inline data parameter (_data) is parsed by merge_or_fetch_data.
+	 *
+	 * When the bookmarklet's popup is blocked (mobile browsers), it falls back
+	 * to passing scraped data as JSON in the _data URL parameter.
+	 */
+	public function test_inline_data_parameter_is_parsed() {
+		$scraped_data = array(
+			'u'       => 'https://example.com/article',
+			't'       => 'Example Article',
+			's'       => 'Selected text',
+			'_images' => array( 'https://example.com/image.jpg' ),
+			'_embeds' => array( 'https://www.youtube.com/embed/abc?si=123' ),
+			'_meta'   => array(
+				'og:title'       => 'OG Title',
+				'og:description' => 'OG Description',
+			),
+			'_links'  => array(
+				'canonical' => 'https://example.com/article',
+			),
+		);
+
+		$_GET['_data'] = wp_json_encode( $scraped_data );
+
+		$data = $this->plugin->merge_or_fetch_data();
+
+		$this->assertEquals( 'https://example.com/article', $data['u'] );
+		$this->assertEquals( 'Example Article', $data['t'] );
+		$this->assertEquals( 'Selected text', $data['s'] );
+		$this->assertContains( 'https://example.com/image.jpg', $data['_images'] );
+		// limit_embed() transforms YouTube embed URLs to watch URLs.
+		$this->assertContains( 'https://www.youtube.com/watch?v=abc', $data['_embeds'] );
+		$this->assertEquals( 'https://example.com/article', $data['_links']['canonical'] );
+
+		unset( $_GET['_data'] );
+	}
+
+	/**
+	 * Test: Inline data does not override existing GET/POST parameters.
+	 */
+	public function test_inline_data_does_not_override_existing_params() {
+		$_GET['u'] = 'https://existing.com/page';
+
+		$scraped_data = array(
+			'u' => 'https://example.com/different',
+			't' => 'Inline Title',
+		);
+
+		$_GET['_data'] = wp_json_encode( $scraped_data );
+
+		$data = $this->plugin->merge_or_fetch_data();
+
+		// Existing 'u' param should take precedence.
+		$this->assertEquals( 'https://existing.com/page', $data['u'] );
+		// 't' should come from inline data since it wasn't in GET.
+		$this->assertEquals( 'Inline Title', $data['t'] );
+
+		unset( $_GET['_data'], $_GET['u'] );
+	}
+
+	/**
+	 * Test: Invalid JSON in _data parameter is handled gracefully.
+	 */
+	public function test_invalid_inline_data_is_handled_gracefully() {
+		$_GET['_data'] = 'not valid json{{{';
+
+		$data = $this->plugin->merge_or_fetch_data();
+
+		// Should not crash, should return normal empty-ish data.
+		$this->assertIsArray( $data );
+
+		unset( $_GET['_data'] );
+	}
 }
