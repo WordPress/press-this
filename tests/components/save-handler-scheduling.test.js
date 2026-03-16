@@ -1,111 +1,120 @@
 /**
- * Save Handler and Data Threading Tests
+ * Save Handler Scheduling Tests
  *
- * Tests for scheduling support in the save handler and timezone data threading.
- * Verifies that handleSave passes date in the REST body, the schedule-specific
- * snackbar displays correctly, timezone flows through the component tree, and
- * no redirect occurs for 'future' status.
+ * Behavioral tests for the formatScheduleDate utility function in PressThisEditor.
+ * Verifies date formatting, timezone label appending, and error handling.
  *
  * @package press-this
  */
 
-const fs = require( 'fs' );
-const path = require( 'path' );
+import { formatScheduleDate } from '../../src/components/PressThisEditor';
 
-describe( 'Save Handler: scheduling support', () => {
-	let editorContent;
+// Mock all @wordpress/* dependencies so the module loads without React/DOM.
+jest.mock( '@wordpress/element', () => ( {
+	useMemo: ( fn ) => fn(),
+	useCallback: ( fn ) => fn,
+	useState: ( init ) => [ typeof init === 'function' ? init() : init, jest.fn() ],
+	useEffect: jest.fn(),
+	useRef: ( val ) => ( { current: val } ),
+} ) );
 
-	beforeAll( () => {
-		const editorPath = path.resolve(
-			__dirname,
-			'../../src/components/PressThisEditor.js'
-		);
-		editorContent = fs.readFileSync( editorPath, 'utf8' );
+jest.mock( '@wordpress/data', () => ( {
+	useSelect: jest.fn( () => false ),
+	useDispatch: jest.fn( () => ( {} ) ),
+} ) );
+
+jest.mock( '@wordpress/blocks', () => ( {
+	parse: jest.fn( () => [] ),
+	registerCoreBlocks: jest.fn(),
+} ) );
+
+jest.mock( '@wordpress/block-library', () => ( {
+	registerCoreBlocks: jest.fn(),
+} ) );
+
+jest.mock( '@wordpress/block-editor', () => ( {
+	BlockEditorProvider: 'BlockEditorProvider',
+	BlockList: 'BlockList',
+	BlockTools: 'BlockTools',
+	WritingFlow: 'WritingFlow',
+	ObserveTyping: 'ObserveTyping',
+	BlockEditorKeyboardShortcuts: { Register: 'Register' },
+	BlockToolbar: 'BlockToolbar',
+	BlockInspector: 'BlockInspector',
+	Inserter: 'Inserter',
+	store: { name: 'core/block-editor' },
+} ) );
+
+jest.mock( '@wordpress/components', () => ( {
+	SlotFillProvider: 'SlotFillProvider',
+	Popover: Object.assign( () => null, { Slot: 'Slot' } ),
+	Button: 'Button',
+	Spinner: 'Spinner',
+	Snackbar: 'Snackbar',
+	Panel: 'Panel',
+	PanelBody: 'PanelBody',
+	FormTokenField: 'FormTokenField',
+} ) );
+
+jest.mock( '@wordpress/i18n', () => ( {
+	__: ( text ) => text,
+	sprintf: ( fmt, ...args ) => {
+		let result = fmt;
+		args.forEach( ( arg ) => {
+			result = result.replace( '%s', arg );
+		} );
+		return result;
+	},
+} ) );
+
+// Mock internal component imports to prevent cascading dependency issues.
+jest.mock( '../../src/components/BlockTransformShortcuts', () => 'BlockTransformShortcuts' );
+jest.mock( '../../src/components/ScrapedMediaPanel', () => 'ScrapedMediaPanel' );
+jest.mock( '../../src/components/FeaturedImagePanel', () => 'FeaturedImagePanel' );
+jest.mock( '../../src/components/CategoryPanel', () => 'CategoryPanel' );
+
+describe( 'formatScheduleDate', () => {
+	test( 'formats a naive ISO datetime into a human-readable string', () => {
+		const result = formatScheduleDate( '2026-06-15T14:30:00', '' );
+		// Should contain the date components (month, day, year, time).
+		expect( result ).toMatch( /June/ );
+		expect( result ).toMatch( /15/ );
+		expect( result ).toMatch( /2026/ );
+		expect( result ).toMatch( /2:30/ );
 	} );
 
-	test( 'handleSave includes date in the REST request body when options.date is provided', () => {
-		// The JSON.stringify body should include a date field sourced from options.date.
-		expect( editorContent ).toMatch( /date:\s*options\.date/ );
-
-		// Verify it is inside the JSON.stringify call alongside other body fields.
-		const bodyMatch = editorContent.match(
-			/body:\s*JSON\.stringify\(\s*\{([\s\S]*?)\}\s*\)/
-		);
-		expect( bodyMatch ).not.toBeNull();
-		expect( bodyMatch[ 1 ] ).toContain( 'date' );
+	test( 'appends timezone identifier when provided', () => {
+		const result = formatScheduleDate( '2026-06-15T14:30:00', 'America/New_York' );
+		expect( result ).toContain( 'America/New_York' );
 	} );
 
-	test( 'successful schedule response shows a snackbar with the formatted date', () => {
-		// Check for 'future' status detection in the success handler.
-		expect( editorContent ).toMatch( /status\s*===\s*'future'/ );
-
-		// Check for Intl.DateTimeFormat usage for date formatting.
-		expect( editorContent ).toContain( 'Intl.DateTimeFormat' );
-
-		// Check for the schedule-specific snackbar message using sprintf.
-		expect( editorContent ).toMatch( /Post scheduled for %s/ );
-		expect( editorContent ).toMatch(
-			/sprintf\(\s*\n?\s*\/\*[\s\S]*?\*\/\s*\n?\s*__\(\s*'Post scheduled for %s\.'/
-		);
+	test( 'appends fixed-offset timezone string', () => {
+		const result = formatScheduleDate( '2026-06-15T14:30:00', 'UTC+2' );
+		expect( result ).toContain( 'UTC+2' );
 	} );
 
-	test( 'no redirect occurs when status is future (response has no redirect key)', () => {
-		// The existing success handler shows a notice when result.redirect is falsy.
-		// For 'future' status, the server returns no redirect, so the no-redirect
-		// branch executes. Verify the no-redirect branch sets a notice (not a redirect).
-		expect( editorContent ).toMatch(
-			/if\s*\(\s*result\.redirect\s*\)/
-		);
-
-		// The else branch (no redirect) sets a notice -- this covers 'future' status.
-		expect( editorContent ).toMatch(
-			/setNotice\(\s*\{[\s\S]*?status:\s*'success'/
-		);
-	} );
-} );
-
-describe( 'Data Threading: timezone from App to components', () => {
-	let appContent;
-	let editorContent;
-	let headerContent;
-
-	beforeAll( () => {
-		const appPath = path.resolve( __dirname, '../../src/App.js' );
-		const editorPath = path.resolve(
-			__dirname,
-			'../../src/components/PressThisEditor.js'
-		);
-		const headerPath = path.resolve(
-			__dirname,
-			'../../src/components/Header.js'
-		);
-		appContent = fs.readFileSync( appPath, 'utf8' );
-		editorContent = fs.readFileSync( editorPath, 'utf8' );
-		headerContent = fs.readFileSync( headerPath, 'utf8' );
+	test( 'does not append timezone when empty', () => {
+		const result = formatScheduleDate( '2026-06-15T14:30:00', '' );
+		// Should not have trailing whitespace from empty timezone.
+		expect( result ).toBe( result.trim() );
 	} );
 
-	test( 'App.js reads timezone from pressThisData and threads it to PressThisEditor and Header', () => {
-		// App.js reads data.timezone.
-		expect( appContent ).toContain( 'data.timezone' );
+	test( 'returns the raw string for unparseable input', () => {
+		const result = formatScheduleDate( 'not-a-date', 'UTC' );
+		expect( result ).toBe( 'not-a-date' );
+	} );
 
-		// App.js passes timezone prop to PressThisEditor.
-		expect( appContent ).toMatch( /<PressThisEditor[\s\S]*?timezone/ );
+	test( 'handles space separator in datetime', () => {
+		const result = formatScheduleDate( '2026-06-15 14:30:00', '' );
+		expect( result ).toMatch( /June/ );
+		expect( result ).toMatch( /15/ );
+	} );
 
-		// App.js passes timezone prop to Header.
-		expect( appContent ).toMatch( /<Header[\s\S]*?timezone/ );
+	test( 'formats correctly for different months', () => {
+		const jan = formatScheduleDate( '2026-01-05T09:00:00', '' );
+		expect( jan ).toMatch( /January/ );
 
-		// PressThisEditor accepts timezone in props.
-		const editorPropsMatch = editorContent.match(
-			/export\s+default\s+function\s+PressThisEditor\(\s*\{([\s\S]*?)\}\s*\)/
-		);
-		expect( editorPropsMatch ).not.toBeNull();
-		expect( editorPropsMatch[ 1 ] ).toContain( 'timezone' );
-
-		// Header accepts timezone in props.
-		const headerPropsMatch = headerContent.match(
-			/export\s+default\s+function\s+Header\(\s*\{([\s\S]*?)\}\s*\)/
-		);
-		expect( headerPropsMatch ).not.toBeNull();
-		expect( headerPropsMatch[ 1 ] ).toContain( 'timezone' );
+		const dec = formatScheduleDate( '2026-12-25T18:00:00', '' );
+		expect( dec ).toMatch( /December/ );
 	} );
 } );

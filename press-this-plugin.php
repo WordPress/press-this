@@ -378,6 +378,7 @@ function press_this_rest_save_post( $request ) {
 			$post_data['post_date']     = gmdate( 'Y-m-d H:i:s', strtotime( $date ) );
 			$post_data['post_date_gmt'] = get_gmt_from_date( $post_data['post_date'] );
 			$post_data['post_status']   = 'future';
+			// Required: wp_update_post ignores post_date changes unless edit_date is true.
 			$post_data['edit_date']     = true;
 		} else {
 			$post_data['post_status'] = 'pending';

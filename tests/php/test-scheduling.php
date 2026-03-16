@@ -200,6 +200,44 @@ class Test_Scheduling extends BaseTestCase {
 	}
 
 	/**
+	 * Test that rescheduling an already-scheduled post updates the date.
+	 */
+	public function test_reschedule_updates_date() {
+		wp_set_current_user( $this->editor_user_id );
+
+		// First, schedule the post for an initial date.
+		$initial_date = '2027-06-15T14:30:00';
+		$request      = $this->build_save_request(
+			array(
+				'status' => 'future',
+				'date'   => $initial_date,
+			)
+		);
+
+		$response = press_this_rest_save_post( $request );
+		$this->assertInstanceOf( WP_REST_Response::class, $response );
+		$this->assertEquals( 'future', get_post_status( $this->test_post_id ) );
+		$this->assertEquals( '2027-06-15 14:30:00', get_post( $this->test_post_id )->post_date );
+
+		// Reschedule to a different date.
+		$new_date = '2027-09-20T10:00:00';
+		$request  = $this->build_save_request(
+			array(
+				'status' => 'future',
+				'date'   => $new_date,
+			)
+		);
+
+		$response = press_this_rest_save_post( $request );
+		$this->assertInstanceOf( WP_REST_Response::class, $response );
+
+		$post = get_post( $this->test_post_id );
+		$this->assertEquals( 'future', $post->post_status );
+		$this->assertEquals( '2027-09-20 10:00:00', $post->post_date );
+		$this->assertNotEquals( '2027-06-15 14:30:00', $post->post_date );
+	}
+
+	/**
 	 * Test that 'future' status is gated behind publish_posts capability.
 	 */
 	public function test_future_status_gated_behind_publish_posts() {

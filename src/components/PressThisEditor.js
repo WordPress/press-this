@@ -303,6 +303,8 @@ function formatScheduleDate( dateString, timezone ) {
  * @param {string}   props.ajaxUrl
  * @return {JSX.Element} Press This Editor component.
  */
+export { formatScheduleDate };
+
 export default function PressThisEditor( {
 	post,
 	settings,

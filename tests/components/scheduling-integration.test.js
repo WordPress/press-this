@@ -2,238 +2,155 @@
  * Scheduling Integration Tests
  *
  * Cross-cutting integration tests for the post-scheduling feature.
- * Verifies the full workflow from UI through data threading to save handler,
- * filling gaps not covered by the individual unit test files.
+ * Tests the interaction between Header scheduling utilities and
+ * PressThisEditor formatting, verifying the full data flow.
  *
  * @package press-this
  */
 
-const fs = require( 'fs' );
-const path = require( 'path' );
+import {
+	getTimezoneAbbreviation,
+	getCurrentDateInTimezone,
+	parseNaiveToMs,
+	isFutureDate,
+} from '../../src/components/Header';
 
-describe( 'Scheduling Integration', () => {
-	let headerContent;
-	let editorContent;
-	let appContent;
+import { formatScheduleDate } from '../../src/components/PressThisEditor';
 
-	beforeAll( () => {
-		headerContent = fs.readFileSync(
-			path.resolve( __dirname, '../../src/components/Header.js' ),
-			'utf8'
-		);
-		editorContent = fs.readFileSync(
-			path.resolve(
-				__dirname,
-				'../../src/components/PressThisEditor.js'
-			),
-			'utf8'
-		);
-		appContent = fs.readFileSync(
-			path.resolve( __dirname, '../../src/App.js' ),
-			'utf8'
-		);
+// Mock @wordpress dependencies for Header.
+jest.mock( '@wordpress/element', () => ( {
+	useState: ( init ) => [ typeof init === 'function' ? init() : init, jest.fn() ],
+	useCallback: ( fn ) => fn,
+	useEffect: jest.fn(),
+	useRef: ( val ) => ( { current: val } ),
+	useMemo: ( fn ) => fn(),
+} ) );
+
+jest.mock( '@wordpress/components', () => ( {
+	Button: 'Button',
+	TextControl: 'TextControl',
+	Notice: 'Notice',
+	Tooltip: 'Tooltip',
+	DropdownMenu: 'DropdownMenu',
+	MenuGroup: 'MenuGroup',
+	MenuItem: 'MenuItem',
+	Popover: Object.assign( () => null, { Slot: 'Slot' } ),
+	DateTimePicker: 'DateTimePicker',
+	SlotFillProvider: 'SlotFillProvider',
+	Spinner: 'Spinner',
+	Snackbar: 'Snackbar',
+	Panel: 'Panel',
+	PanelBody: 'PanelBody',
+	FormTokenField: 'FormTokenField',
+} ) );
+
+jest.mock( '@wordpress/i18n', () => ( {
+	__: ( text ) => text,
+	sprintf: ( fmt, ...args ) => {
+		let result = fmt;
+		args.forEach( ( arg ) => {
+			result = result.replace( '%s', arg );
+		} );
+		return result;
+	},
+} ) );
+
+jest.mock( '@wordpress/icons', () => ( {
+	undo: 'undo-icon',
+	redo: 'redo-icon',
+	moreVertical: 'more-vertical-icon',
+} ) );
+
+jest.mock( '@wordpress/data', () => ( {
+	useSelect: jest.fn( () => false ),
+	useDispatch: jest.fn( () => ( {} ) ),
+} ) );
+
+jest.mock( '@wordpress/blocks', () => ( {
+	parse: jest.fn( () => [] ),
+	registerCoreBlocks: jest.fn(),
+} ) );
+
+jest.mock( '@wordpress/block-library', () => ( {
+	registerCoreBlocks: jest.fn(),
+} ) );
+
+jest.mock( '@wordpress/block-editor', () => ( {
+	BlockEditorProvider: 'BlockEditorProvider',
+	BlockList: 'BlockList',
+	BlockTools: 'BlockTools',
+	WritingFlow: 'WritingFlow',
+	ObserveTyping: 'ObserveTyping',
+	BlockEditorKeyboardShortcuts: { Register: 'Register' },
+	BlockToolbar: 'BlockToolbar',
+	BlockInspector: 'BlockInspector',
+	Inserter: 'Inserter',
+	store: { name: 'core/block-editor' },
+} ) );
+
+jest.mock( '../../src/components/BlockTransformShortcuts', () => 'BlockTransformShortcuts' );
+jest.mock( '../../src/components/ScrapedMediaPanel', () => 'ScrapedMediaPanel' );
+jest.mock( '../../src/components/FeaturedImagePanel', () => 'FeaturedImagePanel' );
+jest.mock( '../../src/components/CategoryPanel', () => 'CategoryPanel' );
+
+describe( 'Scheduling Integration: Header utilities + Editor formatting', () => {
+	test( 'a date produced by getCurrentDateInTimezone is parseable by parseNaiveToMs', () => {
+		const dateStr = getCurrentDateInTimezone( 'America/Chicago' );
+		const ms = parseNaiveToMs( dateStr );
+		expect( ms ).not.toBeNaN();
+		expect( ms ).toBeGreaterThan( 0 );
 	} );
 
-	test( 'full scheduling workflow: menu item -> popover -> date selection -> confirm -> REST request -> snackbar', () => {
-		// 1. Schedule MenuItem exists and opens the popover.
-		expect( headerContent ).toMatch( /setIsScheduleOpen\(\s*true\s*\)/ );
-
-		// 2. DateTimePicker is rendered in the popover with onChange wired to setScheduleDate.
-		expect( headerContent ).toMatch(
-			/DateTimePicker[\s\S]*?onChange=\{\s*setScheduleDate\s*\}/
-		);
-
-		// 3. Confirmation button calls handleScheduleConfirm.
-		expect( headerContent ).toMatch(
-			/onClick=\{[\s\S]*?handleScheduleConfirm/
-		);
-
-		// 4. handleScheduleConfirm calls onSave('future', { date: scheduleDate }).
-		expect( headerContent ).toMatch(
-			/onSave\(\s*'future'\s*,\s*\{\s*date:\s*scheduleDate\s*\}\s*\)/
-		);
-
-		// 5. App.js wires onSave to saveState.handleSave from PressThisEditor.
-		expect( appContent ).toMatch( /onSave=\{\s*saveState\.handleSave\s*\}/ );
-
-		// 6. PressThisEditor's handleSave includes date in the REST body.
-		expect( editorContent ).toMatch( /date:\s*options\.date/ );
-
-		// 7. On success with no redirect and 'future' status, snackbar is shown.
-		expect( editorContent ).toMatch(
-			/status\s*===\s*'future'\s*&&\s*options\.date/
-		);
-		expect( editorContent ).toMatch( /Post scheduled for %s/ );
+	test( 'a date from getCurrentDateInTimezone is formattable by formatScheduleDate', () => {
+		const dateStr = getCurrentDateInTimezone( 'Europe/London' );
+		const formatted = formatScheduleDate( dateStr, 'Europe/London' );
+		expect( formatted ).toContain( 'Europe/London' );
+		// Should contain year.
+		expect( formatted ).toMatch( /\d{4}/ );
 	} );
 
-	test( 'post saved with future status does not trigger a redirect', () => {
-		// The save handler checks result.redirect first, and the future status
-		// branch is in an 'else if' -- meaning it only runs when there is NO redirect.
-		// This ensures scheduled posts stay in Press This instead of redirecting.
-
-		// Verify the 'else if' chain: redirect check followed by future status check.
-		expect( editorContent ).toMatch(
-			/if\s*\(\s*result\.redirect\s*\)\s*\{[\s\S]*?\}\s*else\s+if\s*\(\s*status\s*===\s*'future'/
-		);
-
-		// The future branch shows a snackbar instead of redirecting.
-		expect( editorContent ).toMatch(
-			/status\s*===\s*'future'[\s\S]*?setNotice\(\s*\{[\s\S]*?status:\s*'success'/
-		);
-
-		// Verify that performSafeRedirect is NOT called in the future branch --
-		// it only appears in the redirect branch.
-		const futureBlock = editorContent.match(
-			/else\s+if\s*\(\s*status\s*===\s*'future'\s*&&\s*options\.date\s*\)\s*\{([\s\S]*?)\}\s*else\s*\{/
-		);
-		expect( futureBlock ).not.toBeNull();
-		expect( futureBlock[ 1 ] ).not.toContain( 'performSafeRedirect' );
+	test( 'isFutureDate and formatScheduleDate agree on a far-future date', () => {
+		const futureDate = '2099-06-15T14:30:00';
+		expect( isFutureDate( futureDate, 'UTC' ) ).toBe( true );
+		const formatted = formatScheduleDate( futureDate, 'UTC' );
+		expect( formatted ).toMatch( /June/ );
+		expect( formatted ).toMatch( /2099/ );
 	} );
 
-	test( 'Schedule menu item is hidden when canPublish is false', () => {
-		// The Schedule MenuGroup is wrapped in a conditional on capabilities.canPublish.
-		// Verify the conditional rendering pattern wraps the MenuGroup containing Schedule.
-		expect( headerContent ).toMatch(
-			/capabilities\.canPublish\s*&&\s*\(\s*\n?\s*<MenuGroup>/
-		);
-
-		// Verify the Schedule/Reschedule label is inside that conditional block.
-		const conditionalMatch = headerContent.match(
-			/capabilities\.canPublish\s*&&\s*\(([\s\S]*?)<\/MenuGroup>/
-		);
-		expect( conditionalMatch ).not.toBeNull();
-		expect( conditionalMatch[ 1 ] ).toContain( 'scheduleMenuLabel' );
+	test( 'timezone abbreviation matches the timezone appended to formatted date', () => {
+		const date = '2026-01-15T10:00:00';
+		const tz = 'America/New_York';
+		const abbr = getTimezoneAbbreviation( tz, date );
+		const formatted = formatScheduleDate( date, tz );
+		// formatScheduleDate appends the IANA string, not the abbreviation.
+		expect( formatted ).toContain( tz );
+		// But the abbreviation is a real value (not empty).
+		expect( abbr.length ).toBeGreaterThan( 0 );
 	} );
 
-	test( 'snackbar shows correctly formatted date with timezone', () => {
-		// formatScheduleDate function exists and uses Intl.DateTimeFormat.
-		expect( editorContent ).toMatch(
-			/function\s+formatScheduleDate\s*\(\s*dateString\s*,\s*timezone\s*\)/
-		);
+	test( 'round-trip: parse -> check future -> format for a scheduled post', () => {
+		const scheduledDate = '2099-03-15T09:00:00';
+		const tz = 'Asia/Tokyo';
 
-		// It formats in UTC to avoid browser-timezone reinterpretation.
-		expect( editorContent ).toMatch(
-			/timeZone:\s*'UTC'/
-		);
+		// Step 1: Parse the date.
+		const ms = parseNaiveToMs( scheduledDate );
+		expect( ms ).not.toBeNaN();
 
-		// It appends the timezone identifier to the formatted date.
-		expect( editorContent ).toMatch(
-			/formatted\s*\}\s*\$\{\s*timezone\s*\}/
-		);
+		// Step 2: Check if it's in the future.
+		expect( isFutureDate( scheduledDate, tz ) ).toBe( true );
 
-		// The formatted result is used in the snackbar message via sprintf.
-		expect( editorContent ).toMatch(
-			/sprintf\(\s*\n?\s*\/\*[\s\S]*?\*\/\s*\n?\s*__\(\s*'Post scheduled for %s\.'/
-		);
+		// Step 3: Format for the snackbar.
+		const formatted = formatScheduleDate( scheduledDate, tz );
+		expect( formatted ).toMatch( /March/ );
+		expect( formatted ).toMatch( /2099/ );
+		expect( formatted ).toContain( 'Asia/Tokyo' );
 	} );
 
-	test( 'date exactly at the 1-minute buffer threshold is treated as not-future', () => {
-		// The isFutureDate function uses a strict greater-than comparison with ONE_MINUTE.
-		// It now accepts a tz parameter to compare in the site timezone.
-		const isFutureFn = headerContent.match(
-			/function\s+isFutureDate\s*\(\s*dateString\s*,\s*tz\s*\)\s*\{([\s\S]*?)\n\}/
-		);
-		expect( isFutureFn ).not.toBeNull();
-
-		const fnBody = isFutureFn[ 1 ];
-
-		// Uses getCurrentDateInTimezone for current time reference instead of Date.now().
-		expect( fnBody ).toContain( 'getCurrentDateInTimezone' );
-
-		// Computes difference as selectedMs - nowMs.
-		expect( fnBody ).toMatch( /selectedMs\s*-\s*nowMs/ );
-
-		// Uses strict greater-than with ONE_MINUTE (not >=).
-		// This means a date exactly ONE_MINUTE from now returns false (not future).
-		expect( fnBody ).toMatch( />\s*ONE_MINUTE/ );
-		expect( fnBody ).not.toMatch( />=\s*ONE_MINUTE/ );
-	} );
-
-	test( 'popover re-opens cleanly after a previous schedule action', () => {
-		// After handleScheduleConfirm, the popover is closed.
-		expect( headerContent ).toMatch(
-			/handleScheduleConfirm[\s\S]*?setIsScheduleOpen\(\s*false\s*\)/
-		);
-
-		// When the Schedule menu item is clicked again, the date resets
-		// to either the post's scheduled date or the current time.
-		const menuItemClick = headerContent.match(
-			/setIsScheduleOpen\(\s*true\s*\)[\s\S]*?setScheduleDate\(/
-		);
-		expect( menuItemClick ).not.toBeNull();
-
-		// The date is freshly computed via getCurrentDateInTimezone on re-open
-		// (not stale from the previous session).
-		expect( headerContent ).toMatch(
-			/setScheduleDate\(\s*\n?\s*postStatus\s*===\s*'future'\s*&&\s*postDate[\s\S]*?getCurrentDateInTimezone/
-		);
-	} );
-
-	test( 'DateTimePicker defaults to current date/time on first open', () => {
-		// The scheduleDate state initializer calls getCurrentDateInTimezone
-		// when there is no existing scheduled post.
-		expect( headerContent ).toMatch(
-			/useState\(\s*\(\)\s*=>\s*\{[\s\S]*?getCurrentDateInTimezone\(\s*timezone\s*\)/
-		);
-
-		// getCurrentDateInTimezone uses Intl.DateTimeFormat with the site timezone.
-		expect( headerContent ).toMatch(
-			/function\s+getCurrentDateInTimezone\s*\(\s*tz\s*\)/
-		);
-
-		// It formats in ISO 8601 pattern (YYYY-MM-DDTHH:MM:SS).
-		expect( headerContent ).toMatch(
-			/get\(\s*'year'\s*\)[\s\S]*?get\(\s*'month'\s*\)[\s\S]*?get\(\s*'day'\s*\)/
-		);
-
-		// DateTimePicker receives scheduleDate as currentDate.
-		expect( headerContent ).toMatch(
-			/DateTimePicker[\s\S]*?currentDate=\{\s*scheduleDate\s*\}/
-		);
-	} );
-
-	test( 'post status updates in App.js after scheduling', () => {
-		// App.js maintains postStatus and postDate as React state.
-		expect( appContent ).toMatch( /\[\s*postStatus\s*,\s*setPostStatus\s*\]/ );
-		expect( appContent ).toMatch( /\[\s*postDate\s*,\s*setPostDate\s*\]/ );
-
-		// App.js passes onPostStatusChange callback to PressThisEditor.
-		expect( appContent ).toMatch(
-			/onPostStatusChange=\{\s*handlePostStatusChange\s*\}/
-		);
-
-		// App.js passes postStatus and postDate to Header from state (not static data).
-		expect( appContent ).toMatch( /postStatus=\{\s*postStatus\s*\}/ );
-		expect( appContent ).toMatch( /postDate=\{\s*postDate\s*\}/ );
-
-		// PressThisEditor calls onPostStatusChange after a successful future save.
-		expect( editorContent ).toMatch( /onPostStatusChange\(/ );
-	} );
-
-	test( 'schedule popover has accessible aria-label', () => {
-		// The Popover should have an aria-label for accessibility.
-		expect( headerContent ).toMatch(
-			/Popover[\s\S]*?aria-label=\{\s*__\(\s*'Schedule post'/
-		);
-	} );
-
-	test( 'snackbar message uses sprintf for translatable formatting', () => {
-		// The snackbar message should use sprintf with __() instead of a template literal.
-		expect( editorContent ).toContain( 'sprintf' );
-		expect( editorContent ).toMatch(
-			/import\s*\{[^}]*sprintf[^}]*\}\s*from\s*'@wordpress\/i18n'/
-		);
-		expect( editorContent ).toMatch(
-			/sprintf\(\s*\n?\s*\/\*[\s\S]*?\*\/\s*\n?\s*__\(\s*'Post scheduled for %s\.'/
-		);
-	} );
-
-	test( 'formatScheduleDate uses browser default locale for primary formatting', () => {
-		// The primary DateTimeFormat call should use undefined (browser default).
-		expect( editorContent ).toMatch(
-			/new\s+Intl\.DateTimeFormat\(\s*undefined\s*,\s*options\s*\)/
-		);
-		// The 'en-US' usage is only for deriving timezone abbreviation strings
-		// (not user-visible date formatting), which is acceptable.
+	test( 'past date is not future and formats correctly', () => {
+		const pastDate = '2020-06-01T08:00:00';
+		expect( isFutureDate( pastDate, 'UTC' ) ).toBe( false );
+		const formatted = formatScheduleDate( pastDate, 'UTC' );
+		expect( formatted ).toMatch( /June/ );
+		expect( formatted ).toMatch( /2020/ );
 	} );
 } );

@@ -196,6 +196,13 @@ function isFutureDate( dateString, tz ) {
  * @param {string}   props.postDate              Current post date (ISO 8601).
  * @return {JSX.Element} Header component.
  */
+export {
+	getTimezoneAbbreviation,
+	getCurrentDateInTimezone,
+	parseNaiveToMs,
+	isFutureDate,
+};
+
 export default function Header( {
 	siteName,
 	siteUrl,
