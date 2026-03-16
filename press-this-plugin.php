@@ -144,7 +144,7 @@ function press_this_register_rest_routes() {
 		'press-this/v1',
 		'/manifest',
 		array(
-			'methods'             => 'GET',
+			'methods'             => WP_REST_Server::READABLE,
 			'callback'            => 'press_this_rest_manifest',
 			'permission_callback' => '__return_true',
 		)
