@@ -21,6 +21,9 @@ composer.lock
 .DS_Store
 Thumbs.db
 
+# Test cache
+.phpunit.result.cache
+
 # Debug logs
 *.log
 npm-debug.log*
