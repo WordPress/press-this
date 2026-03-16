@@ -1386,11 +1386,10 @@ class WP_Press_This_Plugin {
 			}
 		}
 
-		// Priority 3: Check for link-only content.
-		// When only a URL is provided with no other content, suggest link format.
-		if ( empty( $suggested_format ) && ! empty( $data['u'] ) && empty( $data['s'] ) && empty( $data['_images'] ) && empty( $data['_embeds'] ) ) {
-			$suggested_format = 'link';
-		}
+		// Priority 3 (removed): Previously auto-suggested 'link' format when only
+		// a URL was provided with no other content. Removed because scraping often
+		// fails to find images/embeds, causing unexpected link format suggestions.
+		// See https://github.com/WordPress/press-this/issues/94
 
 		// Note: The default format filter is NOT applied here.
 		// It's passed separately via postFormatDefault to allow JS detection

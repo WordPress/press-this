@@ -244,11 +244,11 @@ class Test_Post_Format_Filters extends BaseTestCase {
 	}
 
 	/**
-	 * Test: Link detection for URL-only content.
+	 * Test: URL-only content no longer suggests link format.
 	 *
 	 * @covers WP_Press_This_Plugin::get_suggested_post_format
 	 */
-	public function test_link_detection_for_url_only() {
+	public function test_url_only_does_not_suggest_link() {
 		$data = array(
 			'u' => 'https://example.com/article',
 			// No selected text, images, or embeds.
@@ -256,7 +256,7 @@ class Test_Post_Format_Filters extends BaseTestCase {
 
 		$result = $this->plugin->get_suggested_post_format( $data );
 
-		$this->assertEquals( 'link', $result );
+		$this->assertEquals( '', $result );
 	}
 
 	/**

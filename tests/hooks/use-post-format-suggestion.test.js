@@ -240,25 +240,25 @@ describe( 'suggestPostFormat', () => {
 		} );
 	} );
 
-	describe( 'Link Detection', () => {
-		test( 'detects URL with little content', () => {
+	describe( 'Link Detection (removed)', () => {
+		test( 'does not auto-suggest link format for URL with little content', () => {
 			const result = suggestPostFormat( {
 				sourceUrl: 'https://example.com/article',
 				content: '',
 				availableFormats,
 			} );
 
-			expect( result ).toBe( 'link' );
+			expect( result ).toBe( '' );
 		} );
 
-		test( 'detects URL-only content', () => {
+		test( 'does not auto-suggest link format for URL-only content', () => {
 			const result = suggestPostFormat( {
 				content: 'https://example.com/article',
 				sourceUrl: 'https://example.com/article',
 				availableFormats,
 			} );
 
-			expect( result ).toBe( 'link' );
+			expect( result ).toBe( '' );
 		} );
 	} );
 
@@ -286,8 +286,8 @@ describe( 'suggestPostFormat', () => {
 				availableFormats: limitedFormats,
 			} );
 
-			// Video not available, should fall back to link
-			expect( result ).toBe( 'link' );
+			// Video not available and link detection removed, so no match
+			expect( result ).toBe( '' );
 		} );
 
 		test( 'defaultFormat used even if not in availableFormats', () => {

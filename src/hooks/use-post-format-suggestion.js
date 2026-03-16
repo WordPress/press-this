@@ -369,10 +369,8 @@ export function suggestPostFormat( {
 		return 'image';
 	}
 
-	// Check for link-focused content.
-	if ( isFormatAvailable( 'link' ) && hasLinkContent( content, sourceUrl ) ) {
-		return 'link';
-	}
+	// Note: Link format detection removed — too easily triggered by normal
+	// pages with short content. See https://github.com/WordPress/press-this/issues/94
 
 	// Priority 4: Fallback to default format from PHP filter.
 	if ( defaultFormat ) {
