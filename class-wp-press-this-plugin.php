@@ -1331,7 +1331,7 @@ class WP_Press_This_Plugin {
 	 *                    - 's'       (string) Selected text from the page.
 	 *                    - '_images' (array)  Scraped image URLs.
 	 *                    - '_embeds' (array)  Scraped embed URLs.
-	 * @return string Suggested post format ('video', 'quote') or empty string for standard.
+	 * @return string Suggested post format ('video', 'quote', or any format via filter) or empty string for standard.
 	 */
 	public function get_suggested_post_format( $data ) {
 		/**
