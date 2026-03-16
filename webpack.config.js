@@ -24,6 +24,7 @@ const wordPressExternals = {
 	'@wordpress/keycodes': [ 'wp', 'keycodes' ],
 	'@wordpress/primitives': [ 'wp', 'primitives' ],
 	'@wordpress/blob': [ 'wp', 'blob' ],
+	'@wordpress/format-library': [ 'wp', 'formatLibrary' ],
 	// Note: @wordpress/icons is NOT externalized - it gets bundled since
 	// @wordpress/components needs it internally and wp.icons may not be available.
 };
