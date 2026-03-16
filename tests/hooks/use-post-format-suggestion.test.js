@@ -54,9 +54,9 @@ describe( 'suggestPostFormat', () => {
 		test( 'defaultFormat is used when nothing else matches', () => {
 			const result = suggestPostFormat( {
 				defaultFormat: 'aside',
-				// Content that won't match any detection (long enough to not be link-focused)
+				// Content that won't match any detection.
 				content:
-					'<p>This is a regular paragraph with enough content that it will not trigger link detection.</p><p>Another paragraph here.</p>',
+					'<p>This is a regular paragraph with enough content.</p><p>Another paragraph here.</p>',
 				availableFormats,
 			} );
 
@@ -65,9 +65,9 @@ describe( 'suggestPostFormat', () => {
 
 		test( 'returns empty string when nothing matches and no default', () => {
 			const result = suggestPostFormat( {
-				// Content that won't match any detection
+				// Content that won't match any detection.
 				content:
-					'<p>This is a regular paragraph with enough content that it will not trigger link detection.</p><p>Another paragraph here.</p>',
+					'<p>This is a regular paragraph with enough content.</p><p>Another paragraph here.</p>',
 				availableFormats,
 			} );
 

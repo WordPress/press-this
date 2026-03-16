@@ -2,7 +2,7 @@
  * usePostFormatSuggestion Hook
  *
  * Analyzes content to suggest an appropriate post format based on content type.
- * Detects video embeds, quote-heavy content, and link-focused content.
+ * Detects video embeds, audio embeds, social/status posts, quote-heavy content, and images.
  *
  * @package
  */
