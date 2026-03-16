@@ -105,8 +105,26 @@ function getTimezoneAbbreviation( tz, date ) {
  * @return {string} ISO 8601 date string.
  */
 function getCurrentDateInTimezone( tz ) {
+	const pad = ( n ) => String( n ).padStart( 2, '0' );
+	const formatNaive = ( d ) =>
+		`${ d.getUTCFullYear() }-${ pad( d.getUTCMonth() + 1 ) }-${ pad(
+			d.getUTCDate()
+		) }T${ pad( d.getUTCHours() ) }:${ pad( d.getUTCMinutes() ) }:${ pad(
+			d.getUTCSeconds()
+		) }`;
+
 	if ( ! tz ) {
-		return new Date().toISOString();
+		return formatNaive( new Date() );
+	}
+
+	// Handle fixed-offset timezones (e.g. "UTC+2", "UTC-10") which
+	// Intl.DateTimeFormat does not accept.
+	const offsetMatch = tz.match( /^UTC([+-]\d+(?:\.\d+)?)$/ );
+	if ( offsetMatch ) {
+		const offsetHours = parseFloat( offsetMatch[ 1 ] );
+		const now = new Date();
+		// Shift UTC time by the fixed offset to get wall-clock time.
+		return formatNaive( new Date( now.getTime() + offsetHours * 3600000 ) );
 	}
 
 	try {
@@ -124,9 +142,11 @@ function getCurrentDateInTimezone( tz ) {
 		const parts = formatter.formatToParts( now );
 		const get = ( type ) =>
 			parts.find( ( p ) => p.type === type )?.value || '';
-		return `${ get( 'year' ) }-${ get( 'month' ) }-${ get( 'day' ) }T${ get( 'hour' ) }:${ get( 'minute' ) }:${ get( 'second' ) }`;
+		return `${ get( 'year' ) }-${ get( 'month' ) }-${ get( 'day' ) }T${ get(
+			'hour'
+		) }:${ get( 'minute' ) }:${ get( 'second' ) }`;
 	} catch {
-		return new Date().toISOString();
+		return formatNaive( new Date() );
 	}
 }
 
@@ -251,7 +271,10 @@ export default function Header( {
 	const undoShortcut = isMacOS() ? '\u2318Z' : 'Ctrl+Z';
 	const redoShortcut = isMacOS() ? '\u21E7\u2318Z' : 'Ctrl+Shift+Z';
 
-	const timezoneAbbreviation = getTimezoneAbbreviation( timezone, scheduleDate );
+	const timezoneAbbreviation = getTimezoneAbbreviation(
+		timezone,
+		scheduleDate
+	);
 	const isScheduleFuture = isFutureDate( scheduleDate, timezone );
 	const scheduleButtonLabel = isScheduleFuture
 		? __( 'Schedule', 'press-this' )
@@ -570,10 +593,7 @@ export default function Header( {
 						<div ref={ moreMenuRef }>
 							<DropdownMenu
 								icon={ moreVertical }
-								label={ __(
-									'More actions',
-									'press-this'
-								) }
+								label={ __( 'More actions', 'press-this' ) }
 								className="press-this-header__more-menu"
 							>
 								{ ( { onClose } ) => (
@@ -595,11 +615,17 @@ export default function Header( {
 											<MenuGroup>
 												<MenuItem
 													onClick={ () => {
-														setIsScheduleOpen( true );
+														setIsScheduleOpen(
+															true
+														);
 														setScheduleDate(
-															postStatus === 'future' && postDate
+															postStatus ===
+																'future' &&
+																postDate
 																? postDate
-																: getCurrentDateInTimezone( timezone )
+																: getCurrentDateInTimezone(
+																		timezone
+																  )
 														);
 														onClose();
 													} }
@@ -615,12 +641,13 @@ export default function Header( {
 						{ isScheduleOpen && (
 							<Popover
 								anchor={ moreMenuRef.current }
-								onClose={ () =>
-									setIsScheduleOpen( false )
-								}
+								onClose={ () => setIsScheduleOpen( false ) }
 								placement="bottom-end"
 								className="press-this-header__schedule-popover"
-								aria-label={ __( 'Schedule post', 'press-this' ) }
+								aria-label={ __(
+									'Schedule post',
+									'press-this'
+								) }
 							>
 								<div className="press-this-header__schedule-popover-content">
 									<DateTimePicker
@@ -634,9 +661,7 @@ export default function Header( {
 									) }
 									<Button
 										variant="primary"
-										onClick={
-											handleScheduleConfirm
-										}
+										onClick={ handleScheduleConfirm }
 										disabled={ isSaving }
 										isBusy={ isSaving }
 										className="press-this-header__schedule-confirm"
