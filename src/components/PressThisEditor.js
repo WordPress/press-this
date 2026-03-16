@@ -187,7 +187,8 @@ function safeRedirect( url, options = {} ) {
  */
 function isStandaloneMode() {
 	return (
-		window.matchMedia( '(display-mode: standalone)' ).matches ||
+		( typeof window.matchMedia === 'function' &&
+			window.matchMedia( '(display-mode: standalone)' ).matches ) ||
 		window.navigator.standalone === true
 	);
 }

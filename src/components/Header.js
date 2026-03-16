@@ -102,7 +102,8 @@ export default function Header( {
 	// Detect standalone display mode (added to home screen).
 	const isStandalone = useMemo(
 		() =>
-			window.matchMedia( '(display-mode: standalone)' ).matches ||
+			( typeof window.matchMedia === 'function' &&
+				window.matchMedia( '(display-mode: standalone)' ).matches ) ||
 			window.navigator.standalone === true,
 		[]
 	);

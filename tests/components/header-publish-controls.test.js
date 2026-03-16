@@ -79,4 +79,15 @@ describe( 'Header Publish Controls', () => {
 		// Check for disabled state.
 		expect( headerContent ).toContain( 'disabled' );
 	} );
+
+	test( 'Standalone mode detection guards matchMedia availability', () => {
+		expect( headerContent ).toContain( "typeof window.matchMedia === 'function'" );
+	} );
+
+	test( 'Standalone mode shows View Site and New Post menu items', () => {
+		expect( headerContent ).toContain( 'View Site' );
+		expect( headerContent ).toContain( 'New Post' );
+		// Items are conditionally rendered only in standalone mode.
+		expect( headerContent ).toContain( '{ isStandalone && (' );
+	} );
 } );

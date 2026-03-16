@@ -142,3 +142,35 @@ describe( 'Undo/Redo: PressThisEditor stack and shortcuts', () => {
 		);
 	} );
 } );
+
+describe( 'Standalone mode: PressThisEditor', () => {
+	let editorContent;
+
+	beforeAll( () => {
+		const editorPath = path.resolve(
+			__dirname,
+			'../../src/components/PressThisEditor.js'
+		);
+		editorContent = fs.readFileSync( editorPath, 'utf8' );
+	} );
+
+	test( 'isStandaloneMode guards matchMedia availability', () => {
+		expect( editorContent ).toContain( "typeof window.matchMedia === 'function'" );
+	} );
+
+	test( 'performSafeRedirect checks standalone mode before opener redirect', () => {
+		// isStandaloneMode is called inside performSafeRedirect.
+		expect( editorContent ).toMatch(
+			/performSafeRedirect[\s\S]*?isStandaloneMode\(\)/
+		);
+	} );
+
+	test( 'Standalone mode redirects self instead of using opener', () => {
+		// In standalone mode, redirect goes to window.location.href directly.
+		const standaloneBlock = editorContent.match(
+			/if\s*\(\s*isStandaloneMode\(\)\s*\)\s*\{([\s\S]*?)\}/
+		);
+		expect( standaloneBlock ).not.toBeNull();
+		expect( standaloneBlock[ 1 ] ).toContain( 'window.location.href' );
+	} );
+} );
