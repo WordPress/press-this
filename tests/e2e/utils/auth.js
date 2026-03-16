@@ -32,7 +32,34 @@ async function wpLogin( page, username = 'admin', password = 'password' ) {
  */
 async function ensureAdminAuth( browser ) {
 	if ( fs.existsSync( ADMIN_AUTH_FILE ) ) {
-		return;
+		// Validate stored state is still usable.
+		let shouldRefreshState = false;
+		const context = await browser.newContext( {
+			storageState: ADMIN_AUTH_FILE,
+		} );
+
+		try {
+			const page = await context.newPage();
+			await page.goto( '/wp-admin/' );
+			const url = page.url();
+
+			if ( url.includes( 'wp-login.php' ) ) {
+				// Redirected to login — stored state is stale.
+				shouldRefreshState = true;
+			}
+		} catch {
+			// Navigation failed — treat stored state as invalid.
+			shouldRefreshState = true;
+		} finally {
+			await context.close();
+		}
+
+		if ( ! shouldRefreshState ) {
+			return;
+		}
+
+		// Stored state is stale — remove and re-login below.
+		fs.unlinkSync( ADMIN_AUTH_FILE );
 	}
 
 	fs.mkdirSync( AUTH_DIR, { recursive: true } );
