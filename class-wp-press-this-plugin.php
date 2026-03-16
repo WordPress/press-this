@@ -1286,10 +1286,7 @@ class WP_Press_This_Plugin {
 	 *    longer than 50 characters and does not contain URLs. This indicates
 	 *    the user likely wants to quote the selected passage.
 	 *
-	 * 4. **Link format**: Suggested when only a URL is provided with no
-	 *    selected text, images, or embeds. This indicates a simple link share.
-	 *
-	 * 5. **Standard format**: Used when none of the above conditions are met.
+	 * 4. **Standard format**: Used when none of the above conditions are met.
 	 *
 	 * Note: The `press_this_default_post_format` filter is NOT applied here.
 	 * It is passed separately to JavaScript to allow client-side detection
@@ -1334,7 +1331,7 @@ class WP_Press_This_Plugin {
 	 *                    - 's'       (string) Selected text from the page.
 	 *                    - '_images' (array)  Scraped image URLs.
 	 *                    - '_embeds' (array)  Scraped embed URLs.
-	 * @return string Suggested post format ('video', 'quote', 'link') or empty string for standard.
+	 * @return string Suggested post format ('video', 'quote', or any format via filter) or empty string for standard.
 	 */
 	public function get_suggested_post_format( $data ) {
 		/**
@@ -1386,11 +1383,8 @@ class WP_Press_This_Plugin {
 			}
 		}
 
-		// Priority 3: Check for link-only content.
-		// When only a URL is provided with no other content, suggest link format.
-		if ( empty( $suggested_format ) && ! empty( $data['u'] ) && empty( $data['s'] ) && empty( $data['_images'] ) && empty( $data['_embeds'] ) ) {
-			$suggested_format = 'link';
-		}
+		// Link format auto-suggestion was removed because scraping often fails to
+		// find images/embeds, causing unexpected format changes. See issue #94.
 
 		// Note: The default format filter is NOT applied here.
 		// It's passed separately via postFormatDefault to allow JS detection
