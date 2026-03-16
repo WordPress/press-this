@@ -13,6 +13,9 @@
 		"wp-content/plugins/press-this": ".",
 		"wp-content/mu-plugins": "./tests/mu-plugins"
 	},
+	"lifecycleScripts": {
+		"afterStart": "npx wp-env run cli wp plugin activate press-this"
+	},
 	"env": {
 		"tests": {
 			"phpVersion": "8.2",
