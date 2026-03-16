@@ -21,7 +21,12 @@ composer.lock
 .DS_Store
 Thumbs.db
 
-# Test cache
+# Playwright
+.auth/
+test-results/
+playwright-report/
+
+# PHPUnit
 .phpunit.result.cache
 
 # Debug logs
