@@ -345,14 +345,55 @@
 		sendDataToPopup();
 	} else {
 		// Popup blocked (common on mobile browsers). Navigate current window with inline data.
-		// Trim arrays to limit URL length for the fallback path.
-		if ( scrapedData._images && scrapedData._images.length > 5 ) {
-			scrapedData._images = scrapedData._images.slice( 0, 5 );
+		// Build a minimal payload to stay within URL length limits (~8KB in modern browsers).
+		var fallbackData = {
+			t: scrapedData.t,
+			s: scrapedData.s,
+			pt_version: scrapedData.pt_version
+		};
+
+		if ( scrapedData._images ) {
+			fallbackData._images = scrapedData._images.slice( 0, 5 );
 		}
-		if ( scrapedData._embeds && scrapedData._embeds.length > 3 ) {
-			scrapedData._embeds = scrapedData._embeds.slice( 0, 3 );
+		if ( scrapedData._embeds ) {
+			fallbackData._embeds = scrapedData._embeds.slice( 0, 3 );
 		}
 
-		top.location.href = pt_url + '&_data=' + encURI( JSON.stringify( scrapedData ) );
+		// Only include the specific meta keys Press This uses.
+		if ( scrapedData._meta ) {
+			var usedMetaKeys = [ 'og:title', 'og:description', 'og:site_name', 'og:video', 'og:video:url', 'og:video:secure_url', 'twitter:title', 'twitter:description', 'description', 'title' ];
+			fallbackData._meta = {};
+			for ( var mk = 0; mk < usedMetaKeys.length; mk++ ) {
+				if ( scrapedData._meta[ usedMetaKeys[ mk ] ] ) {
+					fallbackData._meta[ usedMetaKeys[ mk ] ] = scrapedData._meta[ usedMetaKeys[ mk ] ];
+				}
+			}
+		}
+
+		// Include only canonical and shortlink from links.
+		if ( scrapedData._links ) {
+			fallbackData._links = {};
+			if ( scrapedData._links.canonical ) {
+				fallbackData._links.canonical = scrapedData._links.canonical;
+			}
+			if ( scrapedData._links.shortlink ) {
+				fallbackData._links.shortlink = scrapedData._links.shortlink;
+			}
+		}
+
+		// Skip _jsonld entirely — low value for the URL budget.
+
+		// Override pm flag so the app doesn't wait for postMessage.
+		var fallbackUrl = pt_url.replace( '&pm=1', '&pm=0' ) + '&_data=' + encURI( JSON.stringify( fallbackData ) );
+
+		// Enforce a max URL length to avoid truncation.
+		if ( fallbackUrl.length > 7500 ) {
+			// Strip meta/links and try again with just title, selection, and media.
+			delete fallbackData._meta;
+			delete fallbackData._links;
+			fallbackUrl = pt_url.replace( '&pm=1', '&pm=0' ) + '&_data=' + encURI( JSON.stringify( fallbackData ) );
+		}
+
+		top.location.href = fallbackUrl;
 	}
 } )( window, document, top.location.href, window.pt_url );

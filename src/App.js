@@ -37,6 +37,15 @@ function getInitialData() {
 export default function App() {
 	const data = useMemo( () => getInitialData(), [] );
 
+	// Strip _data param from browser history to avoid leaking scraped content.
+	useEffect( () => {
+		if ( data.inlineDataMode && window.history.replaceState ) {
+			const url = new URL( window.location.href );
+			url.searchParams.delete( '_data' );
+			window.history.replaceState( null, '', url.toString() );
+		}
+	}, [ data.inlineDataMode ] );
+
 	// State for pending scraped content to append.
 	const [ pendingScrape, setPendingScrape ] = useState( null );
 

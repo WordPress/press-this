@@ -232,15 +232,19 @@ describe( 'Bookmarklet Functionality', () => {
 		expect( bookmarkletSource ).toContain( 'top.location.href' );
 	} );
 
-	test( 'Trims arrays in popup-blocked fallback to limit URL length', () => {
-		// Check for image array trimming.
-		expect( bookmarkletSource ).toContain( 'scrapedData._images.length > 5' );
+	test( 'Builds minimal fallback payload to limit URL length', () => {
+		// Check that fallback builds a separate minimal payload.
+		expect( bookmarkletSource ).toContain( 'fallbackData' );
 
-		// Check for embed array trimming.
-		expect( bookmarkletSource ).toContain( 'scrapedData._embeds.length > 3' );
+		// Check for image and embed trimming via slice.
+		expect( bookmarkletSource ).toContain( '.slice( 0, 5 )' );
+		expect( bookmarkletSource ).toContain( '.slice( 0, 3 )' );
 
-		// Check for slice usage.
-		expect( bookmarkletSource ).toContain( '.slice( 0,' );
+		// Check for URL length enforcement.
+		expect( bookmarkletSource ).toContain( 'fallbackUrl.length > 7500' );
+
+		// Check that pm flag is overridden in fallback.
+		expect( bookmarkletSource ).toContain( "replace( '&pm=1', '&pm=0' )" );
 	} );
 
 	test( 'Enhanced data extraction - JSON-LD structured data', () => {

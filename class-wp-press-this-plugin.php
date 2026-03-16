@@ -798,72 +798,76 @@ class WP_Press_This_Plugin {
 					}
 				}
 
-				// Process media arrays.
-				foreach ( array( '_images', '_embeds', '_og_video' ) as $type ) {
-					if ( empty( $inline_data[ $type ] ) || ! is_array( $inline_data[ $type ] ) ) {
-						continue;
-					}
-
-					if ( ! isset( $data[ $type ] ) ) {
-						$data[ $type ] = array();
-					}
-
-					$items = $this->limit_array( $inline_data[ $type ] );
-
-					foreach ( $items as $value ) {
-						if ( '_images' === $type ) {
-							$value = $this->limit_img( $value );
-						} else {
-							$value = $this->limit_embed( $value );
-						}
-
-						if ( ! empty( $value ) && ! in_array( $value, $data[ $type ], true ) ) {
-							if ( '_og_video' === $type ) {
-								if ( ! isset( $data['_embeds'] ) ) {
-									$data['_embeds'] = array();
-								}
-								if ( ! in_array( $value, $data['_embeds'], true ) ) {
-									$data['_embeds'][] = $value;
-								}
-							} else {
-								$data[ $type ][] = $value;
-							}
-						}
-					}
-				}
-
-				// Process metadata objects.
-				foreach ( array( '_meta', '_links', '_jsonld' ) as $type ) {
-					if ( empty( $inline_data[ $type ] ) || ! is_array( $inline_data[ $type ] ) ) {
-						continue;
-					}
-
-					if ( ! isset( $data[ $type ] ) ) {
-						$data[ $type ] = array();
-					}
-
-					$items = $this->limit_array( $inline_data[ $type ] );
-
-					foreach ( $items as $key => $value ) {
-						if ( empty( $key ) || strlen( $key ) > 100 ) {
+				// Process media and metadata only if media discovery is enabled.
+				/** This filter is documented above in the POST data section. */
+				if ( apply_filters( 'enable_press_this_media_discovery', true ) ) {
+					// Process media arrays.
+					foreach ( array( '_images', '_embeds', '_og_video' ) as $type ) {
+						if ( empty( $inline_data[ $type ] ) || ! is_array( $inline_data[ $type ] ) ) {
 							continue;
 						}
 
-						if ( '_meta' === $type ) {
-							$value = $this->limit_string( $value );
-							if ( ! empty( $value ) ) {
-								$data = $this->process_meta_entry( $key, $value, $data );
+						if ( ! isset( $data[ $type ] ) ) {
+							$data[ $type ] = array();
+						}
+
+						$items = $this->limit_array( $inline_data[ $type ] );
+
+						foreach ( $items as $value ) {
+							if ( '_images' === $type ) {
+								$value = $this->limit_img( $value );
+							} else {
+								$value = $this->limit_embed( $value );
 							}
-						} elseif ( '_links' === $type ) {
-							if ( in_array( $key, array( 'canonical', 'shortlink', 'icon', 'alternate_canonical' ), true ) ) {
-								$data[ $type ][ $key ] = $this->limit_url( $value );
-							}
-						} elseif ( '_jsonld' === $type ) {
-							if ( in_array( $key, array( 'canonical', 'headline', 'description', 'image' ), true ) ) {
-								if ( 'canonical' === $key || 'image' === $key ) {
-									$data[ $type ][ $key ] = $this->limit_url( $value );
+
+							if ( ! empty( $value ) && ! in_array( $value, $data[ $type ], true ) ) {
+								if ( '_og_video' === $type ) {
+									if ( ! isset( $data['_embeds'] ) ) {
+										$data['_embeds'] = array();
+									}
+									if ( ! in_array( $value, $data['_embeds'], true ) ) {
+										$data['_embeds'][] = $value;
+									}
 								} else {
-									$data[ $type ][ $key ] = $this->limit_string( $value );
+									$data[ $type ][] = $value;
+								}
+							}
+						}
+					}
+
+					// Process metadata objects.
+					foreach ( array( '_meta', '_links', '_jsonld' ) as $type ) {
+						if ( empty( $inline_data[ $type ] ) || ! is_array( $inline_data[ $type ] ) ) {
+							continue;
+						}
+
+						if ( ! isset( $data[ $type ] ) ) {
+							$data[ $type ] = array();
+						}
+
+						$items = $this->limit_array( $inline_data[ $type ] );
+
+						foreach ( $items as $key => $value ) {
+							if ( empty( $key ) || strlen( $key ) > 100 ) {
+								continue;
+							}
+
+							if ( '_meta' === $type ) {
+								$value = $this->limit_string( $value );
+								if ( ! empty( $value ) ) {
+									$data = $this->process_meta_entry( $key, $value, $data );
+								}
+							} elseif ( '_links' === $type ) {
+								if ( in_array( $key, array( 'canonical', 'shortlink', 'icon', 'alternate_canonical' ), true ) ) {
+									$data[ $type ][ $key ] = $this->limit_url( $value );
+								}
+							} elseif ( '_jsonld' === $type ) {
+								if ( in_array( $key, array( 'canonical', 'headline', 'description', 'image' ), true ) ) {
+									if ( 'canonical' === $key || 'image' === $key ) {
+										$data[ $type ][ $key ] = $this->limit_url( $value );
+									} else {
+										$data[ $type ][ $key ] = $this->limit_string( $value );
+									}
 								}
 							}
 						}
