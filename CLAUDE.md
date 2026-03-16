@@ -1,5 +1,9 @@
 # Press This - Agent Notes
 
+## Repository
+
+- Default branch: `trunk` (not `main`)
+
 ## Maintenance Reminders
 
 ### Fallback script dependencies
