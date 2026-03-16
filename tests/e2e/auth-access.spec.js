@@ -44,11 +44,15 @@ test.describe( 'Auth & Access Control', () => {
 		// Navigate to Press This - should get an error or redirect.
 		const response = await page.goto( '/wp-admin/press-this.php' );
 
-		if ( response ) {
-			// WordPress typically returns 403 or redirects for unauthorized access.
-			// It may also return 200 with a wp_die() error page.
-			expect( [ 200, 302, 403 ] ).toContain( response.status() );
-		}
+		// Ensure navigation produced an HTTP response so access control is actually tested.
+		expect(
+			response,
+			'Navigation to /wp-admin/press-this.php returned null; ensure WordPress is reachable.'
+		).not.toBeNull();
+
+		// WordPress typically returns 403 or redirects for unauthorized access.
+		// It may also return 200 with a wp_die() error page.
+		expect( [ 200, 302, 403 ] ).toContain( response.status() );
 
 		// The page should NOT contain the Press This app regardless of HTTP status.
 		const appVisible = await page
