@@ -175,45 +175,6 @@ function hasQuoteContent( content = '' ) {
 }
 
 /**
- * Check if content is link-focused.
- *
- * @param {string} content   Post content to analyze.
- * @param {string} sourceUrl The source URL being clipped.
- * @return {boolean} True if link-focused content detected.
- */
-function hasLinkContent( content = '', sourceUrl = '' ) {
-	if ( ! content && ! sourceUrl ) {
-		return false;
-	}
-
-	// If we have a source URL but very little content, it's link-focused.
-	if ( sourceUrl && ( ! content || content.length < 100 ) ) {
-		return true;
-	}
-
-	if ( ! content ) {
-		return false;
-	}
-
-	// Count links in content.
-	const linkCount = ( content.match( /<a[^>]+href/gi ) || [] ).length;
-	const paragraphCount = ( content.match( /<p[^>]*>/gi ) || [] ).length;
-
-	// If we have many links relative to paragraphs, suggest link format.
-	if ( paragraphCount > 0 && linkCount / paragraphCount > 0.8 ) {
-		return true;
-	}
-
-	// Check if content is primarily a URL.
-	const trimmedContent = content.replace( /<[^>]+>/g, '' ).trim();
-	if ( /^https?:\/\/[^\s]+$/.test( trimmedContent ) ) {
-		return true;
-	}
-
-	return false;
-}
-
-/**
  * Check if content is status/social media-like.
  *
  * @param {string} content   Post content to analyze.
