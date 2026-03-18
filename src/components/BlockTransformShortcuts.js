@@ -137,7 +137,11 @@ export default function BlockTransformShortcuts() {
 			if ( innerBlocks.length > 0 ) {
 				// Replace the quote with its inner blocks directly.
 				const replacementBlocks = innerBlocks.map( ( inner ) =>
-					createBlock( inner.name, { ...inner.attributes }, inner.innerBlocks )
+					createBlock(
+						inner.name,
+						{ ...inner.attributes },
+						inner.innerBlocks
+					)
 				);
 				replaceBlocks( currentClientId, replacementBlocks );
 			} else {
