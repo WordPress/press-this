@@ -923,13 +923,17 @@ class Test_WP_Press_This_Plugin_Extended extends BaseTestCase {
 	}
 
 	/**
-	 * Test suggested format: link when only URL.
+	 * Test suggested format: URL-only no longer suggests link.
+	 *
+	 * Link format auto-suggestion was removed because scraping often fails to
+	 * find images/embeds, causing unexpected link format suggestions.
+	 * See https://github.com/WordPress/press-this/issues/94
 	 */
 	public function test_suggested_post_format_link() {
 		$data = array( 'u' => 'https://example.com/article' );
 
 		$result = $this->plugin->get_suggested_post_format( $data );
-		$this->assertEquals( 'link', $result );
+		$this->assertEquals( '', $result );
 	}
 
 	/**
