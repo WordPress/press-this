@@ -207,6 +207,30 @@ describe( 'Bookmarklet Functionality', () => {
 		).toBe( true );
 	} );
 
+	test( 'HTML selection capture preserves formatting', () => {
+		// Check for getRangeAt usage to capture the selection range.
+		expect( bookmarkletSource ).toContain( 'getRangeAt' );
+
+		// Check for cloneContents to extract selected DOM fragment.
+		expect( bookmarkletSource ).toContain( 'cloneContents' );
+
+		// Check for innerHTML to serialise the selection as HTML.
+		expect( bookmarkletSource ).toContain( 'innerHTML' );
+
+		// Check that sel_html is sent alongside plain-text selection.
+		expect(
+			bookmarkletSource.includes( "'sel_html'" ) ||
+			bookmarkletSource.includes( '"sel_html"' ) ||
+			bookmarkletSource.includes( 'sel_html' )
+		).toBe( true );
+
+		// sel_html is added via the add() helper.
+		expect(
+			bookmarkletSource.includes( "add( 'sel_html'" ) ||
+			bookmarkletSource.includes( "add('sel_html'" )
+		).toBe( true );
+	} );
+
 	test( 'Enhanced data extraction - Open Graph video', () => {
 		// Check for og:video detection.
 		expect( bookmarkletSource ).toContain( 'og:video' );
