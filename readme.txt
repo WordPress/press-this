@@ -3,8 +3,8 @@ Contributors: kraftbj, wordpressdotorg
 Donate link: http://wordpressfoundation.org/donate/
 Tags: post, quick-post, photo-post, bookmarklet, gutenberg
 Requires at least: 6.9
-Tested up to: 6.7
-Stable tag: 2.0.1
+Tested up to: 7.0
+Stable tag: 2.0.2
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -124,6 +124,9 @@ All existing hooks continue to work:
 
 == Upgrade Notice ==
 
+= 2.0.2 =
+Bug fixes, new keyboard shortcuts, and undo/redo support.
+
 = 2.0.1 =
 Major update: Gutenberg block editor integration, enhanced content extraction, new developer hooks. Backward compatible with existing bookmarklets.
 
@@ -134,6 +137,19 @@ Fixes styling issues and bumps tested version.
 Restores bookmarklet functionality.
 
 == Changelog ==
+
+= 2.0.2 =
+* **New:** Undo/redo support in the block editor (Ctrl+Z / Ctrl+Shift+Z)
+* **New:** Block transform keyboard shortcuts (e.g. heading, list, quote)
+* **New:** Rich text format keyboard shortcuts via format-library (bold, italic, link, etc.)
+* **New:** Bookmarklet now preserves HTML formatting in text selections
+* **Fix:** Critical error when saving posts with external images in REST context
+* **Fix:** Scraped media inserting at bottom of post instead of cursor position
+* **Fix:** Quote block unwrap losing nested inner blocks
+* **Fix:** Category panel styles not loading and stale search filter results
+* **Fix:** Stale state in category toggle handler
+* **Change:** Removed auto-suggestion of link post format
+* **Change:** Restored category search filter using Gutenberg components
 
 = 2.0.1 =
 * **New:** Gutenberg block editor replaces TinyMCE for modern editing experience
