@@ -150,7 +150,6 @@ Restores bookmarklet functionality.
 * **Fix:** Stale state in category toggle handler
 * **Change:** Removed auto-suggestion of link post format
 * **Change:** Restored category search filter using Gutenberg components
-* **Change:** Requires Node 22
 
 = 2.0.1 =
 * **New:** Gutenberg block editor replaces TinyMCE for modern editing experience
