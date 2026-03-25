@@ -4,7 +4,7 @@ Donate link: http://wordpressfoundation.org/donate/
 Tags: post, quick-post, photo-post, bookmarklet, gutenberg
 Requires at least: 6.9
 Tested up to: 6.7
-Stable tag: 2.0.1
+Stable tag: 2.0.2
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -124,6 +124,9 @@ All existing hooks continue to work:
 
 == Upgrade Notice ==
 
+= 2.0.2 =
+Bug fixes and improvements.
+
 = 2.0.1 =
 Major update: Gutenberg block editor integration, enhanced content extraction, new developer hooks. Backward compatible with existing bookmarklets.
 
@@ -134,6 +137,9 @@ Fixes styling issues and bumps tested version.
 Restores bookmarklet functionality.
 
 == Changelog ==
+
+= 2.0.2 =
+* Bug fixes and improvements.
 
 = 2.0.1 =
 * **New:** Gutenberg block editor replaces TinyMCE for modern editing experience
