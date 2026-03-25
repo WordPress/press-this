@@ -125,7 +125,7 @@ All existing hooks continue to work:
 == Upgrade Notice ==
 
 = 2.0.2 =
-Bug fixes and improvements.
+Bug fixes, new keyboard shortcuts, and undo/redo support.
 
 = 2.0.1 =
 Major update: Gutenberg block editor integration, enhanced content extraction, new developer hooks. Backward compatible with existing bookmarklets.
@@ -139,7 +139,18 @@ Restores bookmarklet functionality.
 == Changelog ==
 
 = 2.0.2 =
-* Bug fixes and improvements.
+* **New:** Undo/redo support in the block editor (Ctrl+Z / Ctrl+Shift+Z)
+* **New:** Block transform keyboard shortcuts (e.g. heading, list, quote)
+* **New:** Rich text format keyboard shortcuts via format-library (bold, italic, link, etc.)
+* **New:** Bookmarklet now preserves HTML formatting in text selections
+* **Fix:** Critical error when saving posts with external images in REST context
+* **Fix:** Scraped media inserting at bottom of post instead of cursor position
+* **Fix:** Quote block unwrap losing nested inner blocks
+* **Fix:** Category panel styles not loading and stale search filter results
+* **Fix:** Stale state in category toggle handler
+* **Change:** Removed auto-suggestion of link post format
+* **Change:** Restored category search filter using Gutenberg components
+* **Change:** Requires Node 22
 
 = 2.0.1 =
 * **New:** Gutenberg block editor replaces TinyMCE for modern editing experience
