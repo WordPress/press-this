@@ -3,7 +3,7 @@ Contributors: kraftbj, wordpressdotorg
 Donate link: http://wordpressfoundation.org/donate/
 Tags: post, quick-post, photo-post, bookmarklet, gutenberg
 Requires at least: 6.9
-Tested up to: 6.9
+Tested up to: 7.0
 Stable tag: 2.0.2
 Requires PHP: 7.4
 License: GPLv2 or later
