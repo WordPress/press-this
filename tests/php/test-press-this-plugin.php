@@ -266,6 +266,116 @@ class Test_WP_Press_This_Plugin extends BaseTestCase {
 	}
 
 	/**
+	 * Helper: capture html() output and extract the pressThisData JSON.
+	 *
+	 * html() triggers wp_enqueue_media() and other admin hooks that may
+	 * error in a lightweight test environment, so we capture output and
+	 * suppress any fatal-like errors after the data we need is emitted.
+	 *
+	 * @return array Decoded pressThisData.
+	 */
+	private function get_press_this_data_from_html() {
+		$_SERVER['REQUEST_METHOD'] = 'GET';
+
+		// Suppress errors from wp_enqueue_media / admin hooks that aren't
+		// fully initialised in the WorDBless test environment.
+		$previous = error_reporting( E_ERROR ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
+
+		ob_start();
+		try {
+			$this->plugin->html();
+		} catch ( \Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+			// Errors after pressThisData is emitted are acceptable.
+		}
+		$html = ob_get_clean();
+
+		error_reporting( $previous ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
+
+		preg_match( '/window\.pressThisData\s*=\s*({.+?});/s', $html, $matches );
+		$this->assertNotEmpty( $matches[1], 'pressThisData JSON not found in html() output.' );
+
+		$data = json_decode( $matches[1], true );
+		$this->assertIsArray( $data, 'pressThisData should decode to an array.' );
+
+		return $data;
+	}
+
+	/**
+	 * Test: categories data is populated when category taxonomy is registered.
+	 *
+	 * @covers WP_Press_This_Plugin::html
+	 */
+	public function test_html_categories_populated_when_taxonomy_registered() {
+		$data = $this->get_press_this_data_from_html();
+
+		// With default 'post' type, category is registered so terms should load.
+		$this->assertNotEmpty( $data['categories'], 'categories should not be empty when category taxonomy is registered.' );
+	}
+
+	/**
+	 * Test: canAssignTags is false when post_tag is unregistered for the post type.
+	 *
+	 * Regression test for taxonomy registration check (#111).
+	 *
+	 * @covers WP_Press_This_Plugin::html
+	 */
+	public function test_html_can_assign_tags_false_when_post_tag_unregistered() {
+		unregister_taxonomy_for_object_type( 'post_tag', 'post' );
+
+		$data = $this->get_press_this_data_from_html();
+
+		$this->assertFalse( $data['canAssignTags'], 'canAssignTags should be false when post_tag is unregistered.' );
+
+		// Re-register for other tests.
+		register_taxonomy_for_object_type( 'post_tag', 'post' );
+	}
+
+	/**
+	 * Test: canAssignCategories, canEditCategories, and categories are empty/false
+	 * when category is unregistered for the post type.
+	 *
+	 * Regression test for taxonomy registration check (#111).
+	 *
+	 * @covers WP_Press_This_Plugin::html
+	 */
+	public function test_html_category_caps_and_data_when_category_unregistered() {
+		unregister_taxonomy_for_object_type( 'category', 'post' );
+
+		$data = $this->get_press_this_data_from_html();
+
+		$this->assertFalse( $data['canAssignCategories'], 'canAssignCategories should be false when category is unregistered.' );
+		$this->assertFalse( $data['canEditCategories'], 'canEditCategories should be false when category is unregistered.' );
+		$this->assertEmpty( $data['categories'], 'categories should be empty when category is unregistered.' );
+
+		// Re-register for other tests.
+		register_taxonomy_for_object_type( 'category', 'post' );
+	}
+
+	/**
+	 * Test: all taxonomy caps are false and categories empty when both taxonomies
+	 * are unregistered for the post type.
+	 *
+	 * Regression test for taxonomy registration check (#111).
+	 *
+	 * @covers WP_Press_This_Plugin::html
+	 */
+	public function test_html_all_taxonomy_caps_false_when_both_unregistered() {
+		unregister_taxonomy_for_object_type( 'category', 'post' );
+		unregister_taxonomy_for_object_type( 'post_tag', 'post' );
+
+		$data = $this->get_press_this_data_from_html();
+
+		$this->assertFalse( $data['canAssignCategories'], 'canAssignCategories should be false.' );
+		$this->assertFalse( $data['canEditCategories'], 'canEditCategories should be false.' );
+		$this->assertFalse( $data['canAssignTags'], 'canAssignTags should be false.' );
+		$this->assertEmpty( $data['categories'], 'categories should be empty.' );
+
+		// Re-register for other tests.
+		register_taxonomy_for_object_type( 'category', 'post' );
+		register_taxonomy_for_object_type( 'post_tag', 'post' );
+	}
+
+	/**
 	 * Test 8: Filter hook press_this_data is triggered.
 	 *
 	 * @covers WP_Press_This_Plugin::merge_or_fetch_data
