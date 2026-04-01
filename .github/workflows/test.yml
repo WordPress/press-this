@@ -2,9 +2,10 @@ name: Tests
 
 on:
   push:
-    branches: [trunk, modernize/v2]
+    branches: [trunk]
   pull_request:
     branches: [trunk]
+  merge_group:
 
 jobs:
   js-tests:
@@ -36,7 +37,10 @@ jobs:
 
     strategy:
       matrix:
-        php-version: ['7.4', '8.0', '8.1', '8.2']
+        php-version: >-
+          ${{ (github.event_name == 'merge_group' || github.event_name == 'push')
+            && fromJSON('["7.4","8.0","8.1","8.2"]')
+            || fromJSON('["7.4","8.2"]') }}
 
     steps:
       - name: Checkout code
@@ -95,7 +99,6 @@ jobs:
 
       - name: Lint JavaScript
         run: npm run lint
-        continue-on-error: true
 
       - name: Lint PHP
         run: composer php:lint:errors
@@ -157,3 +160,16 @@ jobs:
             test-results/
             playwright-report/
           retention-days: 7
+
+  ci:
+    name: CI
+    if: always()
+    needs: [js-tests, php-tests, lint, e2e-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check results
+        run: |
+          if [[ "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
+            echo "One or more jobs failed or were cancelled."
+            exit 1
+          fi
