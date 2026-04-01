@@ -72,6 +72,15 @@ class Test_WP_Press_This_Plugin extends BaseTestCase {
 	 * Tear down after each test.
 	 */
 	public function tear_down() {
+		// Ensure taxonomies are always restored regardless of test outcome.
+		register_taxonomy_for_object_type( 'category', 'post' );
+		register_taxonomy_for_object_type( 'post_tag', 'post' );
+
+		// Clean up any test-registered post types.
+		if ( post_type_exists( 'pt_test_no_tax' ) ) {
+			unregister_post_type( 'pt_test_no_tax' );
+		}
+
 		parent::tear_down();
 		$_POST = array();
 		$_GET  = array();
@@ -269,29 +278,43 @@ class Test_WP_Press_This_Plugin extends BaseTestCase {
 	 * Helper: capture html() output and extract the pressThisData JSON.
 	 *
 	 * html() triggers wp_enqueue_media() and other admin hooks that may
-	 * error in a lightweight test environment, so we capture output and
-	 * suppress any fatal-like errors after the data we need is emitted.
+	 * throw in the lightweight WorDBless test environment. We capture
+	 * output, catch any thrown exception, and surface it when the data
+	 * we need was not emitted.
 	 *
 	 * @return array Decoded pressThisData.
 	 */
 	private function get_press_this_data_from_html() {
-		$_SERVER['REQUEST_METHOD'] = 'GET';
-
-		// Suppress errors from wp_enqueue_media / admin hooks that aren't
-		// fully initialised in the WorDBless test environment.
-		$previous = error_reporting( E_ERROR ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
+		$previous_method             = isset( $_SERVER['REQUEST_METHOD'] ) ? $_SERVER['REQUEST_METHOD'] : null;
+		$_SERVER['REQUEST_METHOD']   = 'GET';
 
 		ob_start();
+		$caught = null;
 		try {
 			$this->plugin->html();
-		} catch ( \Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
-			// Errors after pressThisData is emitted are acceptable.
+		} catch ( \Throwable $e ) {
+			$caught = $e;
 		}
 		$html = ob_get_clean();
 
-		error_reporting( $previous ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
+		// Restore REQUEST_METHOD to avoid leaking state to other tests.
+		if ( null === $previous_method ) {
+			unset( $_SERVER['REQUEST_METHOD'] );
+		} else {
+			$_SERVER['REQUEST_METHOD'] = $previous_method;
+		}
 
 		preg_match( '/window\.pressThisData\s*=\s*({.+?});/s', $html, $matches );
+
+		// If pressThisData was not found and an exception was caught, surface it
+		// so test failures point to the actual error, not a generic message.
+		if ( empty( $matches[1] ) && $caught ) {
+			$this->fail(
+				'pressThisData JSON not found in html() output. '
+				. 'Caught ' . get_class( $caught ) . ': ' . $caught->getMessage()
+			);
+		}
+
 		$this->assertNotEmpty( $matches[1], 'pressThisData JSON not found in html() output.' );
 
 		$data = json_decode( $matches[1], true );
@@ -301,14 +324,19 @@ class Test_WP_Press_This_Plugin extends BaseTestCase {
 	}
 
 	/**
-	 * Test: categories data is populated when category taxonomy is registered.
+	 * Test: taxonomy caps and categories are populated when taxonomies are registered.
+	 *
+	 * Positive baseline — ensures the default 'post' type with both taxonomies
+	 * produces truthy capability flags and non-empty categories.
 	 *
 	 * @covers WP_Press_This_Plugin::html
 	 */
-	public function test_html_categories_populated_when_taxonomy_registered() {
+	public function test_html_taxonomy_data_when_taxonomies_registered() {
 		$data = $this->get_press_this_data_from_html();
 
-		// With default 'post' type, category is registered so terms should load.
+		$this->assertTrue( $data['canAssignCategories'], 'canAssignCategories should be true for default post type.' );
+		$this->assertTrue( $data['canEditCategories'], 'canEditCategories should be true for default post type.' );
+		$this->assertTrue( $data['canAssignTags'], 'canAssignTags should be true for default post type.' );
 		$this->assertNotEmpty( $data['categories'], 'categories should not be empty when category taxonomy is registered.' );
 	}
 
@@ -325,9 +353,6 @@ class Test_WP_Press_This_Plugin extends BaseTestCase {
 		$data = $this->get_press_this_data_from_html();
 
 		$this->assertFalse( $data['canAssignTags'], 'canAssignTags should be false when post_tag is unregistered.' );
-
-		// Re-register for other tests.
-		register_taxonomy_for_object_type( 'post_tag', 'post' );
 	}
 
 	/**
@@ -346,9 +371,6 @@ class Test_WP_Press_This_Plugin extends BaseTestCase {
 		$this->assertFalse( $data['canAssignCategories'], 'canAssignCategories should be false when category is unregistered.' );
 		$this->assertFalse( $data['canEditCategories'], 'canEditCategories should be false when category is unregistered.' );
 		$this->assertEmpty( $data['categories'], 'categories should be empty when category is unregistered.' );
-
-		// Re-register for other tests.
-		register_taxonomy_for_object_type( 'category', 'post' );
 	}
 
 	/**
@@ -369,10 +391,40 @@ class Test_WP_Press_This_Plugin extends BaseTestCase {
 		$this->assertFalse( $data['canEditCategories'], 'canEditCategories should be false.' );
 		$this->assertFalse( $data['canAssignTags'], 'canAssignTags should be false.' );
 		$this->assertEmpty( $data['categories'], 'categories should be empty.' );
+	}
 
-		// Re-register for other tests.
-		register_taxonomy_for_object_type( 'category', 'post' );
-		register_taxonomy_for_object_type( 'post_tag', 'post' );
+	/**
+	 * Test: taxonomy caps are false for a custom post type without taxonomies.
+	 *
+	 * Exercises the real-world scenario: a CPT returned by the
+	 * press_this_post_type filter that never registers category or post_tag.
+	 *
+	 * Regression test for taxonomy registration check (#111).
+	 *
+	 * @covers WP_Press_This_Plugin::html
+	 */
+	public function test_html_taxonomy_caps_false_for_cpt_without_taxonomies() {
+		register_post_type(
+			'pt_test_no_tax',
+			array(
+				'public'     => true,
+				'taxonomies' => array(),
+			)
+		);
+
+		add_filter(
+			'press_this_post_type',
+			function () {
+				return 'pt_test_no_tax';
+			}
+		);
+
+		$data = $this->get_press_this_data_from_html();
+
+		$this->assertFalse( $data['canAssignCategories'], 'canAssignCategories should be false for CPT without taxonomies.' );
+		$this->assertFalse( $data['canEditCategories'], 'canEditCategories should be false for CPT without taxonomies.' );
+		$this->assertFalse( $data['canAssignTags'], 'canAssignTags should be false for CPT without taxonomies.' );
+		$this->assertEmpty( $data['categories'], 'categories should be empty for CPT without taxonomies.' );
 	}
 
 	/**
