@@ -73,6 +73,21 @@ class Test_Press_This_Integration extends BaseTestCase {
 		$previous_method           = isset( $_SERVER['REQUEST_METHOD'] ) ? $_SERVER['REQUEST_METHOD'] : null;
 		$_SERVER['REQUEST_METHOD'] = 'GET';
 
+		// Suppress PHP warnings/notices during html() so that non-fatal
+		// issues (e.g. "property on null" in PHP 8.2 when no user session
+		// exists) don't abort output buffering. These tests only need the
+		// pressThisData JSON, not a fully clean render.
+		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- intentional in test helper.
+		$previous_handler = set_error_handler(
+			function ( $severity, $message, $file, $line ) {
+				// Silence warnings and notices; let everything else through.
+				if ( $severity & ( E_WARNING | E_NOTICE | E_DEPRECATED | E_USER_WARNING | E_USER_NOTICE | E_USER_DEPRECATED ) ) {
+					return true;
+				}
+				return false;
+			}
+		);
+
 		ob_start();
 		$caught = null;
 		try {
@@ -82,6 +97,8 @@ class Test_Press_This_Integration extends BaseTestCase {
 		}
 		$html = ob_get_clean();
 
+		restore_error_handler();
+
 		// Restore REQUEST_METHOD to avoid leaking state to other tests.
 		if ( null === $previous_method ) {
 			unset( $_SERVER['REQUEST_METHOD'] );
@@ -89,12 +106,10 @@ class Test_Press_This_Integration extends BaseTestCase {
 			$_SERVER['REQUEST_METHOD'] = $previous_method;
 		}
 
-		// Fail on real exceptions, but tolerate PHP warnings/notices that
-		// PHPUnit promotes to exceptions (e.g. "property on null" in PHP 8.2
-		// when no user session exists in the test environment).
-		if ( $caught && ! $caught instanceof \PHPUnit\Framework\Error\Warning
-			&& ! $caught instanceof \PHPUnit\Framework\Error\Notice
-		) {
+		// Fail on real exceptions (the custom error handler above prevents
+		// PHPUnit from promoting warnings/notices to exceptions, so anything
+		// caught here is a genuine error).
+		if ( $caught ) {
 			$this->fail(
 				'html() threw ' . get_class( $caught ) . ': ' . $caught->getMessage()
 			);
