@@ -264,11 +264,7 @@ export default function App() {
 		return () => {
 			window.removeEventListener( 'message', handleMessage );
 		};
-	}, [
-		data.postMessageMode,
-		postMessageReceived,
-		processScrapedData,
-	] );
+	}, [ data.postMessageMode, postMessageReceived, processScrapedData ] );
 
 	/**
 	 * Read scraped data from window.name (popup-blocked fallback).
