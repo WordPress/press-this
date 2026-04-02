@@ -270,15 +270,19 @@ export default function App() {
 	 * Read scraped data from window.name (popup-blocked fallback).
 	 * The bookmarklet stores data in window.name when popups are blocked,
 	 * keeping content out of the URL to avoid history/log leaks.
+	 *
+	 * An inline script in the PHP template reads and clears window.name
+	 * immediately (before any other scripts run) and stores it in
+	 * window.__ptWindowName. We read from that stashed copy here.
 	 */
 	useEffect( () => {
 		if ( ! data.windowNameMode ) {
 			return;
 		}
 
-		// Read and immediately clear window.name.
-		const raw = window.name;
-		window.name = '';
+		// Read from the stashed copy (set by inline script in PHP template).
+		const raw = window.__ptWindowName || '';
+		delete window.__ptWindowName;
 
 		// Clean URL (remove wn parameter).
 		if ( window.history?.replaceState ) {
