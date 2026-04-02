@@ -782,8 +782,8 @@ class WP_Press_This_Plugin {
 
 			if ( is_array( $inline_data ) ) {
 				// Process simple string fields.
+				// Note: 'u' is already in $_GET (part of the base URL), so it's not mapped here.
 				$field_map = array(
-					'u'          => 'u',
 					't'          => 't',
 					's'          => 's',
 					'pt_version' => 'v',
@@ -801,8 +801,8 @@ class WP_Press_This_Plugin {
 				// Process media and metadata only if media discovery is enabled.
 				/** This filter is documented above in the POST data section. */
 				if ( apply_filters( 'enable_press_this_media_discovery', true ) ) {
-					// Process media arrays.
-					foreach ( array( '_images', '_embeds', '_og_video' ) as $type ) {
+					// Process media arrays (bookmarklet sends _images and _embeds only).
+					foreach ( array( '_images', '_embeds' ) as $type ) {
 						if ( empty( $inline_data[ $type ] ) || ! is_array( $inline_data[ $type ] ) ) {
 							continue;
 						}
@@ -821,16 +821,7 @@ class WP_Press_This_Plugin {
 							}
 
 							if ( ! empty( $value ) && ! in_array( $value, $data[ $type ], true ) ) {
-								if ( '_og_video' === $type ) {
-									if ( ! isset( $data['_embeds'] ) ) {
-										$data['_embeds'] = array();
-									}
-									if ( ! in_array( $value, $data['_embeds'], true ) ) {
-										$data['_embeds'][] = $value;
-									}
-								} else {
-									$data[ $type ][] = $value;
-								}
+								$data[ $type ][] = $value;
 							}
 						}
 					}

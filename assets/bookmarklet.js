@@ -414,6 +414,13 @@
 			fallbackUrl = pt_url.replace( '&pm=1', '&pm=0' ) + '&_data=' + encURI( JSON.stringify( fallbackData ) );
 		}
 
+		// If still too long after stripping metadata, drop media too.
+		if ( fallbackUrl.length > 7500 ) {
+			delete fallbackData._images;
+			delete fallbackData._embeds;
+			fallbackUrl = pt_url.replace( '&pm=1', '&pm=0' ) + '&_data=' + encURI( JSON.stringify( fallbackData ) );
+		}
+
 		top.location.href = fallbackUrl;
 	}
 } )( window, document, top.location.href, window.pt_url );
