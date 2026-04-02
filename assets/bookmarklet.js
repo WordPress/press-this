@@ -368,8 +368,9 @@
 		// Use window.name to transport scraped data to Press This.
 		// window.name persists across cross-origin navigations within the same tab
 		// and keeps data out of the URL (reducing exposure via browser history,
-		// server logs, and session restore). The payload here is relatively small
-		// (scraped post metadata), well within browser window.name limits.
+		// server logs, and session restore). The payload consists of scraped post
+		// data (which may include selected HTML), so it should be kept within
+		// practical browser window.name size limits.
 		try {
 			window.name = JSON.stringify( {
 				type: 'press-this-data',

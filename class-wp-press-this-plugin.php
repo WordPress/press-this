@@ -1660,8 +1660,9 @@ class WP_Press_This_Plugin {
 		window.pressThisData = <?php echo wp_json_encode( $press_this_data ); ?>;
 
 		// Read and clear window.name immediately, before any other scripts run.
-		// This prevents same-origin admin scripts from accessing scraped data
-		// and narrows the window for attacker-prefilled window.name payloads.
+		// This reduces exposure of scraped data via window.name and narrows the
+		// timing window for attacker-prefilled payloads. Same-origin scripts can
+		// still access window.__ptWindowName until the app clears it.
 		if ( window.pressThisData.windowNameMode && window.name ) {
 			window.__ptWindowName = window.name;
 			window.name = '';

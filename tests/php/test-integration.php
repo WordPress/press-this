@@ -89,14 +89,15 @@ class Test_Press_This_Integration extends BaseTestCase {
 			$_SERVER['REQUEST_METHOD'] = $previous_method;
 		}
 
-		preg_match( '/window\.pressThisData\s*=\s*({.+?});/s', $html, $matches );
-
-		if ( empty( $matches[1] ) && $caught ) {
+		// Fail immediately if html() threw, even if it produced some output.
+		if ( $caught ) {
 			$this->fail(
-				'pressThisData JSON not found in html() output. '
-				. 'Caught ' . get_class( $caught ) . ': ' . $caught->getMessage()
+				'html() threw ' . get_class( $caught ) . ': ' . $caught->getMessage()
 			);
 		}
+
+		// Anchor to </script> to avoid early termination on }; inside JSON strings.
+		preg_match( '/window\.pressThisData\s*=\s*({.+?})\s*;\s*<\/script>/s', $html, $matches );
 
 		$this->assertNotEmpty( $matches[1], 'pressThisData JSON not found in html() output.' );
 
