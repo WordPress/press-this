@@ -1,58 +1,83 @@
 /**
  * Standalone utility tests
  *
- * Tests for isStandaloneMode shared utility.
+ * Behavioral tests for isStandaloneMode shared utility.
  *
- * @package press-this
+ * @package
  */
 
-const fs = require( 'fs' );
-const path = require( 'path' );
+/* eslint-env jest */
 
-describe( 'Standalone mode utility', () => {
-	let utilContent;
+import { isStandaloneMode } from '../../src/utils/standalone';
 
-	beforeAll( () => {
-		const utilPath = path.resolve(
-			__dirname,
-			'../../src/utils/standalone.js'
+describe( 'isStandaloneMode', () => {
+	const originalMatchMedia = window.matchMedia;
+	const originalNavigator = window.navigator;
+
+	afterEach( () => {
+		window.matchMedia = originalMatchMedia;
+		Object.defineProperty( window, 'navigator', {
+			value: originalNavigator,
+			writable: true,
+			configurable: true,
+		} );
+	} );
+
+	test( 'returns true when matchMedia reports standalone display mode', () => {
+		window.matchMedia = jest.fn( () => ( { matches: true } ) );
+		Object.defineProperty( window, 'navigator', {
+			value: { standalone: false },
+			writable: true,
+			configurable: true,
+		} );
+
+		expect( isStandaloneMode() ).toBe( true );
+		expect( window.matchMedia ).toHaveBeenCalledWith(
+			'(display-mode: standalone)'
 		);
-		utilContent = fs.readFileSync( utilPath, 'utf8' );
 	} );
 
-	test( 'isStandaloneMode guards matchMedia availability', () => {
-		expect( utilContent ).toContain(
-			"typeof window.matchMedia === 'function'"
-		);
+	test( 'returns true when navigator.standalone is true (iOS Safari)', () => {
+		window.matchMedia = jest.fn( () => ( { matches: false } ) );
+		Object.defineProperty( window, 'navigator', {
+			value: { standalone: true },
+			writable: true,
+			configurable: true,
+		} );
+
+		expect( isStandaloneMode() ).toBe( true );
 	} );
 
-	test( 'isStandaloneMode checks iOS navigator.standalone fallback', () => {
-		expect( utilContent ).toContain( 'window.navigator.standalone' );
+	test( 'returns false when neither condition is met', () => {
+		window.matchMedia = jest.fn( () => ( { matches: false } ) );
+		Object.defineProperty( window, 'navigator', {
+			value: { standalone: false },
+			writable: true,
+			configurable: true,
+		} );
+
+		expect( isStandaloneMode() ).toBe( false );
 	} );
 
-	test( 'isStandaloneMode checks display-mode: standalone media query', () => {
-		expect( utilContent ).toContain( 'display-mode: standalone' );
-	} );
-} );
+	test( 'handles matchMedia not being available', () => {
+		window.matchMedia = undefined;
+		Object.defineProperty( window, 'navigator', {
+			value: { standalone: true },
+			writable: true,
+			configurable: true,
+		} );
 
-describe( 'Standalone mode usage in components', () => {
-	test( 'Header.js imports isStandaloneMode from shared utils', () => {
-		const headerPath = path.resolve(
-			__dirname,
-			'../../src/components/Header.js'
-		);
-		const headerContent = fs.readFileSync( headerPath, 'utf8' );
-		expect( headerContent ).toContain( 'isStandaloneMode' );
-		expect( headerContent ).toContain( "from '../utils'" );
+		expect( isStandaloneMode() ).toBe( true );
 	} );
 
-	test( 'PressThisEditor.js imports isStandaloneMode from shared utils', () => {
-		const editorPath = path.resolve(
-			__dirname,
-			'../../src/components/PressThisEditor.js'
-		);
-		const editorContent = fs.readFileSync( editorPath, 'utf8' );
-		expect( editorContent ).toContain( 'isStandaloneMode' );
-		expect( editorContent ).toContain( "from '../utils'" );
+	test( 'returns false when matchMedia is unavailable and navigator.standalone is false', () => {
+		window.matchMedia = undefined;
+		Object.defineProperty( window, 'navigator', {
+			value: { standalone: false },
+			writable: true,
+			configurable: true,
+		} );
+
+		expect( isStandaloneMode() ).toBe( false );
 	} );
 } );
