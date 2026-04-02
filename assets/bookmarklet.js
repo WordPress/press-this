@@ -366,9 +366,10 @@
 	} else {
 		// Popup blocked (common on mobile browsers).
 		// Use window.name to transport scraped data to Press This.
-		// window.name persists across cross-origin navigations within the same tab,
-		// has no practical size limit, and keeps data out of the URL (avoiding
-		// leaks to browser history, server logs, and session restore).
+		// window.name persists across cross-origin navigations within the same tab
+		// and keeps data out of the URL (reducing exposure via browser history,
+		// server logs, and session restore). The payload here is relatively small
+		// (scraped post metadata), well within browser window.name limits.
 		try {
 			window.name = JSON.stringify( {
 				type: 'press-this-data',

@@ -50,7 +50,7 @@ class WP_Press_This_Plugin {
 	private $domain = '';
 
 	/**
-	 * Whether data was received inline via URL (popup-blocked fallback).
+	 * Whether the popup-blocked fallback is active (data in window.name).
 	 *
 	 * @var bool
 	 */
@@ -779,9 +779,7 @@ class WP_Press_This_Plugin {
 		// When window.open() fails, the bookmarklet stores scraped data in window.name
 		// and navigates with &wn=1. The React app reads window.name client-side;
 		// no server-side data parsing is needed.
-		if ( ! empty( $_GET['wn'] ) && '1' === $_GET['wn'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			$this->window_name_mode = true;
-		}
+		$this->window_name_mode = ( ! empty( $_GET['wn'] ) && '1' === $_GET['wn'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
 		// phpcs:enable WordPress.Security.NonceVerification.Missing, WordPress.Security.NonceVerification.Recommended
 

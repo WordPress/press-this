@@ -70,6 +70,7 @@ class Test_Press_This_Integration extends BaseTestCase {
 	 * @return array Decoded pressThisData.
 	 */
 	private function get_press_this_data_from_html() {
+		$previous_method           = isset( $_SERVER['REQUEST_METHOD'] ) ? $_SERVER['REQUEST_METHOD'] : null;
 		$_SERVER['REQUEST_METHOD'] = 'GET';
 
 		ob_start();
@@ -80,6 +81,13 @@ class Test_Press_This_Integration extends BaseTestCase {
 			$caught = $e;
 		}
 		$html = ob_get_clean();
+
+		// Restore REQUEST_METHOD to avoid leaking state to other tests.
+		if ( null === $previous_method ) {
+			unset( $_SERVER['REQUEST_METHOD'] );
+		} else {
+			$_SERVER['REQUEST_METHOD'] = $previous_method;
+		}
 
 		preg_match( '/window\.pressThisData\s*=\s*({.+?});/s', $html, $matches );
 
