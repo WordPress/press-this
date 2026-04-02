@@ -295,7 +295,7 @@ export default function App() {
 			window.history.replaceState( null, '', url.toString() );
 		}
 
-		if ( ! raw || raw.length > 1048576 ) {
+		if ( ! raw ) {
 			return;
 		}
 
