@@ -374,12 +374,20 @@
 		var useWindowName = false;
 
 		try {
-			window.name = JSON.stringify( {
+			var payload = JSON.stringify( {
 				type: 'press-this-data',
 				version: PT_VERSION,
 				data: scrapedData
 			} );
-			useWindowName = true;
+			window.name = payload;
+
+			// Verify the browser stored the full payload (some browsers
+			// silently truncate window.name).
+			if ( window.name === payload ) {
+				useWindowName = true;
+			} else {
+				window.name = '';
+			}
 		} catch ( e ) {
 			// JSON serialization failed — clear any pre-existing window.name
 			// to avoid parsing stale or attacker-controlled data.
