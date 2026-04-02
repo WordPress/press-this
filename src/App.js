@@ -247,6 +247,10 @@ export default function App() {
 		}
 
 		async function handleMessage( event ) {
+			if ( event.origin !== window.location.origin ) {
+				return;
+			}
+
 			if ( ! event.data || event.data.type !== 'press-this-data' ) {
 				return;
 			}
@@ -291,7 +295,7 @@ export default function App() {
 			window.history.replaceState( null, '', url.toString() );
 		}
 
-		if ( ! raw ) {
+		if ( ! raw || raw.length > 1048576 ) {
 			return;
 		}
 

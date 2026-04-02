@@ -371,18 +371,27 @@
 		// server logs, and session restore). The payload consists of scraped post
 		// data (which may include selected HTML), so it should be kept within
 		// practical browser window.name size limits.
+		var useWindowName = false;
+
 		try {
 			window.name = JSON.stringify( {
 				type: 'press-this-data',
 				version: PT_VERSION,
 				data: scrapedData
 			} );
+			useWindowName = true;
 		} catch ( e ) {
-			// JSON serialization failed, navigate without data.
+			// JSON serialization failed — clear any pre-existing window.name
+			// to avoid parsing stale or attacker-controlled data.
+			try { window.name = ''; } catch ( _e ) {}
 		}
 
-		// Navigate the current tab. &wn=1 tells the React app to read window.name.
-		// GET navigation sends SameSite=Lax cookies (unlike cross-site POST).
-		top.location.href = pt_url.replace( '&pm=1', '&wn=1' );
+		// Navigate the current tab.
+		// &wn=1 tells the React app to read window.name; only set when
+		// serialization succeeded. GET sends SameSite=Lax cookies (unlike
+		// cross-site POST).
+		top.location.href = useWindowName
+			? pt_url.replace( '&pm=1', '&wn=1' )
+			: pt_url;
 	}
 } )( window, document, top.location.href, window.pt_url );
