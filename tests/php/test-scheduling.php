@@ -238,6 +238,38 @@ class Test_Scheduling extends BaseTestCase {
 	}
 
 	/**
+	 * Test that an invalid date format is rejected by the REST validate_callback.
+	 */
+	public function test_invalid_date_format_is_rejected() {
+		wp_set_current_user( $this->editor_user_id );
+
+		$request = $this->build_save_request(
+			array(
+				'status' => 'future',
+				'date'   => 'not-a-date',
+			)
+		);
+
+		// Manually run the validate_callback since build_save_request bypasses schema validation.
+		$routes = rest_get_server()->get_routes();
+		$route  = $routes['/press-this/v1/save'][0];
+		$args   = $route['args'];
+
+		$result = call_user_func( $args['date']['validate_callback'], 'not-a-date' );
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertEquals( 'press_this_invalid_date_format', $result->get_error_code() );
+
+		// Also verify valid formats pass.
+		$this->assertTrue( call_user_func( $args['date']['validate_callback'], '2027-06-15T14:30:00' ) );
+		$this->assertTrue( call_user_func( $args['date']['validate_callback'], '2027-06-15T14:30' ) );
+		$this->assertTrue( call_user_func( $args['date']['validate_callback'], '' ) );
+
+		// Trailing content should be rejected.
+		$result_trailing = call_user_func( $args['date']['validate_callback'], '2027-06-15T14:30:00Z' );
+		$this->assertInstanceOf( WP_Error::class, $result_trailing );
+	}
+
+	/**
 	 * Test that 'future' status is gated behind publish_posts capability.
 	 */
 	public function test_future_status_gated_behind_publish_posts() {

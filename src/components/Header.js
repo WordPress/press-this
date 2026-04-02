@@ -464,8 +464,12 @@ export default function Header( {
 
 	/**
 	 * Handle schedule confirmation.
-	 * Calls onSave with 'future' status and date for future dates,
-	 * or 'publish' for past dates.
+	 *
+	 * Re-checks isFutureDate at click time so the button action is always
+	 * correct even if time has elapsed since the popover was opened.
+	 * If the selected time has passed, we publish immediately rather than
+	 * sending status=future with a past date. This matches WordPress core
+	 * behavior (wp_insert_post auto-converts future+past to publish).
 	 */
 	const handleScheduleConfirm = useCallback( () => {
 		if ( ! onSave ) {

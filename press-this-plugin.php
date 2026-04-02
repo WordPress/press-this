@@ -189,6 +189,10 @@ function press_this_register_rest_routes() {
 				'date'           => array(
 					'type'              => 'string',
 					'sanitize_callback' => 'sanitize_text_field',
+					// Validates format only (ISO 8601 datetime). Semantic validation
+					// (e.g. month/day ranges, leap years) is handled server-side by
+					// strtotime() in the save handler, which rejects unparseable
+					// dates and normalizes edge cases like Feb 30 → Mar 2.
 					'validate_callback' => function ( $value ) {
 						if ( empty( $value ) ) {
 							return true;
@@ -361,6 +365,9 @@ function press_this_rest_save_post( $request ) {
 	}
 
 	// Handle future (scheduled) status.
+	// We intentionally don't reject past dates here. WordPress core's
+	// wp_insert_post() auto-converts future+past-date to 'publish', so
+	// a past date simply publishes immediately — matching core REST API behavior.
 	if ( 'future' === $status ) {
 		if ( current_user_can( 'publish_posts' ) ) {
 			$date = $request->get_param( 'date' );

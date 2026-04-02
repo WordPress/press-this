@@ -270,7 +270,9 @@ function formatScheduleDate( dateString, timezone ) {
 		const formatted = new Intl.DateTimeFormat( undefined, options ).format(
 			utcDate
 		);
-		// Append timezone identifier if available.
+		// Append the raw timezone identifier (e.g. "America/New_York" or "UTC+2")
+		// rather than a derived abbreviation. Abbreviations from Intl.DateTimeFormat
+		// can be wrong near DST boundaries, and the IANA name is unambiguous.
 		if ( timezone ) {
 			return `${ formatted } ${ timezone }`;
 		}
@@ -283,24 +285,24 @@ function formatScheduleDate( dateString, timezone ) {
 /**
  * Press This Editor component.
  *
- * @param {Object}   props                      Component props.
- * @param {Object}   props.post                 Post object with ID, title, content.
- * @param {Object}   props.settings             Editor settings.
- * @param {Array}    props.images               Scraped images from source.
- * @param {Array}    props.embeds               Scraped embeds from source.
- * @param {Object}   props.categories           Available categories.
- * @param {Array}    props.postFormats          Available post formats.
- * @param {Object}   props.capabilities         User capabilities.
- * @param {Object}   props.restConfig           REST API configuration.
- * @param {string}   props.sourceUrl            Source URL being clipped.
- * @param {Object}   props.pendingScrape        Pending scraped content to append.
- * @param {Function} props.onScrapeProcessed    Callback after scrape is processed.
- * @param {Function} props.onSaveReady          Callback when save handler is ready (receives { handleSave, isSaving, publishLabel }).
- * @param {Function} props.onUndoReady          Callback when undo/redo handlers are ready (receives { handleUndo, handleRedo, hasUndo, hasRedo }).
- * @param {string}   props.timezone             Site timezone string from wp_timezone_string().
- * @param {Function} props.onPostStatusChange   Callback when post status changes after save (receives { status, date }).
- * @param {string}   props.categoryNonce
- * @param {string}   props.ajaxUrl
+ * @param {Object}   props                    Component props.
+ * @param {Object}   props.post               Post object with ID, title, content.
+ * @param {Object}   props.settings           Editor settings.
+ * @param {Array}    props.images             Scraped images from source.
+ * @param {Array}    props.embeds             Scraped embeds from source.
+ * @param {Object}   props.categories         Available categories.
+ * @param {Array}    props.postFormats        Available post formats.
+ * @param {Object}   props.capabilities       User capabilities.
+ * @param {Object}   props.restConfig         REST API configuration.
+ * @param {string}   props.sourceUrl          Source URL being clipped.
+ * @param {Object}   props.pendingScrape      Pending scraped content to append.
+ * @param {Function} props.onScrapeProcessed  Callback after scrape is processed.
+ * @param {Function} props.onSaveReady        Callback when save handler is ready.
+ * @param {Function} props.onUndoReady        Callback when undo/redo handlers are ready.
+ * @param {string}   props.timezone           Site timezone string from wp_timezone_string().
+ * @param {Function} props.onPostStatusChange Callback when post status changes after save.
+ * @param {string}   props.categoryNonce      Nonce for category creation.
+ * @param {string}   props.ajaxUrl            Admin AJAX URL.
  * @return {JSX.Element} Press This Editor component.
  */
 export { formatScheduleDate };
