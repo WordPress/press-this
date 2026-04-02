@@ -943,15 +943,22 @@ function press_this_is_proxy_enabled() {
  * Returns a JSON manifest for Add to Home Screen / PWA support.
  * Must be publicly accessible so the browser can fetch it without authentication.
  *
- * @since 2.0.1
+ * Note: The manifest necessarily contains admin_url() in start_url and scope
+ * fields. This is an accepted trade-off — WordPress exposes the admin path
+ * in numerous public contexts (login redirects, REST discovery, etc.).
+ *
+ * @since 2.1.0
  *
  * @return WP_REST_Response Manifest JSON.
  */
 function press_this_rest_manifest() {
+	$start_url = admin_url( 'press-this.php' );
+
 	$manifest = array(
 		'name'             => __( 'Press This', 'press-this' ),
 		'short_name'       => __( 'Press This', 'press-this' ),
-		'start_url'        => admin_url( 'press-this.php' ),
+		'start_url'        => $start_url,
+		'scope'            => admin_url( '/' ),
 		'display'          => 'standalone',
 		'theme_color'      => '#2271b1',
 		'background_color' => '#ffffff',
@@ -968,7 +975,7 @@ function press_this_rest_manifest() {
 			),
 		),
 		'share_target'     => array(
-			'action' => admin_url( 'press-this.php' ),
+			'action' => $start_url,
 			'method' => 'GET',
 			'params' => array(
 				'url'   => 'u',

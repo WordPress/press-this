@@ -51,6 +51,7 @@ import BlockTransformShortcuts from './BlockTransformShortcuts';
 import ScrapedMediaPanel from './ScrapedMediaPanel';
 import FeaturedImagePanel from './FeaturedImagePanel';
 import CategoryPanel from './CategoryPanel';
+import { isStandaloneMode } from '../utils';
 
 /**
  * Sidebar Block Inspector component.
@@ -179,19 +180,6 @@ function safeRedirect( url, options = {} ) {
  * @param {string}  url            URL to redirect to.
  * @param {boolean} inParentWindow Whether to redirect in parent window.
  */
-
-/**
- * Check if running in standalone display mode (added to home screen).
- *
- * @return {boolean} True if standalone mode.
- */
-function isStandaloneMode() {
-	return (
-		( typeof window.matchMedia === 'function' &&
-			window.matchMedia( '(display-mode: standalone)' ).matches ) ||
-		window.navigator.standalone === true
-	);
-}
 
 function performSafeRedirect( url, inParentWindow = false ) {
 	const safeUrl = safeRedirect( url );

@@ -11,13 +11,7 @@
 /**
  * WordPress dependencies
  */
-import {
-	useState,
-	useCallback,
-	useEffect,
-	useRef,
-	useMemo,
-} from '@wordpress/element';
+import { useState, useCallback, useEffect, useRef } from '@wordpress/element';
 import {
 	Button,
 	TextControl,
@@ -37,7 +31,7 @@ import {
 /**
  * Internal dependencies
  */
-import { buildSuggestedContentFromMetadata } from '../utils';
+import { buildSuggestedContentFromMetadata, isStandaloneMode } from '../utils';
 
 /**
  * Detect if running on macOS for keyboard shortcut hints.
@@ -100,13 +94,9 @@ export default function Header( {
 		useState( isLegacyBookmarklet );
 
 	// Detect standalone display mode (added to home screen).
-	const isStandalone = useMemo(
-		() =>
-			( typeof window.matchMedia === 'function' &&
-				window.matchMedia( '(display-mode: standalone)' ).matches ) ||
-			window.navigator.standalone === true,
-		[]
-	);
+	// Display mode doesn't change during the page lifecycle, so a simple
+	// call at render time (backed by the module-level utility) is sufficient.
+	const isStandalone = isStandaloneMode();
 
 	// Track if initial auto-scan has been performed.
 	const hasAutoScanned = useRef( false );
@@ -435,7 +425,6 @@ export default function Header( {
 													// Reload without query params for a blank post.
 													window.location.href =
 														window.location.pathname;
-													onClose();
 												} }
 											>
 												{ __(
