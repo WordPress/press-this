@@ -48,7 +48,9 @@ export default function App() {
 	} );
 
 	// Post status and date as React state so they update after scheduling.
-	const [ postStatus, setPostStatus ] = useState( () => data.postStatus || '' );
+	const [ postStatus, setPostStatus ] = useState(
+		() => data.postStatus || ''
+	);
 	const [ postDate, setPostDate ] = useState( () => data.postDate || '' );
 
 	// Build initial post object for editor.
@@ -324,9 +326,9 @@ export default function App() {
 	 * Handle post status changes from PressThisEditor after a successful save.
 	 * Updates local state so the Header reflects the new status (e.g., "Reschedule").
 	 *
-	 * @param {Object} change          Status change details.
-	 * @param {string} change.status   New post status.
-	 * @param {string} change.date     New post date (ISO 8601).
+	 * @param {Object} change        Status change details.
+	 * @param {string} change.status New post status.
+	 * @param {string} change.date   New post date (ISO 8601).
 	 */
 	const handlePostStatusChange = useCallback( ( change ) => {
 		setPostStatus( change.status );
