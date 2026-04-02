@@ -100,7 +100,7 @@ class Test_Press_This_REST_Endpoints extends BaseTestCase {
 	}
 
 	/**
-	 * Test that all 4 REST routes are registered.
+	 * Test that all 5 REST routes are registered.
 	 */
 	public function test_routes_are_registered() {
 		do_action( 'rest_api_init' );
