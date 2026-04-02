@@ -88,10 +88,11 @@ describe( 'getCurrentDateInTimezone', () => {
 		expect( result ).toMatch( /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/ );
 	} );
 
-	test( 'falls back to ISO string for empty timezone', () => {
+	test( 'falls back to UTC-based naive string for empty timezone', () => {
 		const result = getCurrentDateInTimezone( '' );
-		// Should return a valid ISO string (from toISOString).
-		expect( result ).toMatch( /^\d{4}-\d{2}-\d{2}T/ );
+		// Empty timezone uses formatNaive(new Date()), returning UTC parts
+		// without a trailing Z or offset.
+		expect( result ).toMatch( /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/ );
 	} );
 } );
 

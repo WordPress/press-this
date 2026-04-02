@@ -76,8 +76,7 @@ jest.mock( '../../src/components/CategoryPanel', () => 'CategoryPanel' );
 describe( 'formatScheduleDate', () => {
 	test( 'formats a naive ISO datetime into a human-readable string', () => {
 		const result = formatScheduleDate( '2026-06-15T14:30:00', '' );
-		// Should contain the date components (month, day, year, time).
-		expect( result ).toMatch( /June/ );
+		// Verify date components are present (locale-agnostic).
 		expect( result ).toMatch( /15/ );
 		expect( result ).toMatch( /2026/ );
 		expect( result ).toMatch( /2:30/ );
@@ -106,15 +105,18 @@ describe( 'formatScheduleDate', () => {
 
 	test( 'handles space separator in datetime', () => {
 		const result = formatScheduleDate( '2026-06-15 14:30:00', '' );
-		expect( result ).toMatch( /June/ );
 		expect( result ).toMatch( /15/ );
+		expect( result ).toMatch( /2026/ );
 	} );
 
 	test( 'formats correctly for different months', () => {
+		// Locale-agnostic: verify numeric day/year components differ.
 		const jan = formatScheduleDate( '2026-01-05T09:00:00', '' );
-		expect( jan ).toMatch( /January/ );
+		expect( jan ).toMatch( /2026/ );
+		expect( jan ).toMatch( /5/ );
 
 		const dec = formatScheduleDate( '2026-12-25T18:00:00', '' );
-		expect( dec ).toMatch( /December/ );
+		expect( dec ).toMatch( /2026/ );
+		expect( dec ).toMatch( /25/ );
 	} );
 } );

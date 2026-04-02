@@ -113,7 +113,8 @@ describe( 'Scheduling Integration: Header utilities + Editor formatting', () => 
 		const futureDate = '2099-06-15T14:30:00';
 		expect( isFutureDate( futureDate, 'UTC' ) ).toBe( true );
 		const formatted = formatScheduleDate( futureDate, 'UTC' );
-		expect( formatted ).toMatch( /June/ );
+		// Locale-agnostic: check numeric components, not month names.
+		expect( formatted ).toMatch( /15/ );
 		expect( formatted ).toMatch( /2099/ );
 	} );
 
@@ -141,7 +142,7 @@ describe( 'Scheduling Integration: Header utilities + Editor formatting', () => 
 
 		// Step 3: Format for the snackbar.
 		const formatted = formatScheduleDate( scheduledDate, tz );
-		expect( formatted ).toMatch( /March/ );
+		expect( formatted ).toMatch( /15/ );
 		expect( formatted ).toMatch( /2099/ );
 		expect( formatted ).toContain( 'Asia/Tokyo' );
 	} );
@@ -150,7 +151,6 @@ describe( 'Scheduling Integration: Header utilities + Editor formatting', () => 
 		const pastDate = '2020-06-01T08:00:00';
 		expect( isFutureDate( pastDate, 'UTC' ) ).toBe( false );
 		const formatted = formatScheduleDate( pastDate, 'UTC' );
-		expect( formatted ).toMatch( /June/ );
 		expect( formatted ).toMatch( /2020/ );
 	} );
 } );

@@ -11,7 +11,13 @@
 /**
  * WordPress dependencies
  */
-import { useState, useCallback, useEffect, useRef } from '@wordpress/element';
+import {
+	useState,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+} from '@wordpress/element';
 import {
 	Button,
 	TextControl,
@@ -271,11 +277,14 @@ export default function Header( {
 	const undoShortcut = isMacOS() ? '\u2318Z' : 'Ctrl+Z';
 	const redoShortcut = isMacOS() ? '\u21E7\u2318Z' : 'Ctrl+Shift+Z';
 
-	const timezoneAbbreviation = getTimezoneAbbreviation(
-		timezone,
-		scheduleDate
+	const timezoneAbbreviation = useMemo(
+		() => getTimezoneAbbreviation( timezone, scheduleDate ),
+		[ timezone, scheduleDate ]
 	);
-	const isScheduleFuture = isFutureDate( scheduleDate, timezone );
+	const isScheduleFuture = useMemo(
+		() => isFutureDate( scheduleDate, timezone ),
+		[ scheduleDate, timezone ]
+	);
 	const scheduleButtonLabel = isScheduleFuture
 		? __( 'Schedule', 'press-this' )
 		: __( 'Publish', 'press-this' );
