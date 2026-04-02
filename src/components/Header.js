@@ -11,7 +11,13 @@
 /**
  * WordPress dependencies
  */
-import { useState, useCallback, useEffect, useRef } from '@wordpress/element';
+import {
+	useState,
+	useCallback,
+	useEffect,
+	useRef,
+	useMemo,
+} from '@wordpress/element';
 import {
 	Button,
 	TextControl,
@@ -94,9 +100,8 @@ export default function Header( {
 		useState( isLegacyBookmarklet );
 
 	// Detect standalone display mode (added to home screen).
-	// Display mode doesn't change during the page lifecycle, so a simple
-	// call at render time (backed by the module-level utility) is sufficient.
-	const isStandalone = isStandaloneMode();
+	// Display mode doesn't change during the page lifecycle, so compute once.
+	const isStandalone = useMemo( () => isStandaloneMode(), [] );
 
 	// Track if initial auto-scan has been performed.
 	const hasAutoScanned = useRef( false );

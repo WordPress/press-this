@@ -155,7 +155,7 @@ function press_this_register_rest_routes() {
 		'press-this/v1',
 		'/scrape',
 		array(
-			'methods'             => 'POST',
+			'methods'             => WP_REST_Server::CREATABLE,
 			'callback'            => 'press_this_rest_scrape_url',
 			'permission_callback' => 'press_this_rest_scrape_permission',
 			'args'                => array(
@@ -173,7 +173,7 @@ function press_this_register_rest_routes() {
 		'press-this/v1',
 		'/save',
 		array(
-			'methods'             => 'POST',
+			'methods'             => WP_REST_Server::CREATABLE,
 			'callback'            => 'press_this_rest_save_post',
 			'permission_callback' => 'press_this_rest_save_permission',
 			'args'                => array(
@@ -230,7 +230,7 @@ function press_this_register_rest_routes() {
 		'press-this/v1',
 		'/sideload',
 		array(
-			'methods'             => 'POST',
+			'methods'             => WP_REST_Server::CREATABLE,
 			'callback'            => 'press_this_rest_sideload_image',
 			'permission_callback' => 'press_this_rest_sideload_permission',
 			'args'                => array(
@@ -253,7 +253,7 @@ function press_this_register_rest_routes() {
 		'press-this/v1',
 		'/validate-embeds',
 		array(
-			'methods'             => 'POST',
+			'methods'             => WP_REST_Server::CREATABLE,
 			'callback'            => 'press_this_rest_validate_embeds',
 			'permission_callback' => 'press_this_rest_validate_embeds_permission',
 			'args'                => array(
