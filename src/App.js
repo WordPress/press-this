@@ -37,15 +37,6 @@ function getInitialData() {
 export default function App() {
 	const data = useMemo( () => getInitialData(), [] );
 
-	// Strip _data param from browser history to avoid leaking scraped content.
-	useEffect( () => {
-		if ( data.inlineDataMode && window.history.replaceState ) {
-			const url = new URL( window.location.href );
-			url.searchParams.delete( '_data' );
-			window.history.replaceState( null, '', url.toString() );
-		}
-	}, [ data.inlineDataMode ] );
-
 	// State for pending scraped content to append.
 	const [ pendingScrape, setPendingScrape ] = useState( null );
 
@@ -185,63 +176,30 @@ export default function App() {
 	);
 
 	/**
-	 * Listen for postMessage data from bookmarklet.
-	 * This is used when the bookmarklet opens Press This via GET (to send cookies)
-	 * and then sends scraped data via postMessage.
+	 * Process scraped data from the bookmarklet (shared by postMessage and window.name paths).
+	 *
+	 * @param {Object} messageData Scraped data object from bookmarklet.
 	 */
-	useEffect( () => {
-		// Only listen if we're in postMessage mode and haven't received data yet.
-		// Skip if inline data mode — data was passed via URL, not postMessage.
-		if (
-			! data.postMessageMode ||
-			data.inlineDataMode ||
-			postMessageReceived
-		) {
-			return;
-		}
-
-		async function handleMessage( event ) {
-			// Validate message structure.
-			if ( ! event.data || event.data.type !== 'press-this-data' ) {
-				return;
-			}
-
-			const messageData = event.data.data;
-			if ( ! messageData ) {
-				return;
-			}
-
-			// Mark as received so we stop listening.
-			setPostMessageReceived( true );
-
-			// Store the received data.
+	const processScrapedData = useCallback(
+		async ( messageData ) => {
 			setPostMessageData( messageData );
 
-			// Process images (no validation needed).
 			const receivedImages = messageData._images || [];
 			const receivedSourceUrl = messageData.u || data.sourceUrl;
 
-			// Validate embeds through WordPress oEmbed providers.
 			const rawEmbeds = messageData._embeds || [];
 			const validatedEmbeds = await validateEmbeds( rawEmbeds );
 
-			// Update media state with validated embeds.
 			setAdditionalMedia( ( prev ) => ( {
 				images: [ ...prev.images, ...receivedImages ],
 				embeds: [ ...prev.embeds, ...validatedEmbeds ],
 				sourceUrl: receivedSourceUrl,
 			} ) );
 
-			// Build suggested content from bookmarklet metadata.
-			// Extract description from meta tags.
 			const meta = messageData._meta || {};
-
-			// HTML selection takes highest priority (preserves formatting).
-			// Always compute plain-text description as a fallback; buildSuggestedContent
-			// will use it if htmlToBlocks() produces no blocks from selectionHtml.
 			const selectionHtml = messageData.sel_html || '';
 			const description =
-				messageData.s || // Plain-text user selection.
+				messageData.s ||
 				meta[ 'twitter:description' ] ||
 				meta[ 'og:description' ] ||
 				meta.description ||
@@ -254,11 +212,9 @@ export default function App() {
 				meta.title ||
 				'';
 
-			// Get canonical URL.
 			const links = messageData._links || {};
 			const canonical = links.canonical || receivedSourceUrl;
 
-			// Build suggested content using the same utility as Header.
 			const suggestedContent = buildSuggestedContentFromMetadata( {
 				title,
 				description,
@@ -268,7 +224,6 @@ export default function App() {
 				url: receivedSourceUrl,
 			} );
 
-			// Set as pending scrape so the editor will process it.
 			if ( title || suggestedContent ) {
 				setPendingScrape( {
 					title,
@@ -278,22 +233,77 @@ export default function App() {
 					sourceUrl: receivedSourceUrl,
 				} );
 			}
+		},
+		[ data.sourceUrl, validateEmbeds ]
+	);
+
+	/**
+	 * Listen for postMessage data from bookmarklet.
+	 * Used when the bookmarklet opens Press This via popup + GET.
+	 */
+	useEffect( () => {
+		if ( ! data.postMessageMode || postMessageReceived ) {
+			return;
+		}
+
+		async function handleMessage( event ) {
+			if ( ! event.data || event.data.type !== 'press-this-data' ) {
+				return;
+			}
+
+			const messageData = event.data.data;
+			if ( ! messageData ) {
+				return;
+			}
+
+			setPostMessageReceived( true );
+			await processScrapedData( messageData );
 		}
 
 		window.addEventListener( 'message', handleMessage );
-
 		return () => {
 			window.removeEventListener( 'message', handleMessage );
 		};
 	}, [
 		data.postMessageMode,
-		data.inlineDataMode,
-		data.restUrl,
-		data.restNonce,
-		data.sourceUrl,
 		postMessageReceived,
-		validateEmbeds,
+		processScrapedData,
 	] );
+
+	/**
+	 * Read scraped data from window.name (popup-blocked fallback).
+	 * The bookmarklet stores data in window.name when popups are blocked,
+	 * keeping content out of the URL to avoid history/log leaks.
+	 */
+	useEffect( () => {
+		if ( ! data.windowNameMode ) {
+			return;
+		}
+
+		// Read and immediately clear window.name.
+		const raw = window.name;
+		window.name = '';
+
+		// Clean URL (remove wn parameter).
+		if ( window.history?.replaceState ) {
+			const url = new URL( window.location.href );
+			url.searchParams.delete( 'wn' );
+			window.history.replaceState( null, '', url.toString() );
+		}
+
+		if ( ! raw ) {
+			return;
+		}
+
+		try {
+			const parsed = JSON.parse( raw );
+			if ( parsed?.type === 'press-this-data' && parsed.data ) {
+				processScrapedData( parsed.data );
+			}
+		} catch ( e ) {
+			// Invalid JSON in window.name — ignore gracefully.
+		}
+	}, [ data.windowNameMode, processScrapedData ] );
 
 	/**
 	 * Handle scrape completion from Header.

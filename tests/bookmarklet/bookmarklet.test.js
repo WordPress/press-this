@@ -242,33 +242,35 @@ describe( 'Bookmarklet Functionality', () => {
 		).toBe( true );
 	} );
 
-	test( 'Falls back to current-window navigation when popup is blocked', () => {
+	test( 'Falls back to window.name transport when popup is blocked', () => {
 		// Check for popup null check (fallback for mobile browsers).
 		expect( bookmarkletSource ).toContain( 'if ( popup )' );
 
-		// Check for inline data encoding via JSON.stringify.
+		// Check for window.name transport (keeps data out of URL).
+		expect( bookmarkletSource ).toContain( 'window.name' );
 		expect( bookmarkletSource ).toContain( 'JSON.stringify' );
 
-		// Check for _data URL parameter in fallback path.
-		expect( bookmarkletSource ).toContain( '_data=' );
+		// Check for wn=1 flag to signal window.name mode.
+		expect( bookmarkletSource ).toContain( '&wn=1' );
 
 		// Check for top.location.href fallback navigation.
 		expect( bookmarkletSource ).toContain( 'top.location.href' );
+
+		// Should NOT contain the old _data URL parameter approach.
+		expect( bookmarkletSource ).not.toContain( '_data=' );
+		expect( bookmarkletSource ).not.toContain( 'fallbackData' );
+		expect( bookmarkletSource ).not.toContain( 'fallbackUrl' );
 	} );
 
-	test( 'Builds minimal fallback payload to limit URL length', () => {
-		// Check that fallback builds a separate minimal payload.
-		expect( bookmarkletSource ).toContain( 'fallbackData' );
+	test( 'Window.name fallback uses same envelope as postMessage', () => {
+		// Check that fallback uses the press-this-data type identifier.
+		expect( bookmarkletSource ).toContain( "'press-this-data'" );
 
-		// Check for image and embed trimming via slice.
-		expect( bookmarkletSource ).toContain( '.slice( 0, 5 )' );
-		expect( bookmarkletSource ).toContain( '.slice( 0, 3 )' );
+		// Check for PT_VERSION in the envelope.
+		expect( bookmarkletSource ).toContain( 'PT_VERSION' );
 
-		// Check for URL length enforcement.
-		expect( bookmarkletSource ).toContain( 'fallbackUrl.length > 7500' );
-
-		// Check that pm flag is overridden in fallback.
-		expect( bookmarkletSource ).toContain( "replace( '&pm=1', '&pm=0' )" );
+		// Check that full scrapedData is sent (no truncation needed).
+		expect( bookmarkletSource ).toContain( 'data: scrapedData' );
 	} );
 
 	test( 'Enhanced data extraction - JSON-LD structured data', () => {

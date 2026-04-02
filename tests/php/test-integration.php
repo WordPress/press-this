@@ -65,6 +65,40 @@ class Test_Press_This_Integration extends BaseTestCase {
 	}
 
 	/**
+	 * Helper: capture html() output and extract the pressThisData JSON.
+	 *
+	 * @return array Decoded pressThisData.
+	 */
+	private function get_press_this_data_from_html() {
+		$_SERVER['REQUEST_METHOD'] = 'GET';
+
+		ob_start();
+		$caught = null;
+		try {
+			$this->plugin->html();
+		} catch ( \Throwable $e ) {
+			$caught = $e;
+		}
+		$html = ob_get_clean();
+
+		preg_match( '/window\.pressThisData\s*=\s*({.+?});/s', $html, $matches );
+
+		if ( empty( $matches[1] ) && $caught ) {
+			$this->fail(
+				'pressThisData JSON not found in html() output. '
+				. 'Caught ' . get_class( $caught ) . ': ' . $caught->getMessage()
+			);
+		}
+
+		$this->assertNotEmpty( $matches[1], 'pressThisData JSON not found in html() output.' );
+
+		$data = json_decode( $matches[1], true );
+		$this->assertIsArray( $data, 'pressThisData should decode to an array.' );
+
+		return $data;
+	}
+
+	/**
 	 * Test 1: Plugin constants are defined.
 	 */
 	public function test_plugin_constants_defined() {
@@ -285,76 +319,42 @@ class Test_Press_This_Integration extends BaseTestCase {
 	}
 
 	/**
-	 * Test: Inline data parameter (_data) is parsed by merge_or_fetch_data.
+	 * Test: windowNameMode flag is set when wn=1 GET parameter is present.
 	 *
-	 * When the bookmarklet's popup is blocked (mobile browsers), it falls back
-	 * to passing scraped data as JSON in the _data URL parameter.
+	 * When the bookmarklet's popup is blocked (mobile browsers), it stores
+	 * scraped data in window.name and navigates with &wn=1. The PHP side
+	 * just sets the flag; the React app reads window.name client-side.
 	 */
-	public function test_inline_data_parameter_is_parsed() {
-		$scraped_data = array(
-			'u'       => 'https://example.com/article',
-			't'       => 'Example Article',
-			's'       => 'Selected text',
-			'_images' => array( 'https://example.com/image.jpg' ),
-			'_embeds' => array( 'https://www.youtube.com/embed/abc?si=123' ),
-			'_meta'   => array(
-				'og:title'       => 'OG Title',
-				'og:description' => 'OG Description',
-			),
-			'_links'  => array(
-				'canonical' => 'https://example.com/article',
-			),
-		);
+	public function test_window_name_mode_flag_is_set() {
+		$_GET['wn'] = '1';
 
-		$_GET['_data'] = wp_json_encode( $scraped_data );
+		$data = $this->get_press_this_data_from_html();
 
-		$data = $this->plugin->merge_or_fetch_data();
+		$this->assertTrue( $data['windowNameMode'], 'windowNameMode should be true when wn=1.' );
 
-		$this->assertEquals( 'https://example.com/article', $data['u'] );
-		$this->assertEquals( 'Example Article', $data['t'] );
-		$this->assertEquals( 'Selected text', $data['s'] );
-		$this->assertContains( 'https://example.com/image.jpg', $data['_images'] );
-		// limit_embed() transforms YouTube embed URLs to watch URLs.
-		$this->assertContains( 'https://www.youtube.com/watch?v=abc', $data['_embeds'] );
-		$this->assertEquals( 'https://example.com/article', $data['_links']['canonical'] );
-
-		unset( $_GET['_data'] );
+		unset( $_GET['wn'] );
 	}
 
 	/**
-	 * Test: Inline data does not override existing GET/POST parameters.
+	 * Test: windowNameMode flag is false when wn parameter is absent.
 	 */
-	public function test_inline_data_does_not_override_existing_params() {
-		$_GET['u'] = 'https://existing.com/page';
+	public function test_window_name_mode_flag_is_false_by_default() {
+		$data = $this->get_press_this_data_from_html();
 
-		$scraped_data = array(
-			'u' => 'https://example.com/different',
-			't' => 'Inline Title',
-		);
-
-		$_GET['_data'] = wp_json_encode( $scraped_data );
-
-		$data = $this->plugin->merge_or_fetch_data();
-
-		// Existing 'u' param should take precedence.
-		$this->assertEquals( 'https://existing.com/page', $data['u'] );
-		// 't' should come from inline data since it wasn't in GET.
-		$this->assertEquals( 'Inline Title', $data['t'] );
-
-		unset( $_GET['_data'], $_GET['u'] );
+		$this->assertFalse( $data['windowNameMode'], 'windowNameMode should be false by default.' );
 	}
 
 	/**
-	 * Test: Invalid JSON in _data parameter is handled gracefully.
+	 * Test: postMessageMode and windowNameMode can be set independently.
 	 */
-	public function test_invalid_inline_data_is_handled_gracefully() {
-		$_GET['_data'] = 'not valid json{{{';
+	public function test_post_message_and_window_name_modes_independent() {
+		$_GET['pm'] = '1';
 
-		$data = $this->plugin->merge_or_fetch_data();
+		$data = $this->get_press_this_data_from_html();
 
-		// Should not crash, should return normal empty-ish data.
-		$this->assertIsArray( $data );
+		$this->assertTrue( $data['postMessageMode'], 'postMessageMode should be true when pm=1.' );
+		$this->assertFalse( $data['windowNameMode'], 'windowNameMode should be false when only pm=1.' );
 
-		unset( $_GET['_data'] );
+		unset( $_GET['pm'] );
 	}
 }

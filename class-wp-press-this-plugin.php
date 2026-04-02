@@ -54,7 +54,7 @@ class WP_Press_This_Plugin {
 	 *
 	 * @var bool
 	 */
-	private $inline_data_mode = false;
+	private $window_name_mode = false;
 
 	/**
 	 * Constructor.
@@ -775,98 +775,12 @@ class WP_Press_This_Plugin {
 			}
 		}
 
-		// Support inline data from bookmarklet fallback (popup blocked on mobile).
-		// When window.open() fails, the bookmarklet encodes scraped data as JSON in the URL.
-		if ( ! empty( $_GET['_data'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			$inline_data = json_decode( wp_unslash( $_GET['_data'] ), true ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-
-			if ( is_array( $inline_data ) ) {
-				// Process simple string fields.
-				// Note: 'u' is already in $_GET (part of the base URL), so it's not mapped here.
-				$field_map = array(
-					't'          => 't',
-					's'          => 's',
-					'pt_version' => 'v',
-				);
-				foreach ( $field_map as $inline_key => $data_key ) {
-					if ( ! empty( $inline_data[ $inline_key ] ) && empty( $data[ $data_key ] ) ) {
-						if ( 'u' === $data_key ) {
-							$data[ $data_key ] = $this->limit_url( $inline_data[ $inline_key ] );
-						} else {
-							$data[ $data_key ] = $this->limit_string( $inline_data[ $inline_key ] );
-						}
-					}
-				}
-
-				// Process media and metadata only if media discovery is enabled.
-				/** This filter is documented above in the POST data section. */
-				if ( apply_filters( 'enable_press_this_media_discovery', true ) ) {
-					// Process media arrays (bookmarklet sends _images and _embeds only).
-					foreach ( array( '_images', '_embeds' ) as $type ) {
-						if ( empty( $inline_data[ $type ] ) || ! is_array( $inline_data[ $type ] ) ) {
-							continue;
-						}
-
-						if ( ! isset( $data[ $type ] ) ) {
-							$data[ $type ] = array();
-						}
-
-						$items = $this->limit_array( $inline_data[ $type ] );
-
-						foreach ( $items as $value ) {
-							if ( '_images' === $type ) {
-								$value = $this->limit_img( $value );
-							} else {
-								$value = $this->limit_embed( $value );
-							}
-
-							if ( ! empty( $value ) && ! in_array( $value, $data[ $type ], true ) ) {
-								$data[ $type ][] = $value;
-							}
-						}
-					}
-
-					// Process metadata objects.
-					foreach ( array( '_meta', '_links', '_jsonld' ) as $type ) {
-						if ( empty( $inline_data[ $type ] ) || ! is_array( $inline_data[ $type ] ) ) {
-							continue;
-						}
-
-						if ( ! isset( $data[ $type ] ) ) {
-							$data[ $type ] = array();
-						}
-
-						$items = $this->limit_array( $inline_data[ $type ] );
-
-						foreach ( $items as $key => $value ) {
-							if ( empty( $key ) || strlen( $key ) > 100 ) {
-								continue;
-							}
-
-							if ( '_meta' === $type ) {
-								$value = $this->limit_string( $value );
-								if ( ! empty( $value ) ) {
-									$data = $this->process_meta_entry( $key, $value, $data );
-								}
-							} elseif ( '_links' === $type ) {
-								if ( in_array( $key, array( 'canonical', 'shortlink', 'icon', 'alternate_canonical' ), true ) ) {
-									$data[ $type ][ $key ] = $this->limit_url( $value );
-								}
-							} elseif ( '_jsonld' === $type ) {
-								if ( in_array( $key, array( 'canonical', 'headline', 'description', 'image' ), true ) ) {
-									if ( 'canonical' === $key || 'image' === $key ) {
-										$data[ $type ][ $key ] = $this->limit_url( $value );
-									} else {
-										$data[ $type ][ $key ] = $this->limit_string( $value );
-									}
-								}
-							}
-						}
-					}
-				}
-
-				$this->inline_data_mode = true;
-			}
+		// Detect window.name fallback mode (popup blocked on mobile).
+		// When window.open() fails, the bookmarklet stores scraped data in window.name
+		// and navigates with &wn=1. The React app reads window.name client-side;
+		// no server-side data parsing is needed.
+		if ( ! empty( $_GET['wn'] ) && '1' === $_GET['wn'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$this->window_name_mode = true;
 		}
 
 		// phpcs:enable WordPress.Security.NonceVerification.Missing, WordPress.Security.NonceVerification.Recommended
@@ -1568,7 +1482,7 @@ class WP_Press_This_Plugin {
 		$proxy_enabled     = press_this_is_proxy_enabled();
 		$has_get_selection = ! empty( $data['s'] ) && 'GET' === $_SERVER['REQUEST_METHOD'];
 
-		if ( $is_post_request || $this->inline_data_mode || ! $proxy_enabled || $has_get_selection ) {
+		if ( $is_post_request || ! $proxy_enabled || $has_get_selection ) {
 			$post_title   = $this->get_suggested_title( $data );
 			$post_content = $this->get_suggested_content( $data );
 		} else {
@@ -1727,9 +1641,9 @@ class WP_Press_This_Plugin {
 			// When true, the app waits for scraped data via postMessage from the opener.
 			'postMessageMode'     => $is_post_message_mode,
 
-			// Inline data mode (popup-blocked fallback).
-			// When true, scraped data was passed via URL and already merged into $data above.
-			'inlineDataMode'      => $this->inline_data_mode,
+			// Window.name mode (popup-blocked fallback).
+			// When true, the React app reads scraped data from window.name (set by bookmarklet).
+			'windowNameMode'      => $this->window_name_mode,
 		);
 
 		if ( ! headers_sent() ) {

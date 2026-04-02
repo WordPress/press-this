@@ -364,63 +364,23 @@
 		// Send scraped data via postMessage.
 		sendDataToPopup();
 	} else {
-		// Popup blocked (common on mobile browsers). Navigate current window with inline data.
-		// Build a minimal payload to stay within URL length limits (~8KB in modern browsers).
-		var fallbackData = {
-			t: scrapedData.t,
-			s: scrapedData.s,
-			pt_version: scrapedData.pt_version
-		};
-
-		if ( scrapedData._images ) {
-			fallbackData._images = scrapedData._images.slice( 0, 5 );
-		}
-		if ( scrapedData._embeds ) {
-			fallbackData._embeds = scrapedData._embeds.slice( 0, 3 );
-		}
-
-		// Only include the specific meta keys Press This uses.
-		if ( scrapedData._meta ) {
-			var usedMetaKeys = [ 'og:title', 'og:description', 'og:site_name', 'og:video', 'og:video:url', 'og:video:secure_url', 'twitter:title', 'twitter:description', 'description', 'title' ];
-			fallbackData._meta = {};
-			for ( var mk = 0; mk < usedMetaKeys.length; mk++ ) {
-				if ( scrapedData._meta[ usedMetaKeys[ mk ] ] ) {
-					fallbackData._meta[ usedMetaKeys[ mk ] ] = scrapedData._meta[ usedMetaKeys[ mk ] ];
-				}
-			}
+		// Popup blocked (common on mobile browsers).
+		// Use window.name to transport scraped data to Press This.
+		// window.name persists across cross-origin navigations within the same tab,
+		// has no practical size limit, and keeps data out of the URL (avoiding
+		// leaks to browser history, server logs, and session restore).
+		try {
+			window.name = JSON.stringify( {
+				type: 'press-this-data',
+				version: PT_VERSION,
+				data: scrapedData
+			} );
+		} catch ( e ) {
+			// JSON serialization failed, navigate without data.
 		}
 
-		// Include only canonical and shortlink from links.
-		if ( scrapedData._links ) {
-			fallbackData._links = {};
-			if ( scrapedData._links.canonical ) {
-				fallbackData._links.canonical = scrapedData._links.canonical;
-			}
-			if ( scrapedData._links.shortlink ) {
-				fallbackData._links.shortlink = scrapedData._links.shortlink;
-			}
-		}
-
-		// Skip _jsonld entirely — low value for the URL budget.
-
-		// Override pm flag so the app doesn't wait for postMessage.
-		var fallbackUrl = pt_url.replace( '&pm=1', '&pm=0' ) + '&_data=' + encURI( JSON.stringify( fallbackData ) );
-
-		// Enforce a max URL length to avoid truncation.
-		if ( fallbackUrl.length > 7500 ) {
-			// Strip meta/links and try again with just title, selection, and media.
-			delete fallbackData._meta;
-			delete fallbackData._links;
-			fallbackUrl = pt_url.replace( '&pm=1', '&pm=0' ) + '&_data=' + encURI( JSON.stringify( fallbackData ) );
-		}
-
-		// If still too long after stripping metadata, drop media too.
-		if ( fallbackUrl.length > 7500 ) {
-			delete fallbackData._images;
-			delete fallbackData._embeds;
-			fallbackUrl = pt_url.replace( '&pm=1', '&pm=0' ) + '&_data=' + encURI( JSON.stringify( fallbackData ) );
-		}
-
-		top.location.href = fallbackUrl;
+		// Navigate the current tab. &wn=1 tells the React app to read window.name.
+		// GET navigation sends SameSite=Lax cookies (unlike cross-site POST).
+		top.location.href = pt_url.replace( '&pm=1', '&wn=1' );
 	}
 } )( window, document, top.location.href, window.pt_url );
