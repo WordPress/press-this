@@ -1619,12 +1619,12 @@ class WP_Press_This_Plugin {
 		$post      = get_default_post_to_edit( $post_type, true );
 		$post_ID   = (int) $post->ID;
 
-		// Get taxonomy capabilities.
-		$categories_tax  = get_taxonomy( 'category' );
-		$tag_tax         = get_taxonomy( 'post_tag' );
-		$can_assign_cats = current_user_can( $categories_tax->cap->assign_terms );
-		$can_edit_cats   = current_user_can( $categories_tax->cap->edit_terms );
-		$can_assign_tags = current_user_can( $tag_tax->cap->assign_terms );
+		// Get taxonomy capabilities (only if the taxonomy is registered for this post type).
+		$categories_tax  = is_object_in_taxonomy( $post_type, 'category' ) ? get_taxonomy( 'category' ) : false;
+		$tag_tax         = is_object_in_taxonomy( $post_type, 'post_tag' ) ? get_taxonomy( 'post_tag' ) : false;
+		$can_assign_cats = $categories_tax && current_user_can( $categories_tax->cap->assign_terms );
+		$can_edit_cats   = $categories_tax && current_user_can( $categories_tax->cap->edit_terms );
+		$can_assign_tags = $tag_tax && current_user_can( $tag_tax->cap->assign_terms );
 
 		// Get supported post formats.
 		$post_formats = array();
@@ -1635,23 +1635,25 @@ class WP_Press_This_Plugin {
 			}
 		}
 
-		// Get all categories for the React app.
-		$categories = get_categories(
-			array(
-				'hide_empty' => false,
-				'orderby'    => 'name',
-				'order'      => 'ASC',
-			)
-		);
-
+		// Get all categories for the React app (only if taxonomy is registered for the post type).
 		$categories_data = array();
-		foreach ( $categories as $cat ) {
-			$categories_data[] = array(
-				'id'     => $cat->term_id,
-				'name'   => $cat->name,
-				'parent' => $cat->parent,
-				'slug'   => $cat->slug,
+		if ( $categories_tax ) {
+			$categories = get_categories(
+				array(
+					'hide_empty' => false,
+					'orderby'    => 'name',
+					'order'      => 'ASC',
+				)
 			);
+
+			foreach ( $categories as $cat ) {
+				$categories_data[] = array(
+					'id'     => $cat->term_id,
+					'name'   => $cat->name,
+					'parent' => $cat->parent,
+					'slug'   => $cat->slug,
+				);
+			}
 		}
 
 		// Comprehensive data object for React app.
