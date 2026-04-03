@@ -651,31 +651,31 @@ export default function Header( {
 												</MenuItem>
 											</MenuGroup>
 										) }
-									{ isStandalone && (
-										<MenuGroup>
-											<MenuItem
-												href={ siteUrl }
-												onClick={ onClose }
-											>
-												{ __(
-													'View Site',
-													'press-this'
-												) }
-											</MenuItem>
-											<MenuItem
-												onClick={ () => {
-													// Reload without query params for a blank post.
-													window.location.href =
-														window.location.pathname;
-												} }
-											>
-												{ __(
-													'New Post',
-													'press-this'
-												) }
-											</MenuItem>
-										</MenuGroup>
-									) }
+										{ isStandalone && (
+											<MenuGroup>
+												<MenuItem
+													href={ siteUrl }
+													onClick={ onClose }
+												>
+													{ __(
+														'View Site',
+														'press-this'
+													) }
+												</MenuItem>
+												<MenuItem
+													onClick={ () => {
+														// Reload without query params for a blank post.
+														window.location.href =
+															window.location.pathname;
+													} }
+												>
+													{ __(
+														'New Post',
+														'press-this'
+													) }
+												</MenuItem>
+											</MenuGroup>
+										) }
 									</>
 								) }
 							</DropdownMenu>
