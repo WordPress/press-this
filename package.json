@@ -38,8 +38,6 @@
     "@playwright/test": "^1.58.2",
     "@wordpress/env": "^10.37.0",
     "@wordpress/scripts": "^31.2.0",
-    "grunt-checktextdomain": "^1.0.1",
-    "grunt-wp-i18n": "^1.0.4",
     "terser": "^5.44.1"
   },
   "dependencies": {
@@ -58,8 +56,8 @@
     "@wordpress/format-library": "^5.37.0",
     "@wordpress/html-entities": "^4.40.0",
     "@wordpress/i18n": "^6.10.0",
-    "@wordpress/keyboard-shortcuts": "^5.37.0",
     "@wordpress/icons": "^11.4.0",
+    "@wordpress/keyboard-shortcuts": "^5.37.0",
     "@wordpress/rich-text": "^7.37.0"
   },
   "overrides": {
