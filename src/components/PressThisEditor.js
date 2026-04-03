@@ -41,7 +41,7 @@ import {
 	PanelBody,
 	FormTokenField,
 } from '@wordpress/components';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import { registerCoreBlocks } from '@wordpress/block-library';
 
 /**
@@ -229,26 +229,84 @@ function getWpRestBaseUrl( pressThisRestUrl ) {
 }
 
 /**
+ * Format a date string for display in the schedule snackbar.
+ *
+ * Uses the browser's default locale for formatting so the date is displayed
+ * in the user's preferred language rather than hardcoded to English.
+ *
+ * @param {string} dateString ISO date string to format.
+ * @param {string} timezone   Timezone identifier (e.g., "America/New_York" or "UTC+2").
+ * @return {string} Human-readable formatted date.
+ */
+function formatScheduleDate( dateString, timezone ) {
+	try {
+		// Parse date parts directly to avoid browser-timezone reinterpretation.
+		// dateString is a naive site-timezone string like "2026-03-15T15:00:00".
+		const match = dateString.match(
+			/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/
+		);
+		if ( ! match ) {
+			return dateString;
+		}
+		const [ , year, month, day, hour, minute ] = match;
+		// Build a UTC Date representing the wall-clock time, then format in UTC.
+		const utcDate = new Date(
+			Date.UTC(
+				Number( year ),
+				Number( month ) - 1,
+				Number( day ),
+				Number( hour ),
+				Number( minute )
+			)
+		);
+		const options = {
+			year: 'numeric',
+			month: 'long',
+			day: 'numeric',
+			hour: 'numeric',
+			minute: '2-digit',
+			timeZone: 'UTC',
+		};
+		const formatted = new Intl.DateTimeFormat( undefined, options ).format(
+			utcDate
+		);
+		// Append the raw timezone identifier (e.g. "America/New_York" or "UTC+2")
+		// rather than a derived abbreviation. Abbreviations from Intl.DateTimeFormat
+		// can be wrong near DST boundaries, and the IANA name is unambiguous.
+		if ( timezone ) {
+			return `${ formatted } ${ timezone }`;
+		}
+		return formatted;
+	} catch {
+		return dateString;
+	}
+}
+
+/**
  * Press This Editor component.
  *
- * @param {Object}   props                   Component props.
- * @param {Object}   props.post              Post object with ID, title, content.
- * @param {Object}   props.settings          Editor settings.
- * @param {Array}    props.images            Scraped images from source.
- * @param {Array}    props.embeds            Scraped embeds from source.
- * @param {Object}   props.categories        Available categories.
- * @param {Array}    props.postFormats       Available post formats.
- * @param {Object}   props.capabilities      User capabilities.
- * @param {Object}   props.restConfig        REST API configuration.
- * @param {string}   props.sourceUrl         Source URL being clipped.
- * @param {Object}   props.pendingScrape     Pending scraped content to append.
- * @param {Function} props.onScrapeProcessed Callback after scrape is processed.
- * @param {Function} props.onSaveReady       Callback when save handler is ready (receives { handleSave, isSaving, publishLabel }).
- * @param {Function} props.onUndoReady       Callback when undo/redo handlers are ready (receives { handleUndo, handleRedo, hasUndo, hasRedo }).
- * @param {string}   props.categoryNonce
- * @param {string}   props.ajaxUrl
+ * @param {Object}   props                    Component props.
+ * @param {Object}   props.post               Post object with ID, title, content.
+ * @param {Object}   props.settings           Editor settings.
+ * @param {Array}    props.images             Scraped images from source.
+ * @param {Array}    props.embeds             Scraped embeds from source.
+ * @param {Object}   props.categories         Available categories.
+ * @param {Array}    props.postFormats        Available post formats.
+ * @param {Object}   props.capabilities       User capabilities.
+ * @param {Object}   props.restConfig         REST API configuration.
+ * @param {string}   props.sourceUrl          Source URL being clipped.
+ * @param {Object}   props.pendingScrape      Pending scraped content to append.
+ * @param {Function} props.onScrapeProcessed  Callback after scrape is processed.
+ * @param {Function} props.onSaveReady        Callback when save handler is ready.
+ * @param {Function} props.onUndoReady        Callback when undo/redo handlers are ready.
+ * @param {string}   props.timezone           Site timezone string from wp_timezone_string().
+ * @param {Function} props.onPostStatusChange Callback when post status changes after save.
+ * @param {string}   props.categoryNonce      Nonce for category creation.
+ * @param {string}   props.ajaxUrl            Admin AJAX URL.
  * @return {JSX.Element} Press This Editor component.
  */
+export { formatScheduleDate };
+
 export default function PressThisEditor( {
 	post,
 	settings,
@@ -263,6 +321,8 @@ export default function PressThisEditor( {
 	onScrapeProcessed = () => {},
 	onSaveReady = () => {},
 	onUndoReady = () => {},
+	timezone = '',
+	onPostStatusChange = () => {},
 	categoryNonce = '',
 	ajaxUrl = '',
 } ) {
@@ -472,7 +532,7 @@ export default function PressThisEditor( {
 	/**
 	 * Handle save operation.
 	 *
-	 * @param {string} status  Post status (draft, publish).
+	 * @param {string} status  Post status (draft, publish, future).
 	 * @param {Object} options Save options.
 	 */
 	const handleSave = useCallback(
@@ -499,6 +559,7 @@ export default function PressThisEditor( {
 						tags,
 						featured_image: featuredImageId,
 						force_redirect: options.forceRedirect || false,
+						date: options.date || '',
 					} ),
 				} );
 
@@ -517,6 +578,26 @@ export default function PressThisEditor( {
 						} else {
 							performSafeRedirect( result.redirect, false );
 						}
+					} else if ( status === 'future' && options.date ) {
+						// Scheduled post -- show formatted date in snackbar.
+						const formatted = formatScheduleDate(
+							options.date,
+							timezone
+						);
+						setNotice( {
+							status: 'success',
+							message: sprintf(
+								/* translators: %s: formatted date and time */
+								__( 'Post scheduled for %s.', 'press-this' ),
+								formatted
+							),
+						} );
+
+						// Notify parent that post status has changed.
+						onPostStatusChange( {
+							status: 'future',
+							date: options.date,
+						} );
 					} else {
 						// No redirect - show success notice.
 						setNotice( {
@@ -550,6 +631,8 @@ export default function PressThisEditor( {
 			featuredImageId,
 			post.id,
 			restConfig,
+			timezone,
+			onPostStatusChange,
 		]
 	);
 

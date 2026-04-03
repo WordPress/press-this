@@ -11,7 +11,13 @@
 /**
  * WordPress dependencies
  */
-import { useState, useCallback, useEffect, useRef } from '@wordpress/element';
+import {
+	useState,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+} from '@wordpress/element';
 import {
 	Button,
 	TextControl,
@@ -20,6 +26,8 @@ import {
 	DropdownMenu,
 	MenuGroup,
 	MenuItem,
+	Popover,
+	DateTimePicker,
 } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import {
@@ -33,6 +41,8 @@ import {
  */
 import { buildSuggestedContentFromMetadata } from '../utils';
 
+const ONE_MINUTE = 60 * 1000;
+
 /**
  * Detect if running on macOS for keyboard shortcut hints.
  *
@@ -43,6 +53,146 @@ function isMacOS() {
 		typeof navigator !== 'undefined' &&
 		/Mac|iPod|iPhone|iPad/.test( navigator.platform )
 	);
+}
+
+/**
+ * Derive a short timezone abbreviation from a timezone string.
+ *
+ * @param {string} tz   Timezone string (e.g., 'America/New_York' or 'UTC+5').
+ * @param {string} date ISO date string to derive abbreviation for (for DST accuracy).
+ * @return {string} Timezone abbreviation (e.g., 'EST' or 'UTC+5').
+ */
+function getTimezoneAbbreviation( tz, date ) {
+	if ( ! tz ) {
+		return '';
+	}
+
+	// Fixed offset timezones pass through directly.
+	if ( /^UTC[+-]?\d*$/.test( tz ) ) {
+		return tz;
+	}
+
+	try {
+		const formatter = new Intl.DateTimeFormat( 'en-US', {
+			timeZone: tz,
+			timeZoneName: 'short',
+		} );
+		// Parse date parts to build a UTC instant matching the wall-clock time,
+		// so DST lookup is correct for the selected date, not the browser's interpretation.
+		let refDate = new Date();
+		if ( date ) {
+			const m = date.match(
+				/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/
+			);
+			if ( m ) {
+				refDate = new Date(
+					Date.UTC(
+						Number( m[ 1 ] ),
+						Number( m[ 2 ] ) - 1,
+						Number( m[ 3 ] ),
+						Number( m[ 4 ] ),
+						Number( m[ 5 ] )
+					)
+				);
+			}
+		}
+		const parts = formatter.formatToParts( refDate );
+		const tzPart = parts.find( ( p ) => p.type === 'timeZoneName' );
+		return tzPart ? tzPart.value : tz;
+	} catch {
+		return tz;
+	}
+}
+
+/**
+ * Get the current date/time as an ISO string in the site timezone.
+ *
+ * @param {string} tz Timezone string.
+ * @return {string} ISO 8601 date string.
+ */
+function getCurrentDateInTimezone( tz ) {
+	const pad = ( n ) => String( n ).padStart( 2, '0' );
+	const formatNaive = ( d ) =>
+		`${ d.getUTCFullYear() }-${ pad( d.getUTCMonth() + 1 ) }-${ pad(
+			d.getUTCDate()
+		) }T${ pad( d.getUTCHours() ) }:${ pad( d.getUTCMinutes() ) }:${ pad(
+			d.getUTCSeconds()
+		) }`;
+
+	if ( ! tz ) {
+		return formatNaive( new Date() );
+	}
+
+	// Handle fixed-offset timezones (e.g. "UTC+2", "UTC-10") which
+	// Intl.DateTimeFormat does not accept.
+	const offsetMatch = tz.match( /^UTC([+-]\d+(?:\.\d+)?)$/ );
+	if ( offsetMatch ) {
+		const offsetHours = parseFloat( offsetMatch[ 1 ] );
+		const now = new Date();
+		// Shift UTC time by the fixed offset to get wall-clock time.
+		return formatNaive( new Date( now.getTime() + offsetHours * 3600000 ) );
+	}
+
+	try {
+		const now = new Date();
+		const formatter = new Intl.DateTimeFormat( 'en-CA', {
+			timeZone: tz,
+			year: 'numeric',
+			month: '2-digit',
+			day: '2-digit',
+			hour: '2-digit',
+			minute: '2-digit',
+			second: '2-digit',
+			hour12: false,
+		} );
+		const parts = formatter.formatToParts( now );
+		const get = ( type ) =>
+			parts.find( ( p ) => p.type === type )?.value || '';
+		return `${ get( 'year' ) }-${ get( 'month' ) }-${ get( 'day' ) }T${ get(
+			'hour'
+		) }:${ get( 'minute' ) }:${ get( 'second' ) }`;
+	} catch {
+		return formatNaive( new Date() );
+	}
+}
+
+/**
+ * Parse a naive datetime string to UTC milliseconds by extracting parts directly,
+ * avoiding browser-local timezone interpretation via new Date().
+ *
+ * @param {string} dateString Naive ISO date string (e.g., "2026-03-07T15:00:00").
+ * @return {number} Milliseconds (as if the wall-clock time were in UTC).
+ */
+function parseNaiveToMs( dateString ) {
+	const m = dateString.match( /(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/ );
+	if ( ! m ) {
+		return new Date( dateString ).getTime();
+	}
+	return Date.UTC(
+		Number( m[ 1 ] ),
+		Number( m[ 2 ] ) - 1,
+		Number( m[ 3 ] ),
+		Number( m[ 4 ] ),
+		Number( m[ 5 ] )
+	);
+}
+
+/**
+ * Check whether a date string represents a future date using a 1-minute buffer.
+ * Matches Gutenberg's isEditedPostBeingScheduled pattern.
+ *
+ * Both dateString and the current time are parsed as wall-clock parts via
+ * parseNaiveToMs to avoid browser-local timezone reinterpretation at DST boundaries.
+ *
+ * @param {string} dateString ISO date string to check (naive, in site timezone).
+ * @param {string} tz         Site timezone string.
+ * @return {boolean} True if the date is more than 1 minute in the future.
+ */
+function isFutureDate( dateString, tz ) {
+	const selectedMs = parseNaiveToMs( dateString );
+	const nowInSiteTz = getCurrentDateInTimezone( tz );
+	const nowMs = parseNaiveToMs( nowInSiteTz );
+	return selectedMs - nowMs > ONE_MINUTE;
 }
 
 /**
@@ -66,8 +216,19 @@ function isMacOS() {
  * @param {Function} props.onRedo                Redo callback.
  * @param {boolean}  props.hasUndo               Whether undo is available.
  * @param {boolean}  props.hasRedo               Whether redo is available.
+ * @param {Object}   props.capabilities          User capabilities.
+ * @param {string}   props.timezone              Site timezone string from wp_timezone_string().
+ * @param {string}   props.postStatus            Current post status.
+ * @param {string}   props.postDate              Current post date (ISO 8601).
  * @return {JSX.Element} Header component.
  */
+export {
+	getTimezoneAbbreviation,
+	getCurrentDateInTimezone,
+	parseNaiveToMs,
+	isFutureDate,
+};
+
 export default function Header( {
 	siteName,
 	siteUrl,
@@ -86,6 +247,10 @@ export default function Header( {
 	onRedo,
 	hasUndo = false,
 	hasRedo = false,
+	capabilities = {},
+	timezone = '',
+	postStatus = '',
+	postDate = '',
 } ) {
 	const [ scanUrl, setScanUrl ] = useState( sourceUrl || '' );
 	const [ isScanning, setIsScanning ] = useState( false );
@@ -93,12 +258,41 @@ export default function Header( {
 	const [ showUpgradeNotice, setShowUpgradeNotice ] =
 		useState( isLegacyBookmarklet );
 
+	// Schedule popover state.
+	const [ isScheduleOpen, setIsScheduleOpen ] = useState( false );
+	const [ scheduleDate, setScheduleDate ] = useState( () => {
+		if ( postStatus === 'future' && postDate ) {
+			return postDate;
+		}
+		return getCurrentDateInTimezone( timezone );
+	} );
+
 	// Track if initial auto-scan has been performed.
 	const hasAutoScanned = useRef( false );
+
+	// Ref for anchoring the schedule popover near the More actions button.
+	const moreMenuRef = useRef( null );
 
 	// Keyboard shortcut hints based on platform.
 	const undoShortcut = isMacOS() ? '\u2318Z' : 'Ctrl+Z';
 	const redoShortcut = isMacOS() ? '\u21E7\u2318Z' : 'Ctrl+Shift+Z';
+
+	const timezoneAbbreviation = useMemo(
+		() => getTimezoneAbbreviation( timezone, scheduleDate ),
+		[ timezone, scheduleDate ]
+	);
+	const isScheduleFuture = useMemo(
+		() => isFutureDate( scheduleDate, timezone ),
+		[ scheduleDate, timezone ]
+	);
+	const scheduleButtonLabel = isScheduleFuture
+		? __( 'Schedule', 'press-this' )
+		: __( 'Publish', 'press-this' );
+
+	const scheduleMenuLabel =
+		postStatus === 'future'
+			? __( 'Reschedule', 'press-this' )
+			: __( 'Schedule', 'press-this' );
 
 	/**
 	 * Handle URL scan via proxy API.
@@ -277,6 +471,29 @@ export default function Header( {
 		}
 	}, [ onSave ] );
 
+	/**
+	 * Handle schedule confirmation.
+	 *
+	 * Re-checks isFutureDate at click time so the button action is always
+	 * correct even if time has elapsed since the popover was opened.
+	 * If the selected time has passed, we publish immediately rather than
+	 * sending status=future with a past date. This matches WordPress core
+	 * behavior (wp_insert_post auto-converts future+past to publish).
+	 */
+	const handleScheduleConfirm = useCallback( () => {
+		if ( ! onSave ) {
+			return;
+		}
+
+		if ( isFutureDate( scheduleDate, timezone ) ) {
+			onSave( 'future', { date: scheduleDate } );
+		} else {
+			onSave( 'publish' );
+		}
+
+		setIsScheduleOpen( false );
+	}, [ onSave, scheduleDate, timezone ] );
+
 	// Only show scanner when proxy is enabled.
 	// Without proxy, server-side scraping doesn't work - the scanner would be non-functional.
 	// Bookmarklet flow works without proxy (client-side scraping) but doesn't need the scanner UI.
@@ -386,27 +603,87 @@ export default function Header( {
 						>
 							{ publishLabel }
 						</Button>
-						<DropdownMenu
-							icon={ moreVertical }
-							label={ __( 'More actions', 'press-this' ) }
-							className="press-this-header__more-menu"
-						>
-							{ ( { onClose } ) => (
-								<MenuGroup>
-									<MenuItem
-										onClick={ () => {
-											handleContinueInEditor();
-											onClose();
-										} }
-									>
-										{ __(
-											'Continue in Standard Editor',
-											'press-this'
+						<div ref={ moreMenuRef }>
+							<DropdownMenu
+								icon={ moreVertical }
+								label={ __( 'More actions', 'press-this' ) }
+								className="press-this-header__more-menu"
+							>
+								{ ( { onClose } ) => (
+									<>
+										<MenuGroup>
+											<MenuItem
+												onClick={ () => {
+													handleContinueInEditor();
+													onClose();
+												} }
+											>
+												{ __(
+													'Continue in Standard Editor',
+													'press-this'
+												) }
+											</MenuItem>
+										</MenuGroup>
+										{ capabilities.canPublish && (
+											<MenuGroup>
+												<MenuItem
+													onClick={ () => {
+														setIsScheduleOpen(
+															true
+														);
+														setScheduleDate(
+															postStatus ===
+																'future' &&
+																postDate
+																? postDate
+																: getCurrentDateInTimezone(
+																		timezone
+																  )
+														);
+														onClose();
+													} }
+												>
+													{ scheduleMenuLabel }
+												</MenuItem>
+											</MenuGroup>
 										) }
-									</MenuItem>
-								</MenuGroup>
-							) }
-						</DropdownMenu>
+									</>
+								) }
+							</DropdownMenu>
+						</div>
+						{ isScheduleOpen && (
+							<Popover
+								anchor={ moreMenuRef.current }
+								onClose={ () => setIsScheduleOpen( false ) }
+								placement="bottom-end"
+								className="press-this-header__schedule-popover"
+								aria-label={ __(
+									'Schedule post',
+									'press-this'
+								) }
+							>
+								<div className="press-this-header__schedule-popover-content">
+									<DateTimePicker
+										currentDate={ scheduleDate }
+										onChange={ setScheduleDate }
+									/>
+									{ timezoneAbbreviation && (
+										<p className="press-this-header__schedule-timezone">
+											{ timezoneAbbreviation }
+										</p>
+									) }
+									<Button
+										variant="primary"
+										onClick={ handleScheduleConfirm }
+										disabled={ isSaving }
+										isBusy={ isSaving }
+										className="press-this-header__schedule-confirm"
+									>
+										{ scheduleButtonLabel }
+									</Button>
+								</div>
+							</Popover>
+						) }
 					</div>
 				) }
 			</div>

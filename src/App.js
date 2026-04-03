@@ -47,6 +47,12 @@ export default function App() {
 		publishLabel: __( 'Publish', 'press-this' ),
 	} );
 
+	// Post status and date as React state so they update after scheduling.
+	const [ postStatus, setPostStatus ] = useState(
+		() => data.postStatus || ''
+	);
+	const [ postDate, setPostDate ] = useState( () => data.postDate || '' );
+
 	// Build initial post object for editor.
 	const post = useMemo(
 		() => ( {
@@ -316,6 +322,21 @@ export default function App() {
 		setSaveState( state );
 	}, [] );
 
+	/**
+	 * Handle post status changes from PressThisEditor after a successful save.
+	 * Updates local state so the Header reflects the new status (e.g., "Reschedule").
+	 *
+	 * @param {Object} change        Status change details.
+	 * @param {string} change.status New post status.
+	 * @param {string} change.date   New post date (ISO 8601).
+	 */
+	const handlePostStatusChange = useCallback( ( change ) => {
+		setPostStatus( change.status );
+		if ( change.date ) {
+			setPostDate( change.date );
+		}
+	}, [] );
+
 	// State for undo/redo from editor.
 	// Split into primitive values so React can skip re-renders when values
 	// haven't changed (Object.is comparison). The handlers are stable refs
@@ -360,6 +381,10 @@ export default function App() {
 				onRedo={ redoHandler }
 				hasUndo={ hasUndo }
 				hasRedo={ hasRedo }
+				capabilities={ capabilities }
+				timezone={ data.timezone }
+				postStatus={ postStatus }
+				postDate={ postDate }
 			/>
 
 			<div className="press-this-app__body">
@@ -377,6 +402,8 @@ export default function App() {
 					onScrapeProcessed={ handleScrapeProcessed }
 					onSaveReady={ handleSaveReady }
 					onUndoReady={ handleUndoReady }
+					timezone={ data.timezone }
+					onPostStatusChange={ handlePostStatusChange }
 					categoryNonce={ data.categoryNonce || '' }
 					ajaxUrl={ data.ajaxUrl || '' }
 				/>
