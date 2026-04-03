@@ -48,6 +48,7 @@ import { registerCoreBlocks } from '@wordpress/block-library';
  * Internal dependencies
  */
 import BlockTransformShortcuts from './BlockTransformShortcuts';
+import LinkEscapeFix from './LinkEscapeFix';
 import ScrapedMediaPanel from './ScrapedMediaPanel';
 import FeaturedImagePanel from './FeaturedImagePanel';
 import CategoryPanel from './CategoryPanel';
@@ -731,6 +732,7 @@ export default function PressThisEditor( {
 							<div className="press-this-editor__content">
 								<BlockEditorKeyboardShortcuts.Register />
 								<BlockTransformShortcuts />
+								<LinkEscapeFix />
 								<BlockTools>
 									<WritingFlow>
 										<ObserveTyping>
