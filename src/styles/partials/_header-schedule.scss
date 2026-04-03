@@ -1,0 +1,64 @@
+/**
+ * Header Schedule Popover Styles
+ *
+ * Styles for the schedule DateTimePicker popover in the header.
+ *
+ * @package press-this
+ */
+
+@use "variables" as *;
+
+// ==========================================================================
+// Popover Container
+// ==========================================================================
+
+.press-this-header__schedule-popover {
+	z-index: $z-index-popover;
+
+	.components-popover__content {
+		min-width: 270px;
+		max-width: 320px;
+	}
+}
+
+// ==========================================================================
+// Popover Content
+// ==========================================================================
+
+.press-this-header__schedule-popover-content {
+	padding: $spacing-lg;
+}
+
+// ==========================================================================
+// Timezone Label
+// ==========================================================================
+
+.press-this-header__schedule-timezone {
+	margin: $spacing-sm 0 0;
+	font-size: $font-size-xs;
+	color: $color-text-muted;
+	text-align: center;
+}
+
+// ==========================================================================
+// Confirmation Button
+// ==========================================================================
+
+.press-this-header__schedule-confirm {
+	width: 100%;
+	justify-content: center;
+	margin-top: $spacing-lg;
+}
+
+// ==========================================================================
+// Mobile Adjustments
+// ==========================================================================
+
+@media (max-width: $breakpoint-mobile) {
+	.press-this-header__schedule-popover {
+		.components-popover__content {
+			min-width: 240px;
+			max-width: calc(100vw - #{$spacing-xl * 2});
+		}
+	}
+}

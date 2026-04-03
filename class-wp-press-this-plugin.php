@@ -50,6 +50,13 @@ class WP_Press_This_Plugin {
 	private $domain = '';
 
 	/**
+	 * Whether the popup-blocked fallback is active (data in window.name).
+	 *
+	 * @var bool
+	 */
+	private $window_name_mode = false;
+
+	/**
 	 * Constructor.
 	 *
 	 * @since 1.0.0
@@ -767,6 +774,12 @@ class WP_Press_This_Plugin {
 				}
 			}
 		}
+
+		// Detect window.name fallback mode (popup blocked on mobile).
+		// When window.open() fails, the bookmarklet stores scraped data in window.name
+		// and navigates with &wn=1. The React app reads window.name client-side;
+		// no server-side data parsing is needed.
+		$this->window_name_mode = ( ! empty( $_GET['wn'] ) && '1' === $_GET['wn'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
 		// phpcs:enable WordPress.Security.NonceVerification.Missing, WordPress.Security.NonceVerification.Recommended
 
@@ -1552,6 +1565,8 @@ class WP_Press_This_Plugin {
 			'postId'              => $post_ID,
 			'title'               => $post_title,
 			'content'             => $post_content,
+			'postStatus'          => $post->post_status,
+			'postDate'            => mysql_to_rfc3339( $post->post_date ),
 			'nonce'               => wp_create_nonce( 'update-post_' . $post_ID ),
 			'categoryNonce'       => wp_create_nonce( 'add-category' ),
 
@@ -1615,6 +1630,7 @@ class WP_Press_This_Plugin {
 			// Config.
 			'redirInParent'       => $site_settings['redirInParent'],
 			'isRTL'               => is_rtl(),
+			'timezone'            => wp_timezone_string(),
 
 			// Allowed blocks.
 			'allowedBlocks'       => $this->get_allowed_blocks(),
@@ -1625,6 +1641,10 @@ class WP_Press_This_Plugin {
 			// PostMessage mode (bookmarklet v11+).
 			// When true, the app waits for scraped data via postMessage from the opener.
 			'postMessageMode'     => $is_post_message_mode,
+
+			// Window.name mode (popup-blocked fallback).
+			// When true, the React app reads scraped data from window.name (set by bookmarklet).
+			'windowNameMode'      => $this->window_name_mode,
 		);
 
 		if ( ! headers_sent() ) {
@@ -1648,6 +1668,15 @@ class WP_Press_This_Plugin {
 
 	<script>
 		window.pressThisData = <?php echo wp_json_encode( $press_this_data ); ?>;
+
+		// Read and clear window.name immediately, before any other scripts run.
+		// This reduces exposure of scraped data via window.name and narrows the
+		// timing window for attacker-prefilled payloads. Same-origin scripts can
+		// still access window.__ptWindowName until the app clears it.
+		if ( window.pressThisData.windowNameMode && window.name ) {
+			window.__ptWindowName = window.name;
+			window.name = '';
+		}
 	</script>
 
 	<script type="text/javascript">
