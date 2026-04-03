@@ -39,7 +39,7 @@ import {
 /**
  * Internal dependencies
  */
-import { buildSuggestedContentFromMetadata } from '../utils';
+import { buildSuggestedContentFromMetadata, isStandaloneMode } from '../utils';
 
 const ONE_MINUTE = 60 * 1000;
 
@@ -257,6 +257,10 @@ export default function Header( {
 	const [ scanError, setScanError ] = useState( '' );
 	const [ showUpgradeNotice, setShowUpgradeNotice ] =
 		useState( isLegacyBookmarklet );
+
+	// Detect standalone display mode (added to home screen).
+	// Display mode doesn't change during the page lifecycle, so compute once.
+	const isStandalone = useMemo( () => isStandaloneMode(), [] );
 
 	// Schedule popover state.
 	const [ isScheduleOpen, setIsScheduleOpen ] = useState( false );
@@ -644,6 +648,31 @@ export default function Header( {
 													} }
 												>
 													{ scheduleMenuLabel }
+												</MenuItem>
+											</MenuGroup>
+										) }
+										{ isStandalone && (
+											<MenuGroup>
+												<MenuItem
+													href={ siteUrl }
+													onClick={ onClose }
+												>
+													{ __(
+														'View Site',
+														'press-this'
+													) }
+												</MenuItem>
+												<MenuItem
+													onClick={ () => {
+														// Reload without query params for a blank post.
+														window.location.href =
+															window.location.pathname;
+													} }
+												>
+													{ __(
+														'New Post',
+														'press-this'
+													) }
 												</MenuItem>
 											</MenuGroup>
 										) }

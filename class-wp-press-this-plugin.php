@@ -1657,6 +1657,13 @@ class WP_Press_This_Plugin {
 <head>
 	<meta http-equiv="Content-Type" content="<?php echo esc_attr( get_bloginfo( 'html_type' ) ); ?>; charset=<?php echo esc_attr( get_option( 'blog_charset' ) ); ?>" />
 	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="default">
+	<meta name="apple-mobile-web-app-title" content="<?php echo esc_attr__( 'Press This', 'press-this' ); ?>">
+	<meta name="theme-color" content="#2271b1">
+	<link rel="apple-touch-icon" href="<?php echo esc_url( plugins_url( 'assets/icon-180.png', __FILE__ ) ); ?>">
+	<link rel="manifest" href="<?php echo esc_url( rest_url( 'press-this/v1/manifest' ) ); ?>">
 	<title><?php esc_html_e( 'Press This!', 'press-this' ); ?></title>
 
 	<script>

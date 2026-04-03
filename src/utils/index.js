@@ -12,3 +12,5 @@ export {
 	escapeHtml,
 	escapeAttr,
 } from './html-parser';
+
+export { isStandaloneMode } from './standalone';
