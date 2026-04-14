@@ -24,7 +24,7 @@
     "lint:fix": "wp-scripts lint-js src/ --fix",
     "lint:css": "wp-scripts lint-style src/",
     "lint:css:fix": "wp-scripts lint-style src/ --fix",
-    "test:unit": "wp-scripts test-unit-js",
+    "test:unit": "wp-scripts test-unit-js --testPathIgnorePatterns='/worktrees/'",
     "test:js": "wp-scripts test-unit-js --testPathPattern='tests/'",
     "wp-env": "wp-env",
     "env:start": "wp-env start",
