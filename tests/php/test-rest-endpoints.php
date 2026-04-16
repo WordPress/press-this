@@ -100,7 +100,7 @@ class Test_Press_This_REST_Endpoints extends BaseTestCase {
 	}
 
 	/**
-	 * Test that all 4 REST routes are registered.
+	 * Test that all 5 REST routes are registered.
 	 */
 	public function test_routes_are_registered() {
 		do_action( 'rest_api_init' );
@@ -108,6 +108,7 @@ class Test_Press_This_REST_Endpoints extends BaseTestCase {
 		$server = rest_get_server();
 		$routes = $server->get_routes();
 
+		$this->assertArrayHasKey( '/press-this/v1/manifest', $routes );
 		$this->assertArrayHasKey( '/press-this/v1/scrape', $routes );
 		$this->assertArrayHasKey( '/press-this/v1/save', $routes );
 		$this->assertArrayHasKey( '/press-this/v1/sideload', $routes );
@@ -515,6 +516,79 @@ class Test_Press_This_REST_Endpoints extends BaseTestCase {
 		$response = press_this_rest_sideload_image( $request );
 
 		$this->assertInstanceOf( 'WP_Error', $response );
+	}
+
+	/**
+	 * Test manifest route uses GET method.
+	 */
+	public function test_manifest_route_uses_get_method() {
+		do_action( 'rest_api_init' );
+		$server = rest_get_server();
+		$routes = $server->get_routes();
+
+		$has_get = false;
+		foreach ( $routes['/press-this/v1/manifest'] as $endpoint ) {
+			if ( isset( $endpoint['methods']['GET'] ) ) {
+				$has_get = true;
+				break;
+			}
+		}
+		$this->assertTrue( $has_get, 'Manifest route should accept GET' );
+	}
+
+	/**
+	 * Test manifest returns expected keys.
+	 */
+	public function test_manifest_returns_expected_keys() {
+		$response = press_this_rest_manifest();
+		$data     = $response->get_data();
+
+		$this->assertArrayHasKey( 'name', $data );
+		$this->assertArrayHasKey( 'short_name', $data );
+		$this->assertArrayHasKey( 'start_url', $data );
+		$this->assertArrayHasKey( 'scope', $data );
+		$this->assertArrayHasKey( 'display', $data );
+		$this->assertArrayHasKey( 'icons', $data );
+		$this->assertArrayHasKey( 'share_target', $data );
+	}
+
+	/**
+	 * Test manifest returns correct content type.
+	 */
+	public function test_manifest_returns_manifest_content_type() {
+		$response = press_this_rest_manifest();
+		$headers  = $response->get_headers();
+
+		$this->assertArrayHasKey( 'Content-Type', $headers );
+		$this->assertStringContainsString( 'application/manifest+json', $headers['Content-Type'] );
+	}
+
+	/**
+	 * Test manifest display mode is standalone.
+	 */
+	public function test_manifest_display_mode_is_standalone() {
+		$response = press_this_rest_manifest();
+		$data     = $response->get_data();
+
+		$this->assertEquals( 'standalone', $data['display'] );
+	}
+
+	/**
+	 * Test manifest is publicly accessible (no auth required).
+	 */
+	public function test_manifest_is_publicly_accessible() {
+		wp_set_current_user( 0 );
+
+		do_action( 'rest_api_init' );
+		$server = rest_get_server();
+		$routes = $server->get_routes();
+
+		foreach ( $routes['/press-this/v1/manifest'] as $endpoint ) {
+			if ( isset( $endpoint['permission_callback'] ) ) {
+				$result = call_user_func( $endpoint['permission_callback'] );
+				$this->assertTrue( $result, 'Manifest should be accessible without authentication' );
+			}
+		}
 	}
 
 	/**

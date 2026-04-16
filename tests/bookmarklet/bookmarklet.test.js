@@ -242,6 +242,37 @@ describe( 'Bookmarklet Functionality', () => {
 		).toBe( true );
 	} );
 
+	test( 'Falls back to window.name transport when popup is blocked', () => {
+		// Check for popup null check (fallback for mobile browsers).
+		expect( bookmarkletSource ).toContain( 'if ( popup )' );
+
+		// Check for window.name transport (keeps data out of URL).
+		expect( bookmarkletSource ).toContain( 'window.name' );
+		expect( bookmarkletSource ).toContain( 'JSON.stringify' );
+
+		// Check for wn=1 flag to signal window.name mode.
+		expect( bookmarkletSource ).toContain( '&wn=1' );
+
+		// Check for top.location.href fallback navigation.
+		expect( bookmarkletSource ).toContain( 'top.location.href' );
+
+		// Should NOT contain the old _data URL parameter approach.
+		expect( bookmarkletSource ).not.toContain( '_data=' );
+		expect( bookmarkletSource ).not.toContain( 'fallbackData' );
+		expect( bookmarkletSource ).not.toContain( 'fallbackUrl' );
+	} );
+
+	test( 'Window.name fallback uses same envelope as postMessage', () => {
+		// Check that fallback uses the press-this-data type identifier.
+		expect( bookmarkletSource ).toContain( "'press-this-data'" );
+
+		// Check for PT_VERSION in the envelope.
+		expect( bookmarkletSource ).toContain( 'PT_VERSION' );
+
+		// Check that full scrapedData is sent (no truncation needed).
+		expect( bookmarkletSource ).toContain( 'data: scrapedData' );
+	} );
+
 	test( 'Enhanced data extraction - JSON-LD structured data', () => {
 		// Check for JSON-LD script tag query.
 		expect( bookmarkletSource ).toContain( 'application/ld+json' );

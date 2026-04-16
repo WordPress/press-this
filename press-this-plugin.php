@@ -139,12 +139,23 @@ function wp_ajax_press_this_plugin_add_category() {
  * @since 2.0.1
  */
 function press_this_register_rest_routes() {
+	// Web App Manifest for Add to Home Screen / PWA support.
+	register_rest_route(
+		'press-this/v1',
+		'/manifest',
+		array(
+			'methods'             => WP_REST_Server::READABLE,
+			'callback'            => 'press_this_rest_manifest',
+			'permission_callback' => '__return_true',
+		)
+	);
+
 	// URL scraping endpoint for Direct Access Mode.
 	register_rest_route(
 		'press-this/v1',
 		'/scrape',
 		array(
-			'methods'             => 'POST',
+			'methods'             => WP_REST_Server::CREATABLE,
 			'callback'            => 'press_this_rest_scrape_url',
 			'permission_callback' => 'press_this_rest_scrape_permission',
 			'args'                => array(
@@ -162,7 +173,7 @@ function press_this_register_rest_routes() {
 		'press-this/v1',
 		'/save',
 		array(
-			'methods'             => 'POST',
+			'methods'             => WP_REST_Server::CREATABLE,
 			'callback'            => 'press_this_rest_save_post',
 			'permission_callback' => 'press_this_rest_save_permission',
 			'args'                => array(
@@ -184,7 +195,29 @@ function press_this_register_rest_routes() {
 					'type'              => 'string',
 					'sanitize_callback' => 'sanitize_text_field',
 					'default'           => 'draft',
-					'enum'              => array( 'draft', 'publish' ),
+					'enum'              => array( 'draft', 'publish', 'future' ),
+				),
+				'date'           => array(
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_text_field',
+					// Validates format only (ISO 8601 datetime). Semantic validation
+					// (e.g. month/day ranges, leap years) is handled server-side by
+					// strtotime() in the save handler, which rejects unparseable
+					// dates and normalizes edge cases like Feb 30 → Mar 2.
+					'validate_callback' => function ( $value ) {
+						if ( empty( $value ) ) {
+							return true;
+						}
+						if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2})?$/', $value ) ) {
+							return new WP_Error(
+								'press_this_invalid_date_format',
+								__( 'Date must be in ISO 8601 format.', 'press-this' ),
+								array( 'status' => 400 )
+							);
+						}
+						return true;
+					},
+					'default'           => '',
 				),
 				'format'         => array(
 					'type'              => 'string',
@@ -219,7 +252,7 @@ function press_this_register_rest_routes() {
 		'press-this/v1',
 		'/sideload',
 		array(
-			'methods'             => 'POST',
+			'methods'             => WP_REST_Server::CREATABLE,
 			'callback'            => 'press_this_rest_sideload_image',
 			'permission_callback' => 'press_this_rest_sideload_permission',
 			'args'                => array(
@@ -242,7 +275,7 @@ function press_this_register_rest_routes() {
 		'press-this/v1',
 		'/validate-embeds',
 		array(
-			'methods'             => 'POST',
+			'methods'             => WP_REST_Server::CREATABLE,
 			'callback'            => 'press_this_rest_validate_embeds',
 			'permission_callback' => 'press_this_rest_validate_embeds_permission',
 			'args'                => array(
@@ -337,6 +370,34 @@ function press_this_rest_save_post( $request ) {
 	if ( 'publish' === $status ) {
 		if ( current_user_can( 'publish_posts' ) ) {
 			$post_data['post_status'] = 'publish';
+		} else {
+			$post_data['post_status'] = 'pending';
+		}
+	}
+
+	// Handle future (scheduled) status.
+	// We intentionally don't reject past dates here. WordPress core's
+	// wp_insert_post() auto-converts future+past-date to 'publish', so
+	// a past date simply publishes immediately — matching core REST API behavior.
+	if ( 'future' === $status ) {
+		if ( current_user_can( 'publish_posts' ) ) {
+			$date = $request->get_param( 'date' );
+			if ( empty( $date ) || false === strtotime( $date ) ) {
+				return new WP_Error(
+					'press_this_invalid_date',
+					__( 'A valid date is required to schedule a post.', 'press-this' ),
+					array( 'status' => 400 )
+				);
+			}
+			// The frontend sends a naive datetime in the site's local timezone (no TZ qualifier).
+			// WordPress sets PHP's timezone to UTC, so strtotime() interprets the string as UTC
+			// and gmdate() formats it back as UTC -- the round-trip preserves the original value.
+			// The result is the site-local time string we need for post_date.
+			$post_data['post_date']     = gmdate( 'Y-m-d H:i:s', strtotime( $date ) );
+			$post_data['post_date_gmt'] = get_gmt_from_date( $post_data['post_date'] );
+			$post_data['post_status']   = 'future';
+			// Required: wp_update_post ignores post_date changes unless edit_date is true.
+			$post_data['edit_date']     = true;
 		} else {
 			$post_data['post_status'] = 'pending';
 		}
@@ -924,6 +985,59 @@ function press_this_is_proxy_enabled() {
 	 * @param bool $enabled Whether the proxy is enabled. Default false.
 	 */
 	return apply_filters( 'press_this_enable_url_proxy', false );
+}
+
+/**
+ * REST callback for Web App Manifest.
+ *
+ * Returns a JSON manifest for Add to Home Screen / PWA support.
+ * Must be publicly accessible so the browser can fetch it without authentication.
+ *
+ * Note: The manifest necessarily contains admin_url() in start_url and scope
+ * fields. This is an accepted trade-off — WordPress exposes the admin path
+ * in numerous public contexts (login redirects, REST discovery, etc.).
+ *
+ * @since 2.1.0
+ *
+ * @return WP_REST_Response Manifest JSON.
+ */
+function press_this_rest_manifest() {
+	$start_url = admin_url( 'press-this.php' );
+
+	$manifest = array(
+		'name'             => __( 'Press This', 'press-this' ),
+		'short_name'       => __( 'Press This', 'press-this' ),
+		'start_url'        => $start_url,
+		'scope'            => admin_url( '/' ),
+		'display'          => 'standalone',
+		'theme_color'      => '#2271b1',
+		'background_color' => '#ffffff',
+		'icons'            => array(
+			array(
+				'src'   => plugins_url( 'assets/icon-192.png', __FILE__ ),
+				'sizes' => '192x192',
+				'type'  => 'image/png',
+			),
+			array(
+				'src'   => plugins_url( 'assets/icon-512.png', __FILE__ ),
+				'sizes' => '512x512',
+				'type'  => 'image/png',
+			),
+		),
+		'share_target'     => array(
+			'action' => $start_url,
+			'method' => 'GET',
+			'params' => array(
+				'url'   => 'u',
+				'title' => 't',
+			),
+		),
+	);
+
+	$response = new WP_REST_Response( $manifest, 200 );
+	$response->header( 'Content-Type', 'application/manifest+json; charset=utf-8' );
+
+	return $response;
 }
 
 /**

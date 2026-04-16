@@ -47,6 +47,12 @@ export default function App() {
 		publishLabel: __( 'Publish', 'press-this' ),
 	} );
 
+	// Post status and date as React state so they update after scheduling.
+	const [ postStatus, setPostStatus ] = useState(
+		() => data.postStatus || ''
+	);
+	const [ postDate, setPostDate ] = useState( () => data.postDate || '' );
+
 	// Build initial post object for editor.
 	const post = useMemo(
 		() => ( {
@@ -176,58 +182,30 @@ export default function App() {
 	);
 
 	/**
-	 * Listen for postMessage data from bookmarklet.
-	 * This is used when the bookmarklet opens Press This via GET (to send cookies)
-	 * and then sends scraped data via postMessage.
+	 * Process scraped data from the bookmarklet (shared by postMessage and window.name paths).
+	 *
+	 * @param {Object} messageData Scraped data object from bookmarklet.
 	 */
-	useEffect( () => {
-		// Only listen if we're in postMessage mode and haven't received data yet.
-		if ( ! data.postMessageMode || postMessageReceived ) {
-			return;
-		}
-
-		async function handleMessage( event ) {
-			// Validate message structure.
-			if ( ! event.data || event.data.type !== 'press-this-data' ) {
-				return;
-			}
-
-			const messageData = event.data.data;
-			if ( ! messageData ) {
-				return;
-			}
-
-			// Mark as received so we stop listening.
-			setPostMessageReceived( true );
-
-			// Store the received data.
+	const processScrapedData = useCallback(
+		async ( messageData ) => {
 			setPostMessageData( messageData );
 
-			// Process images (no validation needed).
 			const receivedImages = messageData._images || [];
 			const receivedSourceUrl = messageData.u || data.sourceUrl;
 
-			// Validate embeds through WordPress oEmbed providers.
 			const rawEmbeds = messageData._embeds || [];
 			const validatedEmbeds = await validateEmbeds( rawEmbeds );
 
-			// Update media state with validated embeds.
 			setAdditionalMedia( ( prev ) => ( {
 				images: [ ...prev.images, ...receivedImages ],
 				embeds: [ ...prev.embeds, ...validatedEmbeds ],
 				sourceUrl: receivedSourceUrl,
 			} ) );
 
-			// Build suggested content from bookmarklet metadata.
-			// Extract description from meta tags.
 			const meta = messageData._meta || {};
-
-			// HTML selection takes highest priority (preserves formatting).
-			// Always compute plain-text description as a fallback; buildSuggestedContent
-			// will use it if htmlToBlocks() produces no blocks from selectionHtml.
 			const selectionHtml = messageData.sel_html || '';
 			const description =
-				messageData.s || // Plain-text user selection.
+				messageData.s ||
 				meta[ 'twitter:description' ] ||
 				meta[ 'og:description' ] ||
 				meta.description ||
@@ -240,11 +218,9 @@ export default function App() {
 				meta.title ||
 				'';
 
-			// Get canonical URL.
 			const links = messageData._links || {};
 			const canonical = links.canonical || receivedSourceUrl;
 
-			// Build suggested content using the same utility as Header.
 			const suggestedContent = buildSuggestedContentFromMetadata( {
 				title,
 				description,
@@ -254,7 +230,6 @@ export default function App() {
 				url: receivedSourceUrl,
 			} );
 
-			// Set as pending scrape so the editor will process it.
 			if ( title || suggestedContent ) {
 				setPendingScrape( {
 					title,
@@ -264,21 +239,81 @@ export default function App() {
 					sourceUrl: receivedSourceUrl,
 				} );
 			}
+		},
+		[ data.sourceUrl, validateEmbeds ]
+	);
+
+	/**
+	 * Listen for postMessage data from bookmarklet.
+	 * Used when the bookmarklet opens Press This via popup + GET.
+	 */
+	useEffect( () => {
+		if ( ! data.postMessageMode || postMessageReceived ) {
+			return;
+		}
+
+		async function handleMessage( event ) {
+			if ( event.origin !== window.location.origin ) {
+				return;
+			}
+
+			if ( ! event.data || event.data.type !== 'press-this-data' ) {
+				return;
+			}
+
+			const messageData = event.data.data;
+			if ( ! messageData ) {
+				return;
+			}
+
+			setPostMessageReceived( true );
+			await processScrapedData( messageData );
 		}
 
 		window.addEventListener( 'message', handleMessage );
-
 		return () => {
 			window.removeEventListener( 'message', handleMessage );
 		};
-	}, [
-		data.postMessageMode,
-		data.restUrl,
-		data.restNonce,
-		data.sourceUrl,
-		postMessageReceived,
-		validateEmbeds,
-	] );
+	}, [ data.postMessageMode, postMessageReceived, processScrapedData ] );
+
+	/**
+	 * Read scraped data from window.name (popup-blocked fallback).
+	 * The bookmarklet stores data in window.name when popups are blocked,
+	 * keeping content out of the URL to avoid history/log leaks.
+	 *
+	 * An inline script in the PHP template reads and clears window.name
+	 * immediately (before any other scripts run) and stores it in
+	 * window.__ptWindowName. We read from that stashed copy here.
+	 */
+	useEffect( () => {
+		if ( ! data.windowNameMode ) {
+			return;
+		}
+
+		// Read from the stashed copy (set by inline script in PHP template).
+		const raw = window.__ptWindowName || '';
+		delete window.__ptWindowName;
+
+		// Clean URL (remove wn parameter).
+		if ( window.history?.replaceState ) {
+			const url = new URL( window.location.href );
+			url.searchParams.delete( 'wn' );
+			window.history.replaceState( null, '', url.toString() );
+		}
+
+		if ( ! raw ) {
+			return;
+		}
+
+		try {
+			const parsed = JSON.parse( raw );
+			if ( parsed?.type === 'press-this-data' && parsed.data ) {
+				processScrapedData( parsed.data );
+			}
+		} catch ( e ) {
+			// Invalid JSON in window.name — ignore gracefully.
+		}
+	}, [ data.windowNameMode, processScrapedData ] );
 
 	/**
 	 * Handle scrape completion from Header.
@@ -314,6 +349,21 @@ export default function App() {
 	 */
 	const handleSaveReady = useCallback( ( state ) => {
 		setSaveState( state );
+	}, [] );
+
+	/**
+	 * Handle post status changes from PressThisEditor after a successful save.
+	 * Updates local state so the Header reflects the new status (e.g., "Reschedule").
+	 *
+	 * @param {Object} change        Status change details.
+	 * @param {string} change.status New post status.
+	 * @param {string} change.date   New post date (ISO 8601).
+	 */
+	const handlePostStatusChange = useCallback( ( change ) => {
+		setPostStatus( change.status );
+		if ( change.date ) {
+			setPostDate( change.date );
+		}
 	}, [] );
 
 	// State for undo/redo from editor.
@@ -360,6 +410,10 @@ export default function App() {
 				onRedo={ redoHandler }
 				hasUndo={ hasUndo }
 				hasRedo={ hasRedo }
+				capabilities={ capabilities }
+				timezone={ data.timezone }
+				postStatus={ postStatus }
+				postDate={ postDate }
 			/>
 
 			<div className="press-this-app__body">
@@ -377,6 +431,8 @@ export default function App() {
 					onScrapeProcessed={ handleScrapeProcessed }
 					onSaveReady={ handleSaveReady }
 					onUndoReady={ handleUndoReady }
+					timezone={ data.timezone }
+					onPostStatusChange={ handlePostStatusChange }
 					categoryNonce={ data.categoryNonce || '' }
 					ajaxUrl={ data.ajaxUrl || '' }
 				/>

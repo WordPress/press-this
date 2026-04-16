@@ -65,6 +65,68 @@ class Test_Press_This_Integration extends BaseTestCase {
 	}
 
 	/**
+	 * Helper: capture html() output and extract the pressThisData JSON.
+	 *
+	 * @return array Decoded pressThisData.
+	 */
+	private function get_press_this_data_from_html() {
+		$previous_method           = isset( $_SERVER['REQUEST_METHOD'] ) ? $_SERVER['REQUEST_METHOD'] : null;
+		$_SERVER['REQUEST_METHOD'] = 'GET';
+
+		// Suppress PHP warnings/notices during html() so that non-fatal
+		// issues (e.g. "property on null" in PHP 8.2 when no user session
+		// exists) don't abort output buffering. These tests only need the
+		// pressThisData JSON, not a fully clean render.
+		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- intentional in test helper.
+		$previous_handler = set_error_handler(
+			function ( $severity, $message, $file, $line ) {
+				// Silence warnings and notices; let everything else through.
+				if ( $severity & ( E_WARNING | E_NOTICE | E_DEPRECATED | E_USER_WARNING | E_USER_NOTICE | E_USER_DEPRECATED ) ) {
+					return true;
+				}
+				return false;
+			}
+		);
+
+		ob_start();
+		$caught = null;
+		try {
+			$this->plugin->html();
+		} catch ( \Throwable $e ) {
+			$caught = $e;
+		}
+		$html = ob_get_clean();
+
+		restore_error_handler();
+
+		// Restore REQUEST_METHOD to avoid leaking state to other tests.
+		if ( null === $previous_method ) {
+			unset( $_SERVER['REQUEST_METHOD'] );
+		} else {
+			$_SERVER['REQUEST_METHOD'] = $previous_method;
+		}
+
+		// Fail on real exceptions (the custom error handler above prevents
+		// PHPUnit from promoting warnings/notices to exceptions, so anything
+		// caught here is a genuine error).
+		if ( $caught ) {
+			$this->fail(
+				'html() threw ' . get_class( $caught ) . ': ' . $caught->getMessage()
+			);
+		}
+
+		// Anchor to </script> to avoid early termination on }; inside JSON strings.
+		preg_match( '/window\.pressThisData\s*=\s*({.+?})\s*;\s*<\/script>/s', $html, $matches );
+
+		$this->assertNotEmpty( $matches[1], 'pressThisData JSON not found in html() output.' );
+
+		$data = json_decode( $matches[1], true );
+		$this->assertIsArray( $data, 'pressThisData should decode to an array.' );
+
+		return $data;
+	}
+
+	/**
 	 * Test 1: Plugin constants are defined.
 	 */
 	public function test_plugin_constants_defined() {
@@ -282,5 +344,45 @@ class Test_Press_This_Integration extends BaseTestCase {
 		$this->assertEquals( 'Test Save With Image', $post->post_title );
 
 		remove_filter( 'pre_http_request', $block_http, 1 );
+	}
+
+	/**
+	 * Test: windowNameMode flag is set when wn=1 GET parameter is present.
+	 *
+	 * When the bookmarklet's popup is blocked (mobile browsers), it stores
+	 * scraped data in window.name and navigates with &wn=1. The PHP side
+	 * just sets the flag; the React app reads window.name client-side.
+	 */
+	public function test_window_name_mode_flag_is_set() {
+		$_GET['wn'] = '1';
+
+		$data = $this->get_press_this_data_from_html();
+
+		$this->assertTrue( $data['windowNameMode'], 'windowNameMode should be true when wn=1.' );
+
+		unset( $_GET['wn'] );
+	}
+
+	/**
+	 * Test: windowNameMode flag is false when wn parameter is absent.
+	 */
+	public function test_window_name_mode_flag_is_false_by_default() {
+		$data = $this->get_press_this_data_from_html();
+
+		$this->assertFalse( $data['windowNameMode'], 'windowNameMode should be false by default.' );
+	}
+
+	/**
+	 * Test: postMessageMode and windowNameMode can be set independently.
+	 */
+	public function test_post_message_and_window_name_modes_independent() {
+		$_GET['pm'] = '1';
+
+		$data = $this->get_press_this_data_from_html();
+
+		$this->assertTrue( $data['postMessageMode'], 'postMessageMode should be true when pm=1.' );
+		$this->assertFalse( $data['windowNameMode'], 'windowNameMode should be false when only pm=1.' );
+
+		unset( $_GET['pm'] );
 	}
 }

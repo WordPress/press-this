@@ -360,6 +360,46 @@
 	// Open popup window directly (GET request sends session cookies).
 	popup = window.open( pt_url, target, 'location,resizable,scrollbars,width=' + windowWidth + ',height=' + windowHeight );
 
-	// Send scraped data via postMessage.
-	sendDataToPopup();
+	if ( popup ) {
+		// Send scraped data via postMessage.
+		sendDataToPopup();
+	} else {
+		// Popup blocked (common on mobile browsers).
+		// Use window.name to transport scraped data to Press This.
+		// window.name persists across cross-origin navigations within the same tab
+		// and keeps data out of the URL (reducing exposure via browser history,
+		// server logs, and session restore). The payload consists of scraped post
+		// data (which may include selected HTML), so it should be kept within
+		// practical browser window.name size limits.
+		var useWindowName = false;
+
+		try {
+			var payload = JSON.stringify( {
+				type: 'press-this-data',
+				version: PT_VERSION,
+				data: scrapedData
+			} );
+			window.name = payload;
+
+			// Verify the browser stored the full payload (some browsers
+			// silently truncate window.name).
+			if ( window.name === payload ) {
+				useWindowName = true;
+			} else {
+				window.name = '';
+			}
+		} catch ( e ) {
+			// JSON serialization failed — clear any pre-existing window.name
+			// to avoid parsing stale or attacker-controlled data.
+			try { window.name = ''; } catch ( _e ) {}
+		}
+
+		// Navigate the current tab.
+		// &wn=1 tells the React app to read window.name; only set when
+		// serialization succeeded. GET sends SameSite=Lax cookies (unlike
+		// cross-site POST).
+		top.location.href = useWindowName
+			? pt_url.replace( '&pm=1', '&wn=1' )
+			: pt_url;
+	}
 } )( window, document, top.location.href, window.pt_url );
