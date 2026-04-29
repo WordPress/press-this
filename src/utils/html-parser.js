@@ -745,8 +745,13 @@ export function buildSuggestedContent( data, sourceUrl ) {
 		const provider = getEmbedProvider( sourceUrl );
 
 		// Add embed block.
+		// The figure class list must match what core/embed save() produces or
+		// the block fails validation in the editor and the user sees
+		// "Block contains unexpected or invalid content" instead of the
+		// preview. core/embed save() emits the provider class twice — once as
+		// `is-provider-X` and once as `wp-block-embed-X`.
 		content += `<!-- wp:embed {"url":"${ escapedUrl }","type":"video","providerNameSlug":"${ provider }"} -->
-<figure class="wp-block-embed is-type-video is-provider-${ provider }"><div class="wp-block-embed__wrapper">
+<figure class="wp-block-embed is-type-video is-provider-${ provider } wp-block-embed-${ provider }"><div class="wp-block-embed__wrapper">
 ${ escapeHtml( sourceUrl ) }
 </div></figure>
 <!-- /wp:embed -->

@@ -517,12 +517,35 @@ describe( 'buildSuggestedContent', () => {
 		expect( content ).toContain( '"providerNameSlug":"youtube"' );
 	} );
 
+	// https://github.com/WordPress/press-this/issues/125
+	// Gutenberg's core/embed save() emits the provider class twice — once as
+	// `is-provider-X` and once as `wp-block-embed-X`. Missing the second
+	// breaks block validation and the editor shows
+	// "Block contains unexpected or invalid content" instead of the preview.
+	test( 'YouTube embed figure className matches core/embed save() output', () => {
+		const data = { title: 'Video' };
+		const url = 'https://www.youtube.com/watch?v=test123';
+		const content = buildSuggestedContent( data, url );
+		expect( content ).toContain(
+			'class="wp-block-embed is-type-video is-provider-youtube wp-block-embed-youtube"'
+		);
+	} );
+
 	test( 'creates Vimeo embed block', () => {
 		const data = { title: 'Video' };
 		const url = 'https://vimeo.com/123456';
 		const content = buildSuggestedContent( data, url );
 		expect( content ).toContain( '<!-- wp:embed' );
 		expect( content ).toContain( '"providerNameSlug":"vimeo"' );
+	} );
+
+	test( 'Vimeo embed figure className matches core/embed save() output', () => {
+		const data = { title: 'Video' };
+		const url = 'https://vimeo.com/123456';
+		const content = buildSuggestedContent( data, url );
+		expect( content ).toContain(
+			'class="wp-block-embed is-type-video is-provider-vimeo wp-block-embed-vimeo"'
+		);
 	} );
 
 	test( 'does not create embed block for non-embeddable URLs', () => {
