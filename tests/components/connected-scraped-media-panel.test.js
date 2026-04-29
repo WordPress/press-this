@@ -19,12 +19,14 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 const mockInsertBlock = jest.fn();
 let mockInsertionPoint = { rootClientId: undefined, index: undefined };
+let mockCanInsert = jest.fn( () => true );
 
 jest.mock( '@wordpress/data', () => ( {
 	useDispatch: () => ( { insertBlock: mockInsertBlock } ),
 	useSelect: ( fn ) =>
 		fn( () => ( {
 			getBlockInsertionPoint: () => mockInsertionPoint,
+			canInsertBlockType: mockCanInsert,
 		} ) ),
 } ) );
 
@@ -89,6 +91,7 @@ describe( 'ConnectedScrapedMediaPanel — issue #126 cursor position', () => {
 	beforeEach( () => {
 		mockInsertBlock.mockClear();
 		mockInsertionPoint = { rootClientId: undefined, index: undefined };
+		mockCanInsert = jest.fn( () => true );
 		container = document.createElement( 'div' );
 		document.body.appendChild( container );
 	} );
@@ -166,6 +169,65 @@ describe( 'ConnectedScrapedMediaPanel — issue #126 cursor position', () => {
 		const [ , index, rootClientId ] = mockInsertBlock.mock.calls[ 0 ];
 		expect( index ).toBe( 2 );
 		expect( rootClientId ).toBe( 'parent-id' );
+	} );
+
+	test( 'forwards arbitrary insertion-point indexes (not just 1)', async () => {
+		// Sweep a few values so a regression that hard-codes the index
+		// would not pass the suite.
+		for ( const index of [ 0, 3, 7 ] ) {
+			mockInsertBlock.mockClear();
+			mockInsertionPoint = { rootClientId: undefined, index };
+
+			if ( root ) {
+				await act( async () => {
+					root.unmount();
+				} );
+				root = null;
+			}
+
+			await renderPanel( [
+				'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+			] );
+
+			const embedButton = container.querySelector(
+				'.press-this-scraped-media__embed-button'
+			);
+			await act( async () => {
+				embedButton.click();
+			} );
+
+			expect( mockInsertBlock.mock.calls[ 0 ][ 1 ] ).toBe( index );
+		}
+	} );
+
+	test( 'falls back to top-level append when canInsertBlockType returns false', async () => {
+		// Cursor inside e.g. a core/list, which only allows core/list-item:
+		// inserting at the cursor would be silently filtered by the editor's
+		// reducer. We should fall back to a top-level append so the user's
+		// click is never a no-op.
+		mockInsertionPoint = { rootClientId: 'list-id', index: 1 };
+		mockCanInsert = jest.fn( ( blockName, rootClientId ) => {
+			return ! ( rootClientId === 'list-id' && blockName === 'core/embed' );
+		} );
+
+		await renderPanel( [
+			'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+		] );
+
+		const embedButton = container.querySelector(
+			'.press-this-scraped-media__embed-button'
+		);
+		await act( async () => {
+			embedButton.click();
+		} );
+
+		expect( mockInsertBlock ).toHaveBeenCalledTimes( 1 );
+		const args = mockInsertBlock.mock.calls[ 0 ];
+		// Only the block was passed — no index, no rootClientId — so the
+		// reducer appends at the end.
+		expect( args[ 1 ] ).toBeUndefined();
+		expect( args[ 2 ] ).toBeUndefined();
+		expect( mockCanInsert ).toHaveBeenCalledWith( 'core/embed', 'list-id' );
 	} );
 
 	test( 'inserting an image also goes to the cursor index', async () => {
