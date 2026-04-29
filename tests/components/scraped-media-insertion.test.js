@@ -36,12 +36,12 @@ describe( 'Scraped media insertion respects cursor position', () => {
 		);
 	} );
 
-	test( 'ConnectedScrapedMediaPanel imports useDispatch and useSelect from @wordpress/data', () => {
+	test( 'ConnectedScrapedMediaPanel imports useDispatch and useRegistry from @wordpress/data', () => {
 		expect( connectedSource ).toMatch(
 			/import\s*\{[^}]*useDispatch[^}]*\}\s*from\s*['"]@wordpress\/data['"]/
 		);
 		expect( connectedSource ).toMatch(
-			/import\s*\{[^}]*useSelect[^}]*\}\s*from\s*['"]@wordpress\/data['"]/
+			/import\s*\{[^}]*useRegistry[^}]*\}\s*from\s*['"]@wordpress\/data['"]/
 		);
 	} );
 

@@ -12,7 +12,7 @@
  * WordPress dependencies
  */
 import { useCallback } from '@wordpress/element';
-import { useDispatch, useSelect } from '@wordpress/data';
+import { useDispatch, useRegistry } from '@wordpress/data';
 import { store as blockEditorStore } from '@wordpress/block-editor';
 
 /**
@@ -23,44 +23,34 @@ import ScrapedMediaPanel from './ScrapedMediaPanel';
 export default function ConnectedScrapedMediaPanel( props ) {
 	const { insertBlock } = useDispatch( blockEditorStore );
 
-	// `insertBlock(block)` with no index falls back to appending at the end
-	// of the document. Read the live insertion point so the new block lands
-	// where the cursor is — fixes #126.
-	const { canInsert, insertionPoint } = useSelect( ( select ) => {
-		const store = select( blockEditorStore );
-		return {
-			canInsert: store.canInsertBlockType,
-			insertionPoint: store.getBlockInsertionPoint(),
-		};
-	}, [] );
+	// Use the registry of the surrounding BlockEditorProvider so we can
+	// query the freshest state at click time. A render-time useSelect would
+	// close over potentially-stale values for any click that fires before
+	// React commits the next selection change. Reading imperatively here
+	// removes that race entirely.
+	const registry = useRegistry();
 
 	const handleInsertBlock = useCallback(
 		( block ) => {
+			const store = registry.select( blockEditorStore );
+			const { index, rootClientId } = store.getBlockInsertionPoint();
+
 			// If the cursor is inside a container that doesn't allow this
 			// block type (e.g. a core/list, which only accepts list-items),
 			// inserting at the cursor would be silently rejected by the
 			// block editor's INSERT_BLOCKS reducer. Fall back to a top-level
 			// append in that case so the click is never a no-op.
 			if (
-				insertionPoint.rootClientId &&
-				! canInsert( block.name, insertionPoint.rootClientId )
+				rootClientId &&
+				! store.canInsertBlockType( block.name, rootClientId )
 			) {
 				insertBlock( block );
 				return;
 			}
 
-			insertBlock(
-				block,
-				insertionPoint.index,
-				insertionPoint.rootClientId
-			);
+			insertBlock( block, index, rootClientId );
 		},
-		[
-			insertBlock,
-			canInsert,
-			insertionPoint.index,
-			insertionPoint.rootClientId,
-		]
+		[ insertBlock, registry ]
 	);
 
 	return (

@@ -23,11 +23,12 @@ let mockCanInsert = jest.fn( () => true );
 
 jest.mock( '@wordpress/data', () => ( {
 	useDispatch: () => ( { insertBlock: mockInsertBlock } ),
-	useSelect: ( fn ) =>
-		fn( () => ( {
+	useRegistry: () => ( {
+		select: () => ( {
 			getBlockInsertionPoint: () => mockInsertionPoint,
 			canInsertBlockType: mockCanInsert,
-		} ) ),
+		} ),
+	} ),
 } ) );
 
 jest.mock( '@wordpress/block-editor', () => ( {
