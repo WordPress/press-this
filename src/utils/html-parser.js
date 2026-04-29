@@ -806,14 +806,56 @@ export function buildSuggestedContentFromMetadata( data ) {
 }
 
 /**
+ * Get the lowercased hostname from a URL string.
+ *
+ * Returns null when parsing fails so callers can treat the URL as not
+ * embeddable rather than trying to substring-match arbitrary input.
+ *
+ * @param {string} url URL string.
+ * @return {string|null} Hostname or null.
+ */
+function getEmbedHost( url ) {
+	try {
+		return new URL( url ).hostname.toLowerCase();
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Check whether a hostname matches one of the given embed domains
+ * exactly or as a subdomain. Substring matching is rejected so
+ * `https://example.com/?ref=youtube.com` is not classified as YouTube.
+ *
+ * @param {string|null} host    Hostname.
+ * @param {...string}   domains Provider domains.
+ * @return {boolean} True if the host matches any provider domain.
+ */
+function hostMatches( host, ...domains ) {
+	if ( ! host ) {
+		return false;
+	}
+	return domains.some(
+		( domain ) => host === domain || host.endsWith( `.${ domain }` )
+	);
+}
+
+/**
  * Check if URL is embeddable.
  *
  * @param {string} url URL to check.
  * @return {boolean} True if embeddable.
  */
 function isEmbeddableUrl( url ) {
-	return /youtube\.com|youtu\.be|vimeo\.com|dailymotion\.com|twitter\.com|x\.com/i.test(
-		url
+	const host = getEmbedHost( url );
+	return hostMatches(
+		host,
+		'youtube.com',
+		'youtu.be',
+		'vimeo.com',
+		'dailymotion.com',
+		'twitter.com',
+		'x.com'
 	);
 }
 
@@ -824,16 +866,17 @@ function isEmbeddableUrl( url ) {
  * @return {string} Provider name.
  */
 function getEmbedProvider( url ) {
-	if ( /youtube\.com|youtu\.be/i.test( url ) ) {
+	const host = getEmbedHost( url );
+	if ( hostMatches( host, 'youtube.com', 'youtu.be' ) ) {
 		return 'youtube';
 	}
-	if ( /vimeo\.com/i.test( url ) ) {
+	if ( hostMatches( host, 'vimeo.com' ) ) {
 		return 'vimeo';
 	}
-	if ( /dailymotion\.com/i.test( url ) ) {
+	if ( hostMatches( host, 'dailymotion.com' ) ) {
 		return 'dailymotion';
 	}
-	if ( /twitter\.com|x\.com/i.test( url ) ) {
+	if ( hostMatches( host, 'twitter.com', 'x.com' ) ) {
 		return 'twitter';
 	}
 	return 'embed';
