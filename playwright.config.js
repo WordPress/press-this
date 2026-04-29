@@ -17,29 +17,63 @@
 const { defineConfig } = require( '@playwright/test' );
 const { spawnSync } = require( 'child_process' );
 
+const DEFAULT_BASE_URL = 'http://localhost:8888';
+
+function warnFallback( reason ) {
+	// Surface why we fell back so a contributor whose env is on a non-default
+	// port doesn't silently run tests against the wrong service.
+	// eslint-disable-next-line no-console
+	console.warn(
+		`[playwright] could not resolve wp-env port (${ reason }); ` +
+			`falling back to ${ DEFAULT_BASE_URL }. ` +
+			'Set PRESS_THIS_BASE_URL to override.'
+	);
+}
+
 function resolveBaseUrl() {
 	if ( process.env.PRESS_THIS_BASE_URL ) {
 		return process.env.PRESS_THIS_BASE_URL;
 	}
 
+	let result;
 	try {
-		const result = spawnSync(
-			'npx',
-			[ 'wp-env', 'status', '--json' ],
-			{ encoding: 'utf8', timeout: 10000 }
-		);
-		if ( result.status === 0 && result.stdout ) {
-			const status = JSON.parse( result.stdout );
-			const port = status?.ports?.development;
-			if ( status?.status === 'running' && port ) {
-				return `http://localhost:${ port }`;
-			}
-		}
-	} catch {
-		// Fall through to default below.
+		result = spawnSync( 'npx', [ 'wp-env', 'status', '--json' ], {
+			encoding: 'utf8',
+			timeout: 10000,
+		} );
+	} catch ( error ) {
+		warnFallback( `wp-env spawn threw: ${ error.message }` );
+		return DEFAULT_BASE_URL;
 	}
 
-	return 'http://localhost:8888';
+	if ( result.error ) {
+		// Includes ETIMEDOUT from the spawn timeout above.
+		warnFallback( `wp-env error: ${ result.error.message }` );
+		return DEFAULT_BASE_URL;
+	}
+
+	if ( result.status !== 0 || ! result.stdout ) {
+		warnFallback( `wp-env status exited ${ result.status }` );
+		return DEFAULT_BASE_URL;
+	}
+
+	let status;
+	try {
+		status = JSON.parse( result.stdout );
+	} catch ( error ) {
+		warnFallback( `wp-env JSON parse failed: ${ error.message }` );
+		return DEFAULT_BASE_URL;
+	}
+
+	const port = status?.ports?.development;
+	if ( status?.status !== 'running' || ! port ) {
+		warnFallback(
+			`wp-env reported status="${ status?.status }" port=${ port }`
+		);
+		return DEFAULT_BASE_URL;
+	}
+
+	return `http://localhost:${ port }`;
 }
 
 module.exports = defineConfig( {
