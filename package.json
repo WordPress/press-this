@@ -27,7 +27,7 @@
     "test:unit": "wp-scripts test-unit-js --testPathIgnorePatterns='/worktrees/'",
     "test:js": "wp-scripts test-unit-js --testPathPattern='tests/'",
     "wp-env": "wp-env",
-    "env:start": "wp-env start",
+    "env:start": "wp-env start --auto-port",
     "env:stop": "wp-env stop",
     "env:destroy": "wp-env destroy",
     "env:cli": "wp-env run cli",
@@ -36,7 +36,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
-    "@wordpress/env": "^10.37.0",
+    "@wordpress/env": "^11.5.0",
     "@wordpress/scripts": "^31.2.0",
     "terser": "^5.44.1"
   },
