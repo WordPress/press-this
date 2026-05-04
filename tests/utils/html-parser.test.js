@@ -517,6 +517,20 @@ describe( 'buildSuggestedContent', () => {
 		expect( content ).toContain( '"providerNameSlug":"youtube"' );
 	} );
 
+	// https://github.com/WordPress/press-this/issues/125
+	// Gutenberg's core/embed save() emits the provider class twice — once as
+	// `is-provider-X` and once as `wp-block-embed-X`. Missing the second
+	// breaks block validation and the editor shows
+	// "Block contains unexpected or invalid content" instead of the preview.
+	test( 'YouTube embed figure className matches core/embed save() output', () => {
+		const data = { title: 'Video' };
+		const url = 'https://www.youtube.com/watch?v=test123';
+		const content = buildSuggestedContent( data, url );
+		expect( content ).toContain(
+			'class="wp-block-embed is-type-video is-provider-youtube wp-block-embed-youtube"'
+		);
+	} );
+
 	test( 'creates Vimeo embed block', () => {
 		const data = { title: 'Video' };
 		const url = 'https://vimeo.com/123456';
@@ -525,10 +539,43 @@ describe( 'buildSuggestedContent', () => {
 		expect( content ).toContain( '"providerNameSlug":"vimeo"' );
 	} );
 
+	test( 'Vimeo embed figure className matches core/embed save() output', () => {
+		const data = { title: 'Video' };
+		const url = 'https://vimeo.com/123456';
+		const content = buildSuggestedContent( data, url );
+		expect( content ).toContain(
+			'class="wp-block-embed is-type-video is-provider-vimeo wp-block-embed-vimeo"'
+		);
+	} );
+
 	test( 'does not create embed block for non-embeddable URLs', () => {
 		const data = { title: 'Page' };
 		const content = buildSuggestedContent( data, 'https://example.com/article' );
 		expect( content ).not.toContain( '<!-- wp:embed' );
+	} );
+
+	// Provider matching is host-anchored so URLs that merely contain a
+	// provider name as a path or query parameter are not misclassified.
+	test( 'does not create embed block for lookalike URLs containing provider names', () => {
+		const data = { title: 'Page' };
+		for ( const url of [
+			'https://example.com/?ref=youtube.com',
+			'https://example.com/youtube.com/article',
+			'https://fake-youtube.example.com/page',
+			'https://attacker.com/path?u=https://www.youtube.com/watch?v=x',
+		] ) {
+			const content = buildSuggestedContent( data, url );
+			expect( content ).not.toContain( '<!-- wp:embed' );
+		}
+	} );
+
+	test( 'matches embed providers on subdomains too', () => {
+		const data = { title: 'Video' };
+		const content = buildSuggestedContent(
+			data,
+			'https://m.youtube.com/watch?v=test'
+		);
+		expect( content ).toContain( '"providerNameSlug":"youtube"' );
 	} );
 
 	test( 'escapes HTML in description', () => {
