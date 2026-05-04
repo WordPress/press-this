@@ -1,11 +1,13 @@
 /**
- * Scraped Media Insertion Tests
+ * Scraped Media Insertion — structural tests.
  *
  * Verifies that inserting scraped media (images/embeds) from the sidebar
- * uses the block editor store's insertBlock action, which respects cursor
- * position, rather than manually appending to the blocks array.
+ * uses the block editor store's insertBlock action, with the cursor's
+ * insertion point passed in so blocks land at the cursor — not appended at
+ * the end. See connected-scraped-media-panel.test.js for behavior tests.
  *
- * Regression test for https://github.com/WordPress/press-this/issues/76
+ * Original regression: https://github.com/WordPress/press-this/issues/76
+ * Cursor-position regression: https://github.com/WordPress/press-this/issues/126
  *
  * @package press-this
  */
@@ -14,49 +16,58 @@ const fs = require( 'fs' );
 const path = require( 'path' );
 
 describe( 'Scraped media insertion respects cursor position', () => {
-	let editorContent;
+	let connectedSource;
+	let editorSource;
 
 	beforeAll( () => {
-		const editorPath = path.resolve(
-			__dirname,
-			'../../src/components/PressThisEditor.js'
+		connectedSource = fs.readFileSync(
+			path.resolve(
+				__dirname,
+				'../../src/components/ConnectedScrapedMediaPanel.js'
+			),
+			'utf8'
 		);
-		editorContent = fs.readFileSync( editorPath, 'utf8' );
+		editorSource = fs.readFileSync(
+			path.resolve(
+				__dirname,
+				'../../src/components/PressThisEditor.js'
+			),
+			'utf8'
+		);
 	} );
 
-	test( 'useDispatch is imported from @wordpress/data', () => {
-		expect( editorContent ).toMatch(
+	test( 'ConnectedScrapedMediaPanel imports useDispatch and useRegistry from @wordpress/data', () => {
+		expect( connectedSource ).toMatch(
 			/import\s*\{[^}]*useDispatch[^}]*\}\s*from\s*['"]@wordpress\/data['"]/
+		);
+		expect( connectedSource ).toMatch(
+			/import\s*\{[^}]*useRegistry[^}]*\}\s*from\s*['"]@wordpress\/data['"]/
 		);
 	} );
 
 	test( 'ConnectedScrapedMediaPanel dispatches insertBlock via blockEditorStore', () => {
-		// The store dispatch must happen inside a child component rendered
-		// within BlockEditorProvider, not in PressThisEditor itself.
-		expect( editorContent ).toMatch(
-			/function\s+ConnectedScrapedMediaPanel/
-		);
-		expect( editorContent ).toMatch(
+		expect( connectedSource ).toMatch(
 			/const\s+\{\s*insertBlock\s*\}\s*=\s*useDispatch\(\s*blockEditorStore\s*\)/
 		);
 	} );
 
-	test( 'ConnectedScrapedMediaPanel is used inside BlockEditorProvider JSX', () => {
-		// The connected wrapper should appear in the rendered JSX.
-		expect( editorContent ).toMatch( /<ConnectedScrapedMediaPanel/ );
-
-		// The raw ScrapedMediaPanel should NOT be rendered directly with
-		// a manual onInsertBlock in the main component's JSX.
-		expect( editorContent ).not.toMatch(
-			/<ScrapedMediaPanel[\s\S]*?onInsertBlock=\{[^}]*setBlocks/
+	test( 'ConnectedScrapedMediaPanel reads getBlockInsertionPoint and passes index + rootClientId', () => {
+		expect( connectedSource ).toMatch( /getBlockInsertionPoint/ );
+		// The insertBlock call must include the cursor's index/rootClientId.
+		expect( connectedSource ).toMatch(
+			/insertBlock\(\s*block\s*,[\s\S]*?index[\s\S]*?rootClientId/
 		);
 	} );
 
-	test( 'no manual array-append insertion pattern exists', () => {
-		// The old bug: setBlocks( ( prev ) => [ ...prev, block ] ) for insertion.
-		// This pattern should not appear tied to an insertBlock callback.
-		expect( editorContent ).not.toMatch(
-			/insertBlock[\s\S]*?setBlocks\s*\(\s*\(\s*prev\s*\)\s*=>\s*\[\s*\.\.\.prev\s*,\s*block\s*\]/
+	test( 'PressThisEditor renders ConnectedScrapedMediaPanel inside its BlockEditorProvider', () => {
+		expect( editorSource ).toMatch(
+			/import\s+ConnectedScrapedMediaPanel\s+from\s+['"]\.\/ConnectedScrapedMediaPanel['"]/
+		);
+		expect( editorSource ).toMatch( /<ConnectedScrapedMediaPanel/ );
+
+		// Must NOT manually append blocks via setBlocks( prev => [ ...prev, block ] ).
+		expect( editorSource ).not.toMatch(
+			/onInsertBlock=\{[\s\S]*?setBlocks\s*\(\s*\(\s*prev\s*\)\s*=>\s*\[\s*\.\.\.prev\s*,\s*block\s*\]/
 		);
 	} );
 } );
