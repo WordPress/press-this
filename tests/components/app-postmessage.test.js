@@ -37,7 +37,9 @@ jest.mock( '@wordpress/i18n', () => ( {
 jest.mock( '../../src/components/Header', () => () => null );
 jest.mock( '../../src/components/PressThisEditor', () => () => null );
 
-// Keep the real utils module shape but avoid HTML parser side effects.
+// processScrapedData only calls buildSuggestedContentFromMetadata from this
+// module — stub it so we don't pull in the HTML parser graph just to assert
+// the message handler ran.
 jest.mock( '../../src/utils', () => ( {
 	buildSuggestedContentFromMetadata: () => '<p>stub content</p>',
 } ) );
@@ -51,6 +53,7 @@ describe( 'App — bookmarklet postMessage handler (issue #135)', () => {
 	let container;
 	let root;
 	let originalFetch;
+	let openerFrame;
 
 	beforeEach( () => {
 		container = document.createElement( 'div' );
@@ -64,14 +67,16 @@ describe( 'App — bookmarklet postMessage handler (issue #135)', () => {
 			} )
 		);
 
-		// The bookmarklet opens this popup via window.open(), so the popup
-		// always has a window.opener pointing at the bookmarklet's window.
-		// Use `window` itself as a stand-in opener — what matters for the
-		// handler is identity, not what the reference is.
+		// In production, window.opener is a *distinct* Window object — the
+		// bookmarklet's page. Mount an iframe and use its contentWindow as
+		// the opener so the identity check runs against a real foreign
+		// Window, not the popup's own window.
+		openerFrame = document.createElement( 'iframe' );
+		document.body.appendChild( openerFrame );
 		Object.defineProperty( window, 'opener', {
 			configurable: true,
 			writable: true,
-			value: window,
+			value: openerFrame.contentWindow,
 		} );
 
 		window.pressThisData = {
@@ -100,6 +105,8 @@ describe( 'App — bookmarklet postMessage handler (issue #135)', () => {
 			root = null;
 		}
 		container.remove();
+		openerFrame?.remove();
+		openerFrame = null;
 		global.fetch = originalFetch;
 		Object.defineProperty( window, 'opener', {
 			configurable: true,
