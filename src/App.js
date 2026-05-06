@@ -253,7 +253,12 @@ export default function App() {
 		}
 
 		async function handleMessage( event ) {
-			if ( event.origin !== window.location.origin ) {
+			// The bookmarklet runs on whatever third-party page the user is
+			// on, so its postMessage origin will never match our own. Gate
+			// on the message source instead — only the window that opened
+			// this popup (the bookmarklet's window) may deliver scraped
+			// data. Other windows posting to us are ignored.
+			if ( ! window.opener || event.source !== window.opener ) {
 				return;
 			}
 

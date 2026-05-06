@@ -60,6 +60,19 @@ async function loadEditor( page ) {
 	await page
 		.locator( '.press-this-editor__content' )
 		.waitFor( { timeout: 10000 } );
+
+	// The handler accepts only messages whose source is window.opener (the
+	// bookmarklet's window). These tests skip the popup mechanics and post
+	// from the page itself, so make the page its own opener — event.source
+	// will then equal window.opener and the handler runs.
+	await page.evaluate( () => {
+		if ( ! window.opener ) {
+			Object.defineProperty( window, 'opener', {
+				value: window,
+				configurable: true,
+			} );
+		}
+	} );
 }
 
 const editorContent = '.press-this-editor__content';
