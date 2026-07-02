@@ -5,7 +5,7 @@
  * Plugin Name: Press This
  * Plugin URI:  https://wordpress.org
  * Description: A little tool that lets you grab bits of the web and create new posts with ease. Now powered by the Gutenberg block editor.
- * Version:     2.1.0-beta2
+ * Version:     2.1.0
  * Author:      WordPress Contributors
  * Author URI:  https://wordpress.org
  * License:     GPL-2.0+
@@ -34,7 +34,7 @@
  * @since 1.0.0
  * @since 2.0.1 Updated for Gutenberg block editor integration.
  */
-define( 'PRESS_THIS__VERSION', '2.1.0-beta2' );
+define( 'PRESS_THIS__VERSION', '2.1.0' );
 
 /**
  * Minimum WordPress version required for the Gutenberg features.
