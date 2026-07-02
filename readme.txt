@@ -4,7 +4,7 @@ Donate link: http://wordpressfoundation.org/donate/
 Tags: post, quick-post, photo-post, bookmarklet, gutenberg
 Requires at least: 6.9
 Tested up to: 7.0
-Stable tag: 2.0.2
+Stable tag: 2.1.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -124,6 +124,9 @@ All existing hooks continue to work:
 
 == Upgrade Notice ==
 
+= 2.1.0 =
+Post scheduling, mobile home-screen support, and fixes for embed previews and cursor placement.
+
 = 2.0.2 =
 Bug fixes, new keyboard shortcuts, and undo/redo support.
 
@@ -137,6 +140,17 @@ Fixes styling issues and bumps tested version.
 Restores bookmarklet functionality.
 
 == Changelog ==
+
+= 2.1.0 =
+* **New:** Schedule posts for future publishing directly from Press This
+* **New:** Mobile web app support — add Press This to your home screen for an app-like experience
+* **Fix:** YouTube and Vimeo embed previews not rendering in the editor
+* **Fix:** Scraped media embeds now insert at the cursor position instead of the end of the post
+* **Fix:** Cursor jumping to the start of the post after closing the link popover with Escape
+* **Fix:** Bookmarklet failing on some mobile browsers
+* **Fix:** Bookmarklet content rejected by an overly strict postMessage origin check
+* **Fix:** Category and tag panels no longer appear for post types without those taxonomies registered
+* **Dev:** Build tooling modernized — Grunt removed, Node 22/24 support, wp-env 11, merge queue CI
 
 = 2.0.2 =
 * **New:** Undo/redo support in the block editor (Ctrl+Z / Ctrl+Shift+Z)
