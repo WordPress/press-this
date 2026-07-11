@@ -371,6 +371,177 @@ class Test_Press_This_REST_Endpoints extends BaseTestCase {
 	}
 
 	/**
+	 * Test save handles a custom hierarchical taxonomy via tax_input.
+	 */
+	public function test_save_handles_custom_hierarchical_taxonomy() {
+		register_taxonomy(
+			'pt_test_genre',
+			'post',
+			array(
+				'public'       => true,
+				'show_ui'      => true,
+				'hierarchical' => true,
+				'labels'       => array( 'name' => 'Genres' ),
+			)
+		);
+
+		$term    = wp_insert_term( 'Fiction', 'pt_test_genre' );
+		$term_id = is_wp_error( $term ) ? $term->get_error_data()['term_id'] : $term['term_id'];
+
+		wp_set_current_user( $this->editor_user_id );
+
+		$request = new WP_REST_Request( 'POST', '/press-this/v1/save' );
+		$request->set_param( 'post_id', $this->test_post_id );
+		$request->set_param( 'title', 'Genre Test' );
+		$request->set_param( 'content', '<p>Content</p>' );
+		$request->set_param( 'tax_input', array( 'pt_test_genre' => array( $term_id ) ) );
+
+		press_this_rest_save_post( $request );
+
+		$terms = wp_get_post_terms( $this->test_post_id, 'pt_test_genre', array( 'fields' => 'ids' ) );
+		$this->assertContains( $term_id, $terms );
+
+		unregister_taxonomy( 'pt_test_genre' );
+	}
+
+	/**
+	 * Test save handles a custom flat taxonomy via tax_input.
+	 */
+	public function test_save_handles_custom_flat_taxonomy() {
+		register_taxonomy(
+			'pt_test_rating',
+			'post',
+			array(
+				'public'       => true,
+				'show_ui'      => true,
+				'hierarchical' => false,
+				'labels'       => array( 'name' => 'Ratings' ),
+			)
+		);
+
+		wp_set_current_user( $this->editor_user_id );
+
+		$request = new WP_REST_Request( 'POST', '/press-this/v1/save' );
+		$request->set_param( 'post_id', $this->test_post_id );
+		$request->set_param( 'title', 'Rating Test' );
+		$request->set_param( 'content', '<p>Content</p>' );
+		$request->set_param( 'tax_input', array( 'pt_test_rating' => array( 'Excellent' ) ) );
+
+		press_this_rest_save_post( $request );
+
+		$terms = wp_get_post_terms( $this->test_post_id, 'pt_test_rating', array( 'fields' => 'names' ) );
+		$this->assertContains( 'Excellent', $terms );
+
+		unregister_taxonomy( 'pt_test_rating' );
+	}
+
+	/**
+	 * Test save ignores tax_input for a taxonomy not registered on the post type.
+	 */
+	public function test_save_ignores_tax_input_for_unregistered_taxonomy() {
+		register_taxonomy( 'pt_test_page_only', 'page', array( 'public' => true ) );
+
+		wp_set_current_user( $this->editor_user_id );
+
+		$request = new WP_REST_Request( 'POST', '/press-this/v1/save' );
+		$request->set_param( 'post_id', $this->test_post_id );
+		$request->set_param( 'title', 'Unregistered Tax Test' );
+		$request->set_param( 'content', '<p>Content</p>' );
+		$request->set_param( 'tax_input', array( 'pt_test_page_only' => array( 'Should Not Save' ) ) );
+
+		$response = press_this_rest_save_post( $request );
+
+		$this->assertFalse( is_wp_error( $response ) );
+		$terms = wp_get_post_terms( $this->test_post_id, 'pt_test_page_only', array( 'fields' => 'names' ) );
+		$this->assertEmpty( $terms );
+
+		unregister_taxonomy( 'pt_test_page_only' );
+	}
+
+	/**
+	 * Test save ignores tax_input for a taxonomy without show_ui, matching
+	 * the gating applied when building the panel data (parity between
+	 * read and write sides).
+	 */
+	public function test_save_ignores_tax_input_without_show_ui() {
+		register_taxonomy(
+			'pt_test_hidden',
+			'post',
+			array(
+				'public'  => true,
+				'show_ui' => false,
+				'labels'  => array( 'name' => 'Hidden' ),
+			)
+		);
+
+		wp_set_current_user( $this->editor_user_id );
+
+		$request = new WP_REST_Request( 'POST', '/press-this/v1/save' );
+		$request->set_param( 'post_id', $this->test_post_id );
+		$request->set_param( 'title', 'Hidden Tax Test' );
+		$request->set_param( 'content', '<p>Content</p>' );
+		$request->set_param( 'tax_input', array( 'pt_test_hidden' => array( 'Should Not Save' ) ) );
+
+		press_this_rest_save_post( $request );
+
+		$terms = wp_get_post_terms( $this->test_post_id, 'pt_test_hidden', array( 'fields' => 'names' ) );
+		$this->assertEmpty( $terms );
+
+		unregister_taxonomy( 'pt_test_hidden' );
+	}
+
+	/**
+	 * Test save ignores tax_input when the user lacks assign_terms capability.
+	 */
+	public function test_save_ignores_tax_input_without_capability() {
+		register_taxonomy(
+			'pt_test_locked',
+			'post',
+			array(
+				'public'       => true,
+				'show_ui'      => true,
+				'capabilities' => array(
+					'assign_terms' => 'manage_pt_test_locked',
+				),
+			)
+		);
+
+		wp_set_current_user( $this->editor_user_id );
+
+		$request = new WP_REST_Request( 'POST', '/press-this/v1/save' );
+		$request->set_param( 'post_id', $this->test_post_id );
+		$request->set_param( 'title', 'Locked Tax Test' );
+		$request->set_param( 'content', '<p>Content</p>' );
+		$request->set_param( 'tax_input', array( 'pt_test_locked' => array( 'Nope' ) ) );
+
+		press_this_rest_save_post( $request );
+
+		$terms = wp_get_post_terms( $this->test_post_id, 'pt_test_locked', array( 'fields' => 'names' ) );
+		$this->assertEmpty( $terms );
+
+		unregister_taxonomy( 'pt_test_locked' );
+	}
+
+	/**
+	 * Test save cannot use tax_input to write to category/post_tag,
+	 * bypassing the dedicated categories/tags handling.
+	 */
+	public function test_save_tax_input_cannot_override_category_or_post_tag() {
+		wp_set_current_user( $this->editor_user_id );
+
+		$request = new WP_REST_Request( 'POST', '/press-this/v1/save' );
+		$request->set_param( 'post_id', $this->test_post_id );
+		$request->set_param( 'title', 'Bypass Attempt' );
+		$request->set_param( 'content', '<p>Content</p>' );
+		$request->set_param( 'tax_input', array( 'post_tag' => array( 'sneaky-tag' ) ) );
+
+		press_this_rest_save_post( $request );
+
+		$tags = wp_get_post_tags( $this->test_post_id, array( 'fields' => 'names' ) );
+		$this->assertNotContains( 'sneaky-tag', $tags );
+	}
+
+	/**
 	 * Test save blocks external redirects.
 	 */
 	public function test_save_blocks_external_redirects() {

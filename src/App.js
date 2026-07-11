@@ -428,6 +428,7 @@ export default function App() {
 					images={ images }
 					embeds={ embeds }
 					categories={ data.categories || [] }
+					taxonomies={ data.taxonomies || [] }
 					postFormats={ data.postFormats || [] }
 					capabilities={ capabilities }
 					restConfig={ restConfig }

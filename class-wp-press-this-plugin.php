@@ -179,9 +179,14 @@ class WP_Press_This_Plugin {
 				// Sanitize taxonomy key.
 				$tax = sanitize_key( $tax );
 
-				// Validate taxonomy exists.
+				// Validate the taxonomy is registered for this post type.
+				if ( ! is_object_in_taxonomy( $post_type, $tax ) ) {
+					continue;
+				}
+
+				// Validate taxonomy exists and has a UI (matches what's ever exposed to the panel).
 				$tax_object = get_taxonomy( $tax );
-				if ( ! $tax_object ) {
+				if ( ! $tax_object || ! $tax_object->show_ui ) {
 					continue;
 				}
 
@@ -1450,6 +1455,78 @@ class WP_Press_This_Plugin {
 	}
 
 	/**
+	 * Get custom taxonomies registered for a post type, with their terms and capabilities.
+	 *
+	 * Excludes 'category' and 'post_tag', which have their own dedicated panels.
+	 * Only taxonomies with 'show_ui' are included, and only if the current user
+	 * can assign terms.
+	 *
+	 * @since 2.1.1
+	 *
+	 * @param string $post_type Post type to get taxonomies for.
+	 * @return array[] List of taxonomy data arrays.
+	 */
+	private function get_custom_taxonomies_data( $post_type ) {
+		$taxonomies_data = array();
+
+		$taxonomies = get_object_taxonomies( $post_type, 'objects' );
+
+		foreach ( $taxonomies as $taxonomy ) {
+			if ( in_array( $taxonomy->name, array( 'category', 'post_tag' ), true ) ) {
+				continue;
+			}
+
+			if ( ! $taxonomy->show_ui || ! current_user_can( $taxonomy->cap->assign_terms ) ) {
+				continue;
+			}
+
+			$terms_data = array();
+
+			if ( $taxonomy->hierarchical ) {
+				$terms = get_terms(
+					array(
+						'taxonomy'   => $taxonomy->name,
+						'hide_empty' => false,
+						'orderby'    => 'name',
+						'order'      => 'ASC',
+					)
+				);
+
+				if ( ! is_wp_error( $terms ) ) {
+					foreach ( $terms as $term ) {
+						$terms_data[] = array(
+							'id'     => $term->term_id,
+							'name'   => $term->name,
+							'parent' => $term->parent,
+							'slug'   => $term->slug,
+						);
+					}
+				}
+			}
+
+			$taxonomies_data[] = array(
+				'name'         => $taxonomy->name,
+				'label'        => $taxonomy->labels->name,
+				'hierarchical' => (bool) $taxonomy->hierarchical,
+				'restBase'     => ! empty( $taxonomy->show_in_rest ) ? ( $taxonomy->rest_base ? $taxonomy->rest_base : $taxonomy->name ) : '',
+				'canEditTerms' => current_user_can( $taxonomy->cap->edit_terms ),
+				'terms'        => $terms_data,
+			);
+		}
+
+		/**
+		 * Filters the custom taxonomies exposed in the Press This panel.
+		 *
+		 * @since 2.1.1
+		 *
+		 * @param array[] $taxonomies_data List of taxonomy data arrays, each with
+		 *                                 name, label, hierarchical, restBase, canEditTerms, terms.
+		 * @param string  $post_type       Post type the taxonomies belong to.
+		 */
+		return array_values( apply_filters( 'press_this_taxonomies', $taxonomies_data, $post_type ) );
+	}
+
+	/**
 	 * Serves the app's base HTML - minimal shell for React app.
 	 *
 	 * All UI is rendered by React. PHP only provides:
@@ -1528,6 +1605,9 @@ class WP_Press_This_Plugin {
 		$can_assign_cats = $categories_tax && current_user_can( $categories_tax->cap->assign_terms );
 		$can_edit_cats   = $categories_tax && current_user_can( $categories_tax->cap->edit_terms );
 		$can_assign_tags = $tag_tax && current_user_can( $tag_tax->cap->assign_terms );
+
+		// Get custom taxonomies registered for this post type (category/post_tag have their own panels).
+		$custom_taxonomies_data = $this->get_custom_taxonomies_data( $post_type );
 
 		// Get supported post formats.
 		$post_formats = array();
@@ -1619,6 +1699,9 @@ class WP_Press_This_Plugin {
 
 			// Categories data.
 			'categories'          => $categories_data,
+
+			// Custom taxonomies registered for the post type (excludes category/post_tag).
+			'taxonomies'          => $custom_taxonomies_data,
 
 			// Bookmarklet version info.
 			// Only set bookmarkletVersion if we have actual POST data from bookmarklet.

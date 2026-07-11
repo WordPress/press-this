@@ -5,7 +5,7 @@
  * Plugin Name: Press This
  * Plugin URI:  https://wordpress.org
  * Description: A little tool that lets you grab bits of the web and create new posts with ease. Now powered by the Gutenberg block editor.
- * Version:     2.1.0
+ * Version:     2.1.1-beta
  * Author:      WordPress Contributors
  * Author URI:  https://wordpress.org
  * License:     GPL-2.0+
@@ -34,7 +34,7 @@
  * @since 1.0.0
  * @since 2.0.1 Updated for Gutenberg block editor integration.
  */
-define( 'PRESS_THIS__VERSION', '2.1.0' );
+define( 'PRESS_THIS__VERSION', '2.1.1-beta' );
 
 /**
  * Minimum WordPress version required for the Gutenberg features.
@@ -234,6 +234,10 @@ function press_this_register_rest_routes() {
 					'items'   => array( 'type' => 'string' ),
 					'default' => array(),
 				),
+				'tax_input'      => array(
+					'type'    => 'object',
+					'default' => array(),
+				),
 				'featured_image' => array(
 					'type'              => 'integer',
 					'sanitize_callback' => 'absint',
@@ -355,14 +359,48 @@ function press_this_rest_save_post( $request ) {
 	}
 
 	// Handle tags if user can assign.
-	$tag_tax = get_taxonomy( 'post_tag' );
+	$tag_tax   = get_taxonomy( 'post_tag' );
+	$tax_input = array();
 	if ( current_user_can( $tag_tax->cap->assign_terms ) ) {
 		$tags = $request->get_param( 'tags' );
 		if ( ! empty( $tags ) ) {
-			$post_data['tax_input'] = array(
-				'post_tag' => array_map( 'sanitize_text_field', $tags ),
-			);
+			$tax_input['post_tag'] = array_map( 'sanitize_text_field', $tags );
 		}
+	}
+
+	// Handle custom taxonomies (excludes category/post_tag, which are handled above).
+	$custom_tax_input = $request->get_param( 'tax_input' );
+	if ( ! empty( $custom_tax_input ) && is_array( $custom_tax_input ) ) {
+		foreach ( $custom_tax_input as $tax_name => $terms ) {
+			$tax_name = sanitize_key( $tax_name );
+
+			if ( in_array( $tax_name, array( 'category', 'post_tag' ), true ) ) {
+				continue;
+			}
+
+			if ( ! is_object_in_taxonomy( $post_type, $tax_name ) ) {
+				continue;
+			}
+
+			$tax_object = get_taxonomy( $tax_name );
+			if ( ! $tax_object || ! $tax_object->show_ui || ! current_user_can( $tax_object->cap->assign_terms ) ) {
+				continue;
+			}
+
+			if ( is_taxonomy_hierarchical( $tax_name ) ) {
+				$terms = array_filter( array_map( 'absint', (array) $terms ) );
+			} else {
+				$terms = array_filter( array_map( 'sanitize_text_field', (array) $terms ) );
+			}
+
+			if ( ! empty( $terms ) ) {
+				$tax_input[ $tax_name ] = $terms;
+			}
+		}
+	}
+
+	if ( ! empty( $tax_input ) ) {
+		$post_data['tax_input'] = $tax_input;
 	}
 
 	// Handle publish status.
