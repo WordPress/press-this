@@ -21,6 +21,11 @@ if ( ! defined( 'DOING_AJAX' ) ) {
 	define( 'DOING_AJAX', true );
 }
 
+// Signal unit tests so html() returns instead of die() and output can be captured.
+if ( ! defined( 'PRESS_THIS_PHPUNIT' ) ) {
+	define( 'PRESS_THIS_PHPUNIT', true );
+}
+
 // Initialize WorDBless with SQLite database support.
 // This enables full database operations including taxonomies and categories.
 // Note: First run shows "no such table: wp_options" error during initialization,

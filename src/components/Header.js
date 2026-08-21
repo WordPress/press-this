@@ -201,6 +201,7 @@ function isFutureDate( dateString, tz ) {
  * @param {Object}   props                       Component props.
  * @param {string}   props.siteName              Site name.
  * @param {string}   props.siteUrl               Site URL.
+ * @param {string}   props.adminUrl              Admin URL used by the site name link.
  * @param {string}   props.sourceUrl             Source URL being clipped.
  * @param {boolean}  props.isLegacyBookmarklet   Whether this is a legacy bookmarklet.
  * @param {boolean}  props.hasBookmarkletContent Whether content was already provided by bookmarklet.
@@ -232,6 +233,7 @@ export {
 export default function Header( {
 	siteName,
 	siteUrl,
+	adminUrl,
 	sourceUrl,
 	isLegacyBookmarklet,
 	hasBookmarkletContent = false,
@@ -511,7 +513,7 @@ export default function Header( {
 			<div className="press-this-header__bar">
 				<div className="press-this-header__site">
 					<a
-						href={ siteUrl }
+						href={ adminUrl || siteUrl }
 						target="_blank"
 						rel="noopener noreferrer"
 						className="press-this-header__site-link"
