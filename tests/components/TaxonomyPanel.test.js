@@ -46,8 +46,8 @@ describe( 'TaxonomyPanel', () => {
 			expect( sourceContent ).toMatch(
 				/import\s*\{[^}]*buildTermsTree[^}]*\}/
 			);
-			expect( sourceContent ).toContain(
-				'buildTermsTree( taxonomy.terms )'
+			expect( sourceContent ).toMatch(
+				/buildTermsTree\(\s*taxonomy\.terms/
 			);
 		} );
 

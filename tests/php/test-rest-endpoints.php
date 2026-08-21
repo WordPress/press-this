@@ -46,6 +46,9 @@ class Test_Press_This_REST_Endpoints extends BaseTestCase {
 	public function set_up() {
 		parent::set_up();
 
+		// Ensure WordPress default roles are available.
+		populate_roles();
+
 		if ( ! class_exists( 'WP_Press_This_Plugin' ) ) {
 			require_once dirname( dirname( __DIR__ ) ) . '/class-wp-press-this-plugin.php';
 		}
@@ -78,6 +81,7 @@ class Test_Press_This_REST_Endpoints extends BaseTestCase {
 		);
 
 		wp_set_current_user( $this->editor_user_id );
+
 		$this->test_post_id = wp_insert_post(
 			array(
 				'post_author'  => $this->editor_user_id,
@@ -92,6 +96,20 @@ class Test_Press_This_REST_Endpoints extends BaseTestCase {
 	 * Tear down after each test.
 	 */
 	public function tear_down() {
+		// Clean up any test-registered taxonomies, as a backstop in case a
+		// test failed before reaching its own unregister_taxonomy() call.
+		foreach ( array(
+			'pt_test_genre',
+			'pt_test_rating',
+			'pt_test_page_only',
+			'pt_test_hidden',
+			'pt_test_locked',
+		) as $test_tax ) {
+			if ( taxonomy_exists( $test_tax ) ) {
+				unregister_taxonomy( $test_tax );
+			}
+		}
+
 		parent::tear_down();
 		remove_all_filters( 'press_this_enable_url_proxy' );
 		remove_all_filters( 'press_this_save_post' );
@@ -402,6 +420,168 @@ class Test_Press_This_REST_Endpoints extends BaseTestCase {
 		$this->assertContains( $term_id, $terms );
 
 		unregister_taxonomy( 'pt_test_genre' );
+	}
+
+	/**
+	 * Test save clears a custom taxonomy's terms when tax_input sends an
+	 * empty array for it (deselect-all flow).
+	 */
+	public function test_save_clears_custom_taxonomy_with_empty_tax_input() {
+		register_taxonomy(
+			'pt_test_genre',
+			'post',
+			array(
+				'public'       => true,
+				'show_ui'      => true,
+				'hierarchical' => true,
+				'labels'       => array( 'name' => 'Genres' ),
+			)
+		);
+
+		$term    = wp_insert_term( 'Fiction', 'pt_test_genre' );
+		$term_id = is_wp_error( $term ) ? (int) $term->get_error_data() : (int) $term['term_id'];
+		wp_set_object_terms( $this->test_post_id, array( $term_id ), 'pt_test_genre' );
+
+		wp_set_current_user( $this->editor_user_id );
+
+		$request = new WP_REST_Request( 'POST', '/press-this/v1/save' );
+		$request->set_param( 'post_id', $this->test_post_id );
+		$request->set_param( 'title', 'Genre Clear Test' );
+		$request->set_param( 'content', '<p>Content</p>' );
+		$request->set_param( 'tax_input', array( 'pt_test_genre' => array() ) );
+
+		$response = press_this_rest_save_post( $request );
+
+		$this->assertFalse( is_wp_error( $response ) );
+		$this->assertSame(
+			array(),
+			wp_get_object_terms( $this->test_post_id, 'pt_test_genre', array( 'fields' => 'ids' ) )
+		);
+
+		unregister_taxonomy( 'pt_test_genre' );
+	}
+
+	/**
+	 * Test save leaves a custom taxonomy untouched when its key is absent
+	 * from tax_input.
+	 */
+	public function test_save_leaves_custom_taxonomy_absent_from_tax_input() {
+		register_taxonomy(
+			'pt_test_genre',
+			'post',
+			array(
+				'public'       => true,
+				'show_ui'      => true,
+				'hierarchical' => true,
+				'labels'       => array( 'name' => 'Genres' ),
+			)
+		);
+
+		$term    = wp_insert_term( 'Fiction', 'pt_test_genre' );
+		$term_id = is_wp_error( $term ) ? (int) $term->get_error_data() : (int) $term['term_id'];
+		wp_set_object_terms( $this->test_post_id, array( $term_id ), 'pt_test_genre' );
+
+		wp_set_current_user( $this->editor_user_id );
+
+		$request = new WP_REST_Request( 'POST', '/press-this/v1/save' );
+		$request->set_param( 'post_id', $this->test_post_id );
+		$request->set_param( 'title', 'Genre Absent Test' );
+		$request->set_param( 'content', '<p>Content</p>' );
+		$request->set_param( 'tax_input', array() );
+
+		$response = press_this_rest_save_post( $request );
+
+		$this->assertFalse( is_wp_error( $response ) );
+		$this->assertContains(
+			$term_id,
+			wp_get_object_terms( $this->test_post_id, 'pt_test_genre', array( 'fields' => 'ids' ) )
+		);
+
+		unregister_taxonomy( 'pt_test_genre' );
+	}
+
+	/**
+	 * Test save clears tags when the tags param is an empty array
+	 * (deselect-all flow).
+	 */
+	public function test_save_clears_tags_with_empty_array() {
+		wp_set_object_terms( $this->test_post_id, array( 'stale-tag' ), 'post_tag' );
+		wp_set_current_user( $this->editor_user_id );
+
+		$request = new WP_REST_Request( 'POST', '/press-this/v1/save' );
+		$request->set_param( 'post_id', $this->test_post_id );
+		$request->set_param( 'title', 'Tag Clear Test' );
+		$request->set_param( 'content', '<p>Content</p>' );
+		$request->set_param( 'tags', array() );
+
+		$response = press_this_rest_save_post( $request );
+
+		$this->assertFalse( is_wp_error( $response ) );
+		$this->assertSame(
+			array(),
+			wp_get_object_terms( $this->test_post_id, 'post_tag', array( 'fields' => 'ids' ) )
+		);
+	}
+
+	/**
+	 * Test save clears categories when the categories param is an empty
+	 * array (deselect-all flow).
+	 */
+	public function test_save_clears_categories_with_empty_array() {
+		$term        = wp_insert_term( 'Stale Category', 'category' );
+		$category_id = is_wp_error( $term ) ? (int) $term->get_error_data()['term_id'] : (int) $term['term_id'];
+		wp_set_object_terms( $this->test_post_id, array( $category_id ), 'category' );
+		wp_set_current_user( $this->editor_user_id );
+
+		$request = new WP_REST_Request( 'POST', '/press-this/v1/save' );
+		$request->set_param( 'post_id', $this->test_post_id );
+		$request->set_param( 'title', 'Category Clear Test' );
+		$request->set_param( 'content', '<p>Content</p>' );
+		$request->set_param( 'categories', array() );
+
+		$response = press_this_rest_save_post( $request );
+
+		$this->assertFalse( is_wp_error( $response ) );
+		$this->assertSame(
+			array(),
+			wp_get_object_terms( $this->test_post_id, 'category', array( 'fields' => 'ids' ) )
+		);
+	}
+
+	/**
+	 * Test save leaves existing categories and tags alone when the params are
+	 * absent from the request. The route registers no default for them, so an
+	 * absent param never enters the "clear" branch — unlike an explicit
+	 * empty array, which does clear.
+	 */
+	public function test_save_leaves_categories_and_tags_absent_from_request() {
+		$cat_term    = wp_insert_term( 'Kept Category', 'category' );
+		$category_id = is_wp_error( $cat_term ) ? (int) $cat_term->get_error_data() : (int) $cat_term['term_id'];
+		wp_set_object_terms( $this->test_post_id, array( $category_id ), 'category' );
+		// Non-hierarchical taxonomies take term names, not IDs.
+		// Non-hierarchical taxonomies take term names, not IDs.
+		wp_set_post_tags( $this->test_post_id, array( 'Kept Tag' ) );
+		$kept_tags = wp_get_post_tags( $this->test_post_id, array( 'fields' => 'ids' ) );
+
+		wp_set_current_user( $this->editor_user_id );
+
+		$request = new WP_REST_Request( 'POST', '/press-this/v1/save' );
+		$request->set_param( 'post_id', $this->test_post_id );
+		$request->set_param( 'title', 'Params Absent Test' );
+		$request->set_param( 'content', '<p>Content</p>' );
+		// No categories or tags params set.
+
+		$response = press_this_rest_save_post( $request );
+
+		$this->assertFalse( is_wp_error( $response ) );
+		$this->assertContains(
+			$category_id,
+			wp_get_object_terms( $this->test_post_id, 'category', array( 'fields' => 'ids' ) )
+		);
+		$this->assertSame(
+			$kept_tags,
+			wp_get_post_tags( $this->test_post_id, array( 'fields' => 'ids' ) )
+		);
 	}
 
 	/**

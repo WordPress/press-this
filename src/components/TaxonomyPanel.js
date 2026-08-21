@@ -11,7 +11,13 @@
 /**
  * WordPress dependencies
  */
-import { useCallback, useMemo, useRef, useState } from '@wordpress/element';
+import {
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from '@wordpress/element';
 import {
 	CheckboxControl,
 	FormTokenField,
@@ -78,7 +84,7 @@ function HierarchicalTaxonomyPanel( {
 	const [ filterValue, setFilterValue ] = useState( '' );
 
 	const termsTree = useMemo(
-		() => buildTermsTree( taxonomy.terms ),
+		() => buildTermsTree( taxonomy.terms || [] ),
 		[ taxonomy.terms ]
 	);
 
@@ -104,7 +110,8 @@ function HierarchicalTaxonomyPanel( {
 	);
 
 	const displayedTerms = filterValue !== '' ? filteredTermsTree : termsTree;
-	const showFilter = taxonomy.terms.length >= MIN_TERMS_COUNT_FOR_FILTER;
+	const showFilter =
+		( taxonomy.terms || [] ).length >= MIN_TERMS_COUNT_FOR_FILTER;
 
 	return (
 		<PanelBody title={ taxonomy.label } initialOpen={ false }>
@@ -157,11 +164,32 @@ function FlatTaxonomyPanel( {
 } ) {
 	const [ suggestions, setSuggestions ] = useState( [] );
 	const searchTimeout = useRef( null );
+	const abortController = useRef( null );
+
+	// PanelBody unmounts its children when collapsed, so this fires on ordinary
+	// use, not just teardown.
+	useEffect( () => {
+		return () => {
+			if ( searchTimeout.current ) {
+				clearTimeout( searchTimeout.current );
+			}
+			if ( abortController.current ) {
+				abortController.current.abort();
+			}
+		};
+	}, [] );
 
 	const searchTerms = useCallback(
 		( search ) => {
 			if ( searchTimeout.current ) {
 				clearTimeout( searchTimeout.current );
+			}
+
+			// clearTimeout only cancels a timer that hasn't fired yet. Once a
+			// request is in flight it has to be aborted, or a slower earlier
+			// response can land last and overwrite newer suggestions.
+			if ( abortController.current ) {
+				abortController.current.abort();
 			}
 
 			if ( ! search || search.length < 2 || ! taxonomy.restBase ) {
@@ -170,30 +198,38 @@ function FlatTaxonomyPanel( {
 			}
 
 			searchTimeout.current = setTimeout( async () => {
+				const controller = new AbortController();
+				abortController.current = controller;
+
 				try {
 					const wpRestBase = getWpRestBaseUrl( restUrl );
-					const taxUrl = wpRestBase.includes( 'rest_route=' )
-						? `${ wpRestBase }wp/v2/${
-								taxonomy.restBase
-						  }&search=${ encodeURIComponent(
-								search
-						  ) }&per_page=10`
-						: `${ wpRestBase }wp/v2/${
-								taxonomy.restBase
-						  }?search=${ encodeURIComponent(
-								search
-						  ) }&per_page=10`;
+					const separator = wpRestBase.includes( 'rest_route=' )
+						? '&'
+						: '?';
+					const taxUrl = `${ wpRestBase }wp/v2/${
+						taxonomy.restBase
+					}${ separator }search=${ encodeURIComponent(
+						search
+					) }&per_page=10`;
 
 					const response = await fetch( taxUrl, {
 						headers: { 'X-WP-Nonce': restNonce },
+						signal: controller.signal,
 					} );
 
-					if ( response.ok ) {
-						const results = await response.json();
-						setSuggestions( results.map( ( term ) => term.name ) );
+					if ( ! response.ok ) {
+						setSuggestions( [] );
+						return;
 					}
+
+					const results = await response.json();
+					setSuggestions(
+						results.map( ( term ) => unescapeString( term.name ) )
+					);
 				} catch ( error ) {
-					setSuggestions( [] );
+					if ( error.name !== 'AbortError' ) {
+						setSuggestions( [] );
+					}
 				}
 			}, 300 );
 		},

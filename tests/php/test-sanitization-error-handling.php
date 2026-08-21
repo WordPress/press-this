@@ -39,6 +39,9 @@ class Test_Sanitization_Error_Handling extends BaseTestCase {
 	public function set_up() {
 		parent::set_up();
 
+		// Ensure WordPress default roles are available.
+		populate_roles();
+
 		// Load the plugin class.
 		require_once dirname( dirname( __DIR__ ) ) . '/press-this-plugin.php';
 		require_once dirname( dirname( __DIR__ ) ) . '/class-wp-press-this-plugin.php';
