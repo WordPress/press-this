@@ -98,6 +98,12 @@ add_action( 'tool_box', 'press_this_tool_box' );
 // Load text domain for translations.
 add_action( 'init', 'press_this_load_textdomain' );
 
+// Register WP-CLI commands.
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	require_once __DIR__ . '/includes/class-press-this-cli-commands.php';
+	WP_CLI::add_command( 'press-this', 'Press_This_CLI_Commands' );
+}
+
 /**
  * Load plugin text domain for translations.
  *
@@ -397,7 +403,7 @@ function press_this_rest_save_post( $request ) {
 			$post_data['post_date_gmt'] = get_gmt_from_date( $post_data['post_date'] );
 			$post_data['post_status']   = 'future';
 			// Required: wp_update_post ignores post_date changes unless edit_date is true.
-			$post_data['edit_date']     = true;
+			$post_data['edit_date'] = true;
 		} else {
 			$post_data['post_status'] = 'pending';
 		}
