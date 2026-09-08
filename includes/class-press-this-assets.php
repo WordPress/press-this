@@ -228,6 +228,7 @@ class Press_This_Assets {
 			'wp-dom-ready',
 			'wp-element',
 			'wp-format-library',
+			'wp-hooks',
 			'wp-html-entities',
 			'wp-i18n',
 			'wp-keyboard-shortcuts',
