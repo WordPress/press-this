@@ -161,27 +161,31 @@ class WP_Press_This_Plugin {
 		// Sanitize category IDs with absint and verify capability.
 		$category_tax = get_taxonomy( 'category' );
 		if ( current_user_can( $category_tax->cap->assign_terms ) ) {
-			if ( ! empty( $_POST['post_category'] ) ) {
+			if ( isset( $_POST['post_category'] ) && is_array( $_POST['post_category'] ) ) {
 				// Convert all values to integers and filter out zeros (invalid IDs).
-				$categories                 = array_map( 'absint', (array) $_POST['post_category'] );
-				$categories                 = array_filter( $categories );
-				$post_data['post_category'] = $categories;
+				$categories                 = array_map( 'absint', $_POST['post_category'] );
+				$post_data['post_category'] = array_values( array_filter( $categories ) );
 			} else {
 				$post_data['post_category'] = array();
 			}
 		}
 
 		// Sanitize taxonomy inputs with proper type handling.
-		if ( ! empty( $_POST['tax_input'] ) ) {
+		if ( ! empty( $_POST['tax_input'] ) && is_array( $_POST['tax_input'] ) ) {
 			$tax_input = array();
 
-			foreach ( (array) $_POST['tax_input'] as $tax => $terms ) {
+			foreach ( $_POST['tax_input'] as $tax => $terms ) {
 				// Sanitize taxonomy key.
 				$tax = sanitize_key( $tax );
 
-				// Validate taxonomy exists.
+				// Validate the taxonomy is registered for this post type.
+				if ( ! is_object_in_taxonomy( $post_type, $tax ) ) {
+					continue;
+				}
+
+				// Validate taxonomy exists and has a UI (matches what's ever exposed to the panel).
 				$tax_object = get_taxonomy( $tax );
-				if ( ! $tax_object ) {
+				if ( ! $tax_object || ! $tax_object->show_ui ) {
 					continue;
 				}
 
@@ -193,13 +197,16 @@ class WP_Press_This_Plugin {
 				// Sanitize terms based on taxonomy type.
 				if ( is_taxonomy_hierarchical( $tax ) ) {
 					// Hierarchical taxonomies use term IDs (integers).
-					$tax_input[ $tax ] = array_map( 'absint', (array) $terms );
-					$tax_input[ $tax ] = array_filter( $tax_input[ $tax ] );
+					$terms = array_filter( array_map( 'absint', (array) $terms ) );
 				} else {
 					// Non-hierarchical taxonomies use term names (strings).
-					$tax_input[ $tax ] = array_map( 'sanitize_text_field', (array) $terms );
-					$tax_input[ $tax ] = array_filter( $tax_input[ $tax ] );
+					$terms = array_filter( array_map( 'sanitize_text_field', (array) $terms ) );
 				}
+
+				// The client sent this taxonomy, so an empty array means "clear
+				// the terms", not "leave them alone". Only keys absent from the
+				// request are left untouched.
+				$tax_input[ $tax ] = array_values( $terms );
 			}
 
 			if ( ! empty( $tax_input ) ) {
@@ -1450,6 +1457,147 @@ class WP_Press_This_Plugin {
 	}
 
 	/**
+	 * Get custom taxonomies registered for a post type, with their terms and capabilities.
+	 *
+	 * Excludes 'category' and 'post_tag', which have their own dedicated panels.
+	 * Only taxonomies with 'show_ui' are included, and only if the current user
+	 * can assign terms.
+	 *
+	 * @since 2.1.1
+	 *
+	 * @param string $post_type Post type to get taxonomies for.
+	 * @return array[] List of taxonomy data arrays.
+	 */
+	private function get_custom_taxonomies_data( $post_type ) {
+		$taxonomies_data = array();
+
+		$taxonomies = get_object_taxonomies( $post_type, 'objects' );
+
+		foreach ( $taxonomies as $taxonomy ) {
+			if ( in_array( $taxonomy->name, array( 'category', 'post_tag' ), true ) ) {
+				continue;
+			}
+
+			if ( ! $taxonomy->show_ui || ! current_user_can( $taxonomy->cap->assign_terms ) ) {
+				continue;
+			}
+
+			$terms_data = array();
+
+			if ( $taxonomy->hierarchical ) {
+				$terms = get_terms(
+					array(
+						'taxonomy'   => $taxonomy->name,
+						'hide_empty' => false,
+						'orderby'    => 'name',
+						'order'      => 'ASC',
+					)
+				);
+
+				if ( ! is_wp_error( $terms ) ) {
+					foreach ( $terms as $term ) {
+						$terms_data[] = array(
+							'id'     => $term->term_id,
+							'name'   => $term->name,
+							'parent' => $term->parent,
+							'slug'   => $term->slug,
+						);
+					}
+				}
+			}
+
+			$taxonomies_data[] = array(
+				'name'         => $taxonomy->name,
+				'label'        => $taxonomy->labels->name,
+				'hierarchical' => (bool) $taxonomy->hierarchical,
+				'restBase'     => ! empty( $taxonomy->show_in_rest ) ? ( $taxonomy->rest_base ? $taxonomy->rest_base : $taxonomy->name ) : '',
+				'terms'        => $terms_data,
+			);
+		}
+
+		/**
+		 * Filters the custom taxonomies exposed in the Press This panel.
+		 *
+		 * Each entry is validated after the filter runs: an entry that is not
+		 * an array, or whose name, label, restBase, hierarchical, or terms
+		 * fields have the wrong types, is dropped rather than passed to the
+		 * editor as-is.
+		 *
+		 * @since 2.1.1
+		 *
+		 * @param array[] $taxonomies_data List of taxonomy data arrays, each with
+		 *                                 name, label, hierarchical, restBase, terms.
+		 * @param string  $post_type       Post type the taxonomies belong to.
+		 */
+		$filtered = apply_filters( 'press_this_taxonomies', $taxonomies_data, $post_type );
+
+		if ( ! is_array( $filtered ) ) {
+			return array();
+		}
+
+		$valid = array();
+
+		foreach ( array_values( $filtered ) as $entry ) {
+			if ( ! is_array( $entry )
+				|| empty( $entry['name'] ) || ! is_string( $entry['name'] )
+				|| ! isset( $entry['label'] ) || ! is_string( $entry['label'] )
+				|| ! isset( $entry['hierarchical'] )
+				|| ( ! is_bool( $entry['hierarchical'] ) && ! is_numeric( $entry['hierarchical'] ) )
+				|| ! isset( $entry['restBase'] ) || ! is_string( $entry['restBase'] )
+				|| ! isset( $entry['terms'] ) || ! is_array( $entry['terms'] )
+			) {
+				continue;
+			}
+
+			$valid[] = array(
+				'name'         => sanitize_key( $entry['name'] ),
+				'label'        => sanitize_text_field( $entry['label'] ),
+				// Booleans pass through; numeric flags are coerced for
+				// filter authors who write 1/0 instead of true/false.
+				'hierarchical' => (bool) $entry['hierarchical'],
+				'restBase'     => sanitize_key( $entry['restBase'] ),
+				'terms'        => $this->sanitize_terms_data( $entry['terms'] ),
+			);
+		}
+
+		return $valid;
+	}
+
+	/**
+	 * Sanitizes the terms list of one filtered taxonomy entry.
+	 *
+	 * Keeps only numeric IDs and string names; drops everything else so a
+	 * malformed term cannot reach the editor markup.
+	 *
+	 * @since 2.1.1
+	 *
+	 * @param mixed $terms Raw terms list from a filter callback.
+	 * @return array[] List of sanitized term arrays with id and name keys.
+	 */
+	private function sanitize_terms_data( $terms ) {
+		$clean = array();
+
+		foreach ( (array) $terms as $term ) {
+			if ( ! is_array( $term )
+				|| ! isset( $term['id'], $term['name'] )
+				|| ! is_numeric( $term['id'] )
+				|| ! is_string( $term['name'] )
+			) {
+				continue;
+			}
+
+			$clean[] = array(
+				'id'     => absint( $term['id'] ),
+				'name'   => sanitize_text_field( $term['name'] ),
+				'parent' => isset( $term['parent'] ) && is_numeric( $term['parent'] ) ? absint( $term['parent'] ) : 0,
+				'slug'   => isset( $term['slug'] ) && is_string( $term['slug'] ) ? sanitize_title( $term['slug'] ) : '',
+			);
+		}
+
+		return $clean;
+	}
+
+	/**
 	 * Serves the app's base HTML - minimal shell for React app.
 	 *
 	 * All UI is rendered by React. PHP only provides:
@@ -1528,6 +1676,9 @@ class WP_Press_This_Plugin {
 		$can_assign_cats = $categories_tax && current_user_can( $categories_tax->cap->assign_terms );
 		$can_edit_cats   = $categories_tax && current_user_can( $categories_tax->cap->edit_terms );
 		$can_assign_tags = $tag_tax && current_user_can( $tag_tax->cap->assign_terms );
+
+		// Get custom taxonomies registered for this post type (category/post_tag have their own panels).
+		$custom_taxonomies_data = $this->get_custom_taxonomies_data( $post_type );
 
 		// Get supported post formats.
 		$post_formats = array();
@@ -1619,6 +1770,9 @@ class WP_Press_This_Plugin {
 
 			// Categories data.
 			'categories'          => $categories_data,
+
+			// Custom taxonomies registered for the post type (excludes category/post_tag).
+			'taxonomies'          => $custom_taxonomies_data,
 
 			// Bookmarklet version info.
 			// Only set bookmarkletVersion if we have actual POST data from bookmarklet.

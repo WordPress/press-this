@@ -39,6 +39,9 @@ class Test_WP_Press_This_Plugin extends BaseTestCase {
 	public function set_up() {
 		parent::set_up();
 
+		// Ensure WordPress default roles are available.
+		populate_roles();
+
 		// Load the plugin class.
 		require_once dirname( dirname( __DIR__ ) ) . '/class-wp-press-this-plugin.php';
 
@@ -80,6 +83,17 @@ class Test_WP_Press_This_Plugin extends BaseTestCase {
 		if ( post_type_exists( 'pt_test_no_tax' ) ) {
 			unregister_post_type( 'pt_test_no_tax' );
 		}
+
+		// Clean up any test-registered taxonomies, as a backstop in case
+		// a test failed before reaching its own unregister_taxonomy() call.
+		foreach ( array( 'pt_test_genre', 'pt_test_rating', 'pt_test_hidden', 'pt_test_page_only', 'pt_test_locked' ) as $test_tax ) {
+			if ( taxonomy_exists( $test_tax ) ) {
+				unregister_taxonomy( $test_tax );
+			}
+		}
+
+		remove_all_filters( 'press_this_taxonomies' );
+		remove_all_filters( 'press_this_post_type' );
 
 		parent::tear_down();
 		$_POST = array();
@@ -139,6 +153,151 @@ class Test_WP_Press_This_Plugin extends BaseTestCase {
 		// The original post title should not be changed.
 		$post = get_post( $this->test_post_id );
 		$this->assertNotEquals( 'Test Title', $post->post_title );
+	}
+
+	/**
+	 * Test: save_post() AJAX handler saves a custom taxonomy via tax_input.
+	 *
+	 * @covers WP_Press_This_Plugin::save_post
+	 */
+	public function test_save_post_handles_custom_taxonomy() {
+		register_taxonomy(
+			'pt_test_genre',
+			'post',
+			array(
+				'public'       => true,
+				'show_ui'      => true,
+				'hierarchical' => false,
+				'labels'       => array( 'name' => 'Genres' ),
+			)
+		);
+
+		$_POST['post_ID']      = $this->test_post_id;
+		$_POST['_wpnonce']     = wp_create_nonce( 'update-post_' . $this->test_post_id );
+		$_POST['post_title']   = 'Genre Test';
+		$_POST['post_content'] = '<p>Content</p>';
+		$_POST['tax_input']    = array( 'pt_test_genre' => array( 'Sci-Fi' ) );
+
+		ob_start();
+		try {
+			$this->plugin->save_post();
+		} catch ( WPDieException $e ) {
+			// Expected - wp_send_json_* calls wp_die().
+		}
+		ob_end_clean();
+
+		$terms = wp_get_post_terms( $this->test_post_id, 'pt_test_genre', array( 'fields' => 'names' ) );
+		$this->assertContains( 'Sci-Fi', $terms );
+
+		unregister_taxonomy( 'pt_test_genre' );
+	}
+
+	/**
+	 * Test: save_post() AJAX handler clears a custom taxonomy's terms when
+	 * tax_input sends an empty array for it (deselect-all flow).
+	 *
+	 * @covers WP_Press_This_Plugin::save_post
+	 */
+	public function test_save_post_clears_custom_taxonomy_with_empty_tax_input() {
+		register_taxonomy(
+			'pt_test_genre',
+			'post',
+			array(
+				'public'       => true,
+				'show_ui'      => true,
+				'hierarchical' => false,
+				'labels'       => array( 'name' => 'Genres' ),
+			)
+		);
+
+		wp_set_object_terms( $this->test_post_id, array( 'Stale' ), 'pt_test_genre' );
+
+		$_POST['post_ID']      = $this->test_post_id;
+		$_POST['_wpnonce']     = wp_create_nonce( 'update-post_' . $this->test_post_id );
+		$_POST['post_title']   = 'Genre Clear Test';
+		$_POST['post_content'] = '<p>Content</p>';
+		$_POST['tax_input']    = array( 'pt_test_genre' => array() );
+
+		ob_start();
+		try {
+			$this->plugin->save_post();
+		} catch ( WPDieException $e ) {
+			// Expected.
+		}
+		ob_end_clean();
+
+		$this->assertSame(
+			array(),
+			wp_get_object_terms( $this->test_post_id, 'pt_test_genre', array( 'fields' => 'ids' ) )
+		);
+
+		unregister_taxonomy( 'pt_test_genre' );
+	}
+
+	/**
+	 * Test: save_post() AJAX handler ignores tax_input for a taxonomy not
+	 * registered on the post's type.
+	 *
+	 * @covers WP_Press_This_Plugin::save_post
+	 */
+	public function test_save_post_ignores_tax_input_for_unregistered_taxonomy() {
+		register_taxonomy( 'pt_test_page_only', 'page', array( 'public' => true ) );
+
+		$_POST['post_ID']      = $this->test_post_id;
+		$_POST['_wpnonce']     = wp_create_nonce( 'update-post_' . $this->test_post_id );
+		$_POST['post_title']   = 'Unregistered Tax Test';
+		$_POST['post_content'] = '<p>Content</p>';
+		$_POST['tax_input']    = array( 'pt_test_page_only' => array( 'Should Not Save' ) );
+
+		ob_start();
+		try {
+			$this->plugin->save_post();
+		} catch ( WPDieException $e ) {
+			// Expected.
+		}
+		ob_end_clean();
+
+		$terms = wp_get_post_terms( $this->test_post_id, 'pt_test_page_only', array( 'fields' => 'names' ) );
+		$this->assertEmpty( $terms );
+
+		unregister_taxonomy( 'pt_test_page_only' );
+	}
+
+	/**
+	 * Test: save_post() AJAX handler ignores tax_input for a taxonomy
+	 * without show_ui, matching what's ever exposed to the panel.
+	 *
+	 * @covers WP_Press_This_Plugin::save_post
+	 */
+	public function test_save_post_ignores_tax_input_without_show_ui() {
+		register_taxonomy(
+			'pt_test_hidden',
+			'post',
+			array(
+				'public'  => true,
+				'show_ui' => false,
+				'labels'  => array( 'name' => 'Hidden' ),
+			)
+		);
+
+		$_POST['post_ID']      = $this->test_post_id;
+		$_POST['_wpnonce']     = wp_create_nonce( 'update-post_' . $this->test_post_id );
+		$_POST['post_title']   = 'Hidden Tax Test';
+		$_POST['post_content'] = '<p>Content</p>';
+		$_POST['tax_input']    = array( 'pt_test_hidden' => array( 'Should Not Save' ) );
+
+		ob_start();
+		try {
+			$this->plugin->save_post();
+		} catch ( WPDieException $e ) {
+			// Expected.
+		}
+		ob_end_clean();
+
+		$terms = wp_get_post_terms( $this->test_post_id, 'pt_test_hidden', array( 'fields' => 'names' ) );
+		$this->assertEmpty( $terms );
+
+		unregister_taxonomy( 'pt_test_hidden' );
 	}
 
 	/**
@@ -425,6 +584,236 @@ class Test_WP_Press_This_Plugin extends BaseTestCase {
 		$this->assertFalse( $data['canEditCategories'], 'canEditCategories should be false for CPT without taxonomies.' );
 		$this->assertFalse( $data['canAssignTags'], 'canAssignTags should be false for CPT without taxonomies.' );
 		$this->assertEmpty( $data['categories'], 'categories should be empty for CPT without taxonomies.' );
+	}
+
+	/**
+	 * Test: a custom hierarchical taxonomy registered for 'post' appears in
+	 * the taxonomies data with its terms.
+	 *
+	 * @covers WP_Press_This_Plugin::html
+	 */
+	public function test_html_includes_custom_hierarchical_taxonomy() {
+		register_taxonomy(
+			'pt_test_genre',
+			'post',
+			array(
+				'public'       => true,
+				'show_ui'      => true,
+				'hierarchical' => true,
+				'labels'       => array( 'name' => 'Genres' ),
+			)
+		);
+
+		$term    = wp_insert_term( 'Fiction', 'pt_test_genre' );
+		$term_id = is_wp_error( $term ) ? (int) $term->get_error_data() : (int) $term['term_id'];
+
+		$data = $this->get_press_this_data_from_html();
+
+		$this->assertArrayHasKey( 'taxonomies', $data );
+		$genre = current(
+			array_filter(
+				$data['taxonomies'],
+				function ( $tax ) {
+					return 'pt_test_genre' === $tax['name'];
+				}
+			)
+		);
+
+		$this->assertNotFalse( $genre, 'pt_test_genre should be present in taxonomies data.' );
+		$this->assertSame( 'Genres', $genre['label'] );
+		$this->assertTrue( $genre['hierarchical'] );
+		// Match by term id: WorDBless persists term rows across tests in the
+		// shared SQLite database, so unrelated tests may leave extra terms
+		// behind on this taxonomy.
+		$term_names = wp_list_pluck( $genre['terms'], 'name', 'id' );
+		$this->assertArrayHasKey( $term_id, $term_names );
+		$this->assertSame( 'Fiction', $term_names[ $term_id ] );
+
+		unregister_taxonomy( 'pt_test_genre' );
+	}
+
+	/**
+	 * Test: a custom flat taxonomy registered for 'post' appears in the
+	 * taxonomies data without terms (terms are only bootstrapped for
+	 * hierarchical taxonomies; flat taxonomies use REST suggestions).
+	 *
+	 * @covers WP_Press_This_Plugin::html
+	 */
+	public function test_html_includes_custom_flat_taxonomy() {
+		register_taxonomy(
+			'pt_test_rating',
+			'post',
+			array(
+				'public'        => true,
+				'show_ui'       => true,
+				'hierarchical'  => false,
+				'show_in_rest'  => true,
+				'rest_base'     => 'ratings',
+				'labels'        => array( 'name' => 'Ratings' ),
+			)
+		);
+
+		$data = $this->get_press_this_data_from_html();
+
+		$rating = current(
+			array_filter(
+				$data['taxonomies'],
+				function ( $tax ) {
+					return 'pt_test_rating' === $tax['name'];
+				}
+			)
+		);
+
+		$this->assertNotFalse( $rating, 'pt_test_rating should be present in taxonomies data.' );
+		$this->assertFalse( $rating['hierarchical'] );
+		$this->assertSame( 'ratings', $rating['restBase'] );
+
+		unregister_taxonomy( 'pt_test_rating' );
+	}
+
+	/**
+	 * Test: category and post_tag are never duplicated into the custom
+	 * taxonomies list, since they have their own dedicated panels.
+	 *
+	 * @covers WP_Press_This_Plugin::html
+	 */
+	public function test_html_taxonomies_excludes_category_and_post_tag() {
+		$data = $this->get_press_this_data_from_html();
+
+		$names = wp_list_pluck( $data['taxonomies'], 'name' );
+
+		$this->assertNotContains( 'category', $names );
+		$this->assertNotContains( 'post_tag', $names );
+	}
+
+	/**
+	 * Test: a taxonomy without show_ui is not exposed in the panel data.
+	 *
+	 * @covers WP_Press_This_Plugin::html
+	 */
+	public function test_html_excludes_taxonomy_without_show_ui() {
+		register_taxonomy(
+			'pt_test_hidden',
+			'post',
+			array(
+				'public'  => true,
+				'show_ui' => false,
+				'labels'  => array( 'name' => 'Hidden' ),
+			)
+		);
+
+		$data  = $this->get_press_this_data_from_html();
+		$names = wp_list_pluck( $data['taxonomies'], 'name' );
+
+		$this->assertNotContains( 'pt_test_hidden', $names );
+
+		unregister_taxonomy( 'pt_test_hidden' );
+	}
+
+	/**
+	 * Test: the press_this_taxonomies filter can add or remove entries.
+	 *
+	 * @covers WP_Press_This_Plugin::html
+	 */
+	public function test_html_taxonomies_filter_can_modify_list() {
+		add_filter(
+			'press_this_taxonomies',
+			function ( $taxonomies_data, $post_type ) {
+				$this->assertSame( 'post', $post_type );
+				return array(
+					array(
+						'name'         => 'injected',
+						'label'        => 'Injected',
+						'hierarchical' => false,
+						'restBase'     => '',
+						'terms'        => array(),
+					),
+				);
+			},
+			10,
+			2
+		);
+
+		$data = $this->get_press_this_data_from_html();
+
+		$this->assertCount( 1, $data['taxonomies'] );
+		$this->assertSame( 'injected', $data['taxonomies'][0]['name'] );
+	}
+
+	/**
+	 * Test: a filter callback returning null (e.g. a forgotten return in a
+	 * removal-only filter) does not fatal; the list falls back to empty.
+	 *
+	 * @covers WP_Press_This_Plugin::html
+	 */
+	public function test_html_taxonomies_filter_null_return_falls_back_to_array() {
+		add_filter( 'press_this_taxonomies', '__return_null' );
+
+		$data = $this->get_press_this_data_from_html();
+
+		$this->assertArrayHasKey( 'taxonomies', $data );
+		$this->assertSame( array(), $data['taxonomies'] );
+	}
+
+	/**
+	 * Test: malformed entries injected by the press_this_taxonomies filter are
+	 * dropped, and surviving entries have their fields sanitized.
+	 *
+	 * @covers WP_Press_This_Plugin::html
+	 */
+	public function test_html_taxonomies_filter_sanitizes_entries() {
+		add_filter(
+			'press_this_taxonomies',
+			function () {
+				return array(
+					// Well-formed entry: survives, fields normalized.
+					array(
+						'name'         => 'injected',
+						'label'        => 'Injected <b>Label</b>',
+						'hierarchical' => 1,
+						'restBase'     => 'injected-terms',
+						'terms'        => array(
+							array( 'id' => '5', 'name' => 'Term <i>One</i>', 'parent' => '2', 'slug' => 'term-one' ),
+							'not-an-array',
+							array( 'no-id-key' => true ),
+							array( 'id' => 'oops', 'name' => 'Bad' ),
+						),
+					),
+					// Not an array: dropped.
+					'string-entry',
+					// Missing name: dropped.
+					array( 'label' => 'No Name' ),
+					// Empty name: dropped.
+					array( 'name' => '', 'label' => 'Empty Name' ),
+					// Wrong hierarchical type: dropped.
+					array( 'name' => 'badbool', 'label' => 'B', 'hierarchical' => 'yes', 'restBase' => '', 'terms' => array() ),
+					// Numeric hierarchical flag: kept, coerced to true.
+					array( 'name' => 'numbool', 'label' => 'N', 'hierarchical' => 1, 'restBase' => '', 'terms' => array() ),
+				);
+			}
+		);
+
+		$data = $this->get_press_this_data_from_html();
+
+		// 'injected' survives; 'numbool' survives with a coerced flag.
+		$this->assertCount( 2, $data['taxonomies'] );
+
+		$entry = $data['taxonomies'][0];
+		$this->assertSame( 'injected', $entry['name'] );
+		$this->assertSame( 'Injected Label', $entry['label'] );
+		$this->assertTrue( $entry['hierarchical'] );
+		$this->assertSame( 'injected-terms', $entry['restBase'] );
+
+		// Only the well-formed term survives, with cast id/parent and clean strings.
+		$this->assertCount( 1, $entry['terms'] );
+		$term = $entry['terms'][0];
+		$this->assertSame( 5, $term['id'] );
+		$this->assertSame( 'Term One', $term['name'] );
+		$this->assertSame( 2, $term['parent'] );
+		$this->assertSame( 'term-one', $term['slug'] );
+
+		$this->assertSame( 'numbool', $data['taxonomies'][1]['name'] );
+		$this->assertTrue( $data['taxonomies'][1]['hierarchical'] );
 	}
 
 	/**
