@@ -43,6 +43,7 @@ import {
 } from '@wordpress/components';
 import { __, sprintf } from '@wordpress/i18n';
 import { registerCoreBlocks } from '@wordpress/block-library';
+import { addFilter } from '@wordpress/hooks';
 
 /**
  * Internal dependencies
@@ -83,11 +84,49 @@ function SidebarBlockInspector() {
 
 // Ensure core blocks are registered.
 let blocksRegistered = false;
-function ensureBlocksRegistered() {
-	if ( ! blocksRegistered ) {
-		registerCoreBlocks();
-		blocksRegistered = true;
+
+/**
+ * Register core blocks, curating which ones appear in the inserter.
+ *
+ * All core blocks are registered so that pasted or scraped content of any
+ * type is preserved. Blocks outside the curated list are hidden from the
+ * inserter UI via `supports.inserter: false`, which keeps the quick-post
+ * experience focused without blocking insertion. Crucially, `inserter: false`
+ * does not affect `canInsertBlockType`, so pasting content that produces
+ * non-curated blocks (tables, columns, etc.) still works — unlike an
+ * `allowedBlockTypes` allowlist, which makes the block editor silently drop
+ * the entire paste when any block is disallowed.
+ *
+ * @param {string[]} inserterBlocks Block names to keep visible in the inserter.
+ */
+function ensureBlocksRegistered( inserterBlocks = [] ) {
+	if ( blocksRegistered ) {
+		return;
 	}
+
+	// Hide non-curated blocks from the inserter. Added before registration so
+	// the support flag is baked into each block type as it registers.
+	if ( Array.isArray( inserterBlocks ) && inserterBlocks.length ) {
+		addFilter(
+			'blocks.registerBlockType',
+			'press-this/curate-inserter',
+			( blockSettings, name ) => {
+				if ( inserterBlocks.includes( name ) ) {
+					return blockSettings;
+				}
+				return {
+					...blockSettings,
+					supports: {
+						...( blockSettings.supports || {} ),
+						inserter: false,
+					},
+				};
+			}
+		);
+	}
+
+	registerCoreBlocks();
+	blocksRegistered = true;
 }
 
 /**
@@ -310,10 +349,10 @@ export default function PressThisEditor( {
 	categoryNonce = '',
 	ajaxUrl = '',
 } ) {
-	// Register blocks on mount.
+	// Register blocks on mount, curating the inserter to the configured list.
 	useEffect( () => {
-		ensureBlocksRegistered();
-	}, [] );
+		ensureBlocksRegistered( settings.allowedBlocks );
+	}, [] ); // eslint-disable-line react-hooks/exhaustive-deps
 
 	// State for blocks and post data.
 	const [ blocks, setBlocks ] = useState( [] );
@@ -731,7 +770,15 @@ export default function PressThisEditor( {
 	// Editor settings.
 	const editorSettings = useMemo(
 		() => ( {
-			allowedBlockTypes: settings.allowedBlocks,
+			/*
+			 * Allow every block type to be inserted. The inserter is curated
+			 * separately via supports.inserter (see ensureBlocksRegistered), so
+			 * this does not clutter the quick-post UI. Using `true` here — rather
+			 * than an allowlist — is essential: an allowedBlockTypes allowlist
+			 * makes the block editor silently discard an entire paste when any
+			 * pasted block is disallowed (e.g. a table in a copied article).
+			 */
+			allowedBlockTypes: true,
 			hasFixedToolbar: true,
 			bodyPlaceholder: __(
 				'Start writing or press / to choose a block',

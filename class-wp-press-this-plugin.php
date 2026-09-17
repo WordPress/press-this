@@ -1254,11 +1254,17 @@ class WP_Press_This_Plugin {
 	}
 
 	/**
-	 * Get the allowed blocks for the block editor.
+	 * Get the blocks featured in the editor's inserter.
+	 *
+	 * These blocks are the curated set shown in the "Add block" inserter to keep
+	 * the quick-post experience focused. All other block types remain registered
+	 * and insertable — they are only hidden from the inserter UI — so pasted or
+	 * scraped content of any type (tables, columns, etc.) is preserved rather
+	 * than dropped.
 	 *
 	 * @since 2.0.1
 	 *
-	 * @return array Array of allowed block type names.
+	 * @return array Array of block type names shown in the inserter.
 	 */
 	public function get_allowed_blocks() {
 		$default_blocks = array(
@@ -1273,11 +1279,14 @@ class WP_Press_This_Plugin {
 		);
 
 		/**
-		 * Filters the allowed blocks in Press This.
+		 * Filters the blocks featured in the Press This inserter.
+		 *
+		 * This controls which blocks appear in the inserter UI only. It does not
+		 * restrict which blocks can be pasted or inserted programmatically.
 		 *
 		 * @since 2.0.1
 		 *
-		 * @param string[] $allowed_blocks Array of allowed block type names.
+		 * @param string[] $allowed_blocks Array of block type names shown in the inserter.
 		 */
 		return apply_filters( 'press_this_allowed_blocks', $default_blocks );
 	}
