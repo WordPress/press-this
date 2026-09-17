@@ -138,7 +138,7 @@ function safeRedirect( url, options = {} ) {
 		}
 
 		return fallback;
-	} catch ( e ) {
+	} catch {
 		// If URL parsing fails, treat it as potentially malicious.
 		if ( window.pressThisEditorSettings?.scriptDebug ) {
 			// eslint-disable-next-line no-console
@@ -175,7 +175,7 @@ function performSafeRedirect( url, inParentWindow = false ) {
 				window.close();
 				return;
 			}
-		} catch ( e ) {
+		} catch {
 			// Cross-origin opener - don't redirect parent.
 			// eslint-disable-next-line no-console
 			console.warn(
@@ -597,7 +597,7 @@ export default function PressThisEditor( {
 							__( 'Error saving post.', 'press-this' ),
 					} );
 				}
-			} catch ( error ) {
+			} catch {
 				setNotice( {
 					status: 'error',
 					message: __( 'Error saving post.', 'press-this' ),
@@ -691,10 +691,10 @@ export default function PressThisEditor( {
 					const tagsUrl = wpRestBase.includes( 'rest_route=' )
 						? `${ wpRestBase }wp/v2/tags&search=${ encodeURIComponent(
 								search
-						  ) }&per_page=10`
+							) }&per_page=10`
 						: `${ wpRestBase }wp/v2/tags?search=${ encodeURIComponent(
 								search
-						  ) }&per_page=10`;
+							) }&per_page=10`;
 
 					const response = await fetch( tagsUrl, {
 						headers: {
@@ -708,7 +708,7 @@ export default function PressThisEditor( {
 						const names = results.map( ( tag ) => tag.name );
 						setTagSuggestions( names );
 					}
-				} catch ( error ) {
+				} catch {
 					// Silently fail - suggestions are optional.
 					setTagSuggestions( [] );
 				} finally {
@@ -743,7 +743,7 @@ export default function PressThisEditor( {
 				? ( { onFileChange } ) => {
 						// Default upload handler - uses WordPress media library.
 						onFileChange( [] );
-				  }
+					}
 				: undefined,
 		} ),
 		[ settings, capabilities.canUploadFiles ]

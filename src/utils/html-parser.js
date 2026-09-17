@@ -157,7 +157,7 @@ function extractJsonLd( doc ) {
 					}
 				}
 			} );
-		} catch ( e ) {
+		} catch {
 			// Ignore invalid JSON-LD.
 		}
 	} );
@@ -325,7 +325,7 @@ function resolveUrl( url, baseUrl ) {
 
 	try {
 		return new URL( url, baseUrl ).href;
-	} catch ( e ) {
+	} catch {
 		return '';
 	}
 }
