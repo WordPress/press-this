@@ -6,8 +6,6 @@
  * @package
  */
 
-/* global navigator */
-
 /**
  * WordPress dependencies
  */
@@ -642,7 +640,7 @@ export default function Header( {
 																? postDate
 																: getCurrentDateInTimezone(
 																		timezone
-																  )
+																	)
 														);
 														onClose();
 													} }

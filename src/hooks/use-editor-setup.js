@@ -70,7 +70,7 @@ export default function useEditorSetup( {
 				if ( ! allowedBlocks.includes( block.name ) ) {
 					try {
 						unregisterBlockType( block.name );
-					} catch ( error ) {
+					} catch {
 						// Block may have already been unregistered, ignore error.
 					}
 				}
