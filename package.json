@@ -37,7 +37,7 @@
   "devDependencies": {
     "@playwright/test": "^1.58.2",
     "@wordpress/env": "^11.5.0",
-    "@wordpress/scripts": "^31.2.0",
+    "@wordpress/scripts": "^35.0.0",
     "terser": "^5.44.1"
   },
   "dependencies": {
