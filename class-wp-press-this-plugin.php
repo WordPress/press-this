@@ -1559,6 +1559,18 @@ class WP_Press_This_Plugin {
 			}
 		}
 
+		/**
+		 * Filters the URL used by the site name link in the Press This header.
+		 *
+		 * Defaults to the admin dashboard so users have an easy way back
+		 * to wp-admin. The "View Site" menu item keeps using the front-end URL.
+		 *
+		 * @since 2.1.1
+		 *
+		 * @param string $admin_url URL for the header site name link. Default admin URL.
+		 */
+		$site_link_url = apply_filters( 'press_this_site_link_url', admin_url() );
+
 		// Comprehensive data object for React app.
 		$press_this_data = array(
 			// Post data.
@@ -1579,6 +1591,7 @@ class WP_Press_This_Plugin {
 			// Decode HTML entities for proper display (e.g., &#8211; to –).
 			'siteName'            => html_entity_decode( get_bloginfo( 'name', 'display' ), ENT_QUOTES | ENT_HTML5, 'UTF-8' ),
 			'siteUrl'             => home_url( '/' ),
+			'adminUrl'            => $site_link_url,
 			'ajaxUrl'             => admin_url( 'admin-ajax.php' ),
 			'restUrl'             => rest_url( 'press-this/v1/' ),
 			'restNonce'           => wp_create_nonce( 'wp_rest' ),
@@ -1752,6 +1765,10 @@ class WP_Press_This_Plugin {
 </html>
 		<?php
 		// phpcs:enable WordPress.Security.NonceVerification.Missing, WordPress.Security.NonceVerification.Recommended
+		// Return during unit tests so output can be captured; die in production.
+		if ( defined( 'PRESS_THIS_PHPUNIT' ) && PRESS_THIS_PHPUNIT ) {
+			return;
+		}
 		die();
 	}
 

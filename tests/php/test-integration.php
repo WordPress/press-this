@@ -115,8 +115,9 @@ class Test_Press_This_Integration extends BaseTestCase {
 			);
 		}
 
-		// Anchor to </script> to avoid early termination on }; inside JSON strings.
-		preg_match( '/window\.pressThisData\s*=\s*({.+?})\s*;\s*<\/script>/s', $html, $matches );
+		// wp_json_encode emits a single line; match that line only (no /s)
+		// so later script tags cannot bleed into the capture.
+		preg_match( '/window\.pressThisData\s*=\s*(\{.*\})\s*;/', $html, $matches );
 
 		$this->assertNotEmpty( $matches[1], 'pressThisData JSON not found in html() output.' );
 
@@ -384,5 +385,44 @@ class Test_Press_This_Integration extends BaseTestCase {
 		$this->assertFalse( $data['windowNameMode'], 'windowNameMode should be false when only pm=1.' );
 
 		unset( $_GET['pm'] );
+	}
+
+	/**
+	 * Test: adminUrl defaults to the admin dashboard URL.
+	 *
+	 * The header site name link uses adminUrl so users have an easy
+	 * way back to wp-admin. See GitHub issue #4.
+	 */
+	public function test_admin_url_defaults_to_admin_dashboard() {
+		$data = $this->get_press_this_data_from_html();
+
+		$this->assertArrayHasKey( 'adminUrl', $data );
+		$this->assertSame( admin_url(), $data['adminUrl'] );
+	}
+
+	/**
+	 * Test: press_this_site_link_url filter changes adminUrl.
+	 */
+	public function test_site_link_url_filter_works() {
+		$site_link_filter = function () {
+			return 'https://example.com/custom-dashboard/';
+		};
+		add_filter( 'press_this_site_link_url', $site_link_filter );
+
+		try {
+			$data = $this->get_press_this_data_from_html();
+			$this->assertSame( 'https://example.com/custom-dashboard/', $data['adminUrl'] );
+		} finally {
+			remove_filter( 'press_this_site_link_url', $site_link_filter );
+		}
+	}
+
+	/**
+	 * Test: siteUrl still points to the front-end for the View Site menu item.
+	 */
+	public function test_site_url_still_points_to_front_end() {
+		$data = $this->get_press_this_data_from_html();
+
+		$this->assertSame( home_url( '/' ), $data['siteUrl'] );
 	}
 }
