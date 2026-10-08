@@ -77,7 +77,7 @@ export default function LinkEscapeFix() {
 					? node.closest?.( '[contenteditable="true"]' )
 					: node.parentElement?.closest?.(
 							'[contenteditable="true"]'
-					  );
+						);
 			if ( ! editable ) {
 				return;
 			}
@@ -96,7 +96,7 @@ export default function LinkEscapeFix() {
 				pre.setEnd( range.endContainer, range.endOffset );
 				lastCharOffset = pre.toString().length;
 				lastEditable = editable;
-			} catch ( e ) {
+			} catch {
 				// DOM mutations between reading the selection and
 				// creating the range can cause InvalidStateError.
 				// Clear stale state so we never restore a wrong offset.
@@ -149,7 +149,7 @@ export default function LinkEscapeFix() {
 					sel.removeAllRanges();
 					sel.addRange( range );
 				}
-			} catch ( e ) {
+			} catch {
 				// DOM likely changed between keydown and rAF.
 			}
 		}

@@ -191,7 +191,7 @@ export default function CategoryPanel( {
 						__( 'Failed to create category.', 'press-this' )
 				);
 			}
-		} catch ( error ) {
+		} catch {
 			setCategoryError(
 				__( 'Failed to create category.', 'press-this' )
 			);
