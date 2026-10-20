@@ -14,3 +14,5 @@ export {
 } from './html-parser';
 
 export { isStandaloneMode } from './standalone';
+
+export { getWpRestBaseUrl } from './rest';
