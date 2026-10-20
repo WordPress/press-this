@@ -418,6 +418,25 @@ class Test_Press_This_Integration extends BaseTestCase {
 	}
 
 	/**
+	 * Test: an empty, non-string or unsafe filter result falls back to the admin URL.
+	 */
+	public function test_site_link_url_filter_falls_back_on_invalid_values() {
+		foreach ( array( '', null, array( 'https://example.com/' ), 'javascript:alert(1)' ) as $value ) {
+			$site_link_filter = function () use ( $value ) {
+				return $value;
+			};
+			add_filter( 'press_this_site_link_url', $site_link_filter );
+
+			try {
+				$data = $this->get_press_this_data_from_html();
+				$this->assertSame( admin_url(), $data['adminUrl'], 'Filter value: ' . wp_json_encode( $value ) );
+			} finally {
+				remove_filter( 'press_this_site_link_url', $site_link_filter );
+			}
+		}
+	}
+
+	/**
 	 * Test: siteUrl still points to the front-end for the View Site menu item.
 	 */
 	public function test_site_url_still_points_to_front_end() {

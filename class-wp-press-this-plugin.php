@@ -1567,9 +1567,14 @@ class WP_Press_This_Plugin {
 		 *
 		 * @since 2.1.1
 		 *
-		 * @param string $admin_url URL for the header site name link. Default admin URL.
+		 * @param string $site_link_url URL for the header site name link. Default admin URL.
 		 */
 		$site_link_url = apply_filters( 'press_this_site_link_url', admin_url() );
+		$site_link_url = is_string( $site_link_url ) ? esc_url_raw( $site_link_url ) : '';
+
+		if ( '' === $site_link_url ) {
+			$site_link_url = admin_url();
+		}
 
 		// Comprehensive data object for React app.
 		$press_this_data = array(
