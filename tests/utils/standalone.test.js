@@ -6,8 +6,6 @@
  * @package
  */
 
-/* eslint-env jest */
-
 import { isStandaloneMode } from '../../src/utils/standalone';
 
 describe( 'isStandaloneMode', () => {
@@ -24,7 +22,7 @@ describe( 'isStandaloneMode', () => {
 	} );
 
 	test( 'returns true when matchMedia reports standalone display mode', () => {
-		window.matchMedia = jest.fn( () => ( { matches: true } ) );
+		window.matchMedia = vi.fn( () => ( { matches: true } ) );
 		Object.defineProperty( window, 'navigator', {
 			value: { standalone: false },
 			writable: true,
@@ -38,7 +36,7 @@ describe( 'isStandaloneMode', () => {
 	} );
 
 	test( 'returns true when navigator.standalone is true (iOS Safari)', () => {
-		window.matchMedia = jest.fn( () => ( { matches: false } ) );
+		window.matchMedia = vi.fn( () => ( { matches: false } ) );
 		Object.defineProperty( window, 'navigator', {
 			value: { standalone: true },
 			writable: true,
@@ -49,7 +47,7 @@ describe( 'isStandaloneMode', () => {
 	} );
 
 	test( 'returns false when neither condition is met', () => {
-		window.matchMedia = jest.fn( () => ( { matches: false } ) );
+		window.matchMedia = vi.fn( () => ( { matches: false } ) );
 		Object.defineProperty( window, 'navigator', {
 			value: { standalone: false },
 			writable: true,

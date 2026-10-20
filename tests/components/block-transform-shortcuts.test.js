@@ -16,37 +16,39 @@ import { createBlock } from '@wordpress/blocks';
  */
 import BlockTransformShortcuts from '../../src/components/BlockTransformShortcuts';
 
-// Store sentinels for routing mock returns.
-const BLOCK_EDITOR_STORE = { name: 'core/block-editor' };
-const KEYBOARD_SHORTCUTS_STORE = { name: 'core/keyboard-shortcuts' };
+// Store sentinels for routing mock returns. Hoisted so the vi.mock() factories can use them.
+const { BLOCK_EDITOR_STORE, KEYBOARD_SHORTCUTS_STORE } = vi.hoisted( () => ( {
+	BLOCK_EDITOR_STORE: { name: 'core/block-editor' },
+	KEYBOARD_SHORTCUTS_STORE: { name: 'core/keyboard-shortcuts' },
+} ) );
 
-jest.mock( '@wordpress/block-editor', () => ( {
+vi.mock( '@wordpress/block-editor', () => ( {
 	store: BLOCK_EDITOR_STORE,
 } ) );
 
-jest.mock( '@wordpress/keyboard-shortcuts', () => ( {
-	useShortcut: jest.fn(),
+vi.mock( '@wordpress/keyboard-shortcuts', () => ( {
+	useShortcut: vi.fn(),
 	store: KEYBOARD_SHORTCUTS_STORE,
 } ) );
 
-jest.mock( '@wordpress/data', () => ( {
-	useSelect: jest.fn(),
-	useDispatch: jest.fn(),
+vi.mock( '@wordpress/data', () => ( {
+	useSelect: vi.fn(),
+	useDispatch: vi.fn(),
 } ) );
 
-jest.mock( '@wordpress/blocks', () => ( {
-	createBlock: jest.fn( ( name, attrs, innerBlocks ) => ( {
+vi.mock( '@wordpress/blocks', () => ( {
+	createBlock: vi.fn( ( name, attrs, innerBlocks ) => ( {
 		name,
 		attributes: attrs || {},
 		innerBlocks: innerBlocks || [],
 	} ) ),
 } ) );
 
-jest.mock( '@wordpress/element', () => ( {
+vi.mock( '@wordpress/element', () => ( {
 	useEffect: ( fn ) => fn(),
 } ) );
 
-jest.mock( '@wordpress/i18n', () => ( {
+vi.mock( '@wordpress/i18n', () => ( {
 	__: ( text ) => text,
 } ) );
 
@@ -62,14 +64,14 @@ describe( 'BlockTransformShortcuts', () => {
 	let shortcutHandlers;
 
 	beforeEach( () => {
-		jest.clearAllMocks();
+		vi.clearAllMocks();
 
-		registerShortcut = jest.fn();
-		replaceBlocks = jest.fn();
-		getSelectedBlockClientId = jest.fn( () => null );
-		getBlockName = jest.fn();
-		getBlockAttributes = jest.fn( () => ( {} ) );
-		getBlock = jest.fn();
+		registerShortcut = vi.fn();
+		replaceBlocks = vi.fn();
+		getSelectedBlockClientId = vi.fn( () => null );
+		getBlockName = vi.fn();
+		getBlockAttributes = vi.fn( () => ( {} ) );
+		getBlock = vi.fn();
 
 		shortcutHandlers = {};
 
@@ -102,7 +104,7 @@ describe( 'BlockTransformShortcuts', () => {
 	function fireShortcut( name, event ) {
 		const handler = shortcutHandlers[ name ];
 		expect( handler ).toBeDefined();
-		handler( event || { preventDefault: jest.fn() } );
+		handler( event || { preventDefault: vi.fn() } );
 	}
 
 	// -------------------------------------------------------------------------
