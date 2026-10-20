@@ -1752,7 +1752,6 @@ class WP_Press_This_Plugin {
 </html>
 		<?php
 		// phpcs:enable WordPress.Security.NonceVerification.Missing, WordPress.Security.NonceVerification.Recommended
-		die();
 	}
 
 	/**

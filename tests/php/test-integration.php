@@ -115,8 +115,9 @@ class Test_Press_This_Integration extends BaseTestCase {
 			);
 		}
 
-		// Anchor to </script> to avoid early termination on }; inside JSON strings.
-		preg_match( '/window\.pressThisData\s*=\s*({.+?})\s*;\s*<\/script>/s', $html, $matches );
+		// wp_json_encode() prints the object on one line, so match to the last }; on that line.
+		// This keeps a }; inside a JSON string from ending the match early.
+		preg_match( '/window\.pressThisData\s*=\s*(\{.*\});[ \t]*$/m', $html, $matches );
 
 		$this->assertNotEmpty( $matches[1], 'pressThisData JSON not found in html() output.' );
 
