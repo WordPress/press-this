@@ -1,7 +1,7 @@
 /**
  * Press This Editor Component
  *
- * Native Gutenberg editor wrapper using @wordpress/editor.
+ * Native Gutenberg editor wrapper using `@wordpress/editor`.
  * Provides the full editing experience with native sidebar and publish flow.
  *
  * @package
@@ -269,24 +269,24 @@ function formatScheduleDate( dateString, timezone ) {
 /**
  * Press This Editor component.
  *
- * @param {Object}   props                    Component props.
- * @param {Object}   props.post               Post object with ID, title, content.
- * @param {Object}   props.settings           Editor settings.
- * @param {Array}    props.images             Scraped images from source.
- * @param {Array}    props.embeds             Scraped embeds from source.
- * @param {Object}   props.categories         Available categories.
- * @param {Array}    props.postFormats        Available post formats.
- * @param {Object}   props.capabilities       User capabilities.
- * @param {Object}   props.restConfig         REST API configuration.
- * @param {string}   props.sourceUrl          Source URL being clipped.
- * @param {Object}   props.pendingScrape      Pending scraped content to append.
- * @param {Function} props.onScrapeProcessed  Callback after scrape is processed.
- * @param {Function} props.onSaveReady        Callback when save handler is ready.
- * @param {Function} props.onUndoReady        Callback when undo/redo handlers are ready.
- * @param {string}   props.timezone           Site timezone string from wp_timezone_string().
- * @param {Function} props.onPostStatusChange Callback when post status changes after save.
- * @param {string}   props.categoryNonce      Nonce for category creation.
- * @param {string}   props.ajaxUrl            Admin AJAX URL.
+ * @param {Object}                      props                    Component props.
+ * @param {Object}                      props.post               Post object with ID, title, content.
+ * @param {Object}                      props.settings           Editor settings.
+ * @param {Array}                       props.images             Scraped images from source.
+ * @param {Array}                       props.embeds             Scraped embeds from source.
+ * @param {Object}                      props.categories         Available categories.
+ * @param {Array}                       props.postFormats        Available post formats.
+ * @param {Object}                      props.capabilities       User capabilities.
+ * @param {Object}                      props.restConfig         REST API configuration.
+ * @param {string}                      props.sourceUrl          Source URL being clipped.
+ * @param {Object}                      props.pendingScrape      Pending scraped content to append.
+ * @param {() => void}                  props.onScrapeProcessed  Callback after scrape is processed.
+ * @param {(saveState: Object) => void} props.onSaveReady        Callback when save handler is ready.
+ * @param {(handlers: Object) => void}  props.onUndoReady        Callback when undo/redo handlers are ready.
+ * @param {string}                      props.timezone           Site timezone string from wp_timezone_string().
+ * @param {(change: Object) => void}    props.onPostStatusChange Callback when post status changes after save.
+ * @param {string}                      props.categoryNonce      Nonce for category creation.
+ * @param {string}                      props.ajaxUrl            Admin AJAX URL.
  * @return {JSX.Element} Press This Editor component.
  */
 export { formatScheduleDate };

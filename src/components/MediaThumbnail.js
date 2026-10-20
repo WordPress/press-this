@@ -106,14 +106,14 @@ function getMediaType( src, isEmbed ) {
 /**
  * MediaThumbnail component.
  *
- * @param {Object}   props               Component props.
- * @param {string}   props.src           Source URL of the media.
- * @param {string}   props.alt           Alt text for accessibility.
- * @param {boolean}  props.isEmbed       Whether this is an embed (vs image).
- * @param {boolean}  props.isFeatured    Whether this is the featured image.
- * @param {Function} props.onInsert      Callback when inserting into editor.
- * @param {Function} props.onSetFeatured Callback when setting as featured.
- * @param {number}   props.index         Index for accessibility label.
+ * @param {Object}                  props               Component props.
+ * @param {string}                  props.src           Source URL of the media.
+ * @param {string}                  props.alt           Alt text for accessibility.
+ * @param {boolean}                 props.isEmbed       Whether this is an embed (vs image).
+ * @param {boolean}                 props.isFeatured    Whether this is the featured image.
+ * @param {(media: Object) => void} props.onInsert      Callback when inserting into editor.
+ * @param {(src: string) => void}   props.onSetFeatured Callback when setting as featured.
+ * @param {number}                  props.index         Index for accessibility label.
  * @return {JSX.Element} The MediaThumbnail component.
  */
 export default function MediaThumbnail( {
