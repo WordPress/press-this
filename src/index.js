@@ -2,7 +2,7 @@
  * Press This - Gutenberg Block Editor Application
  *
  * Main entry point for the fully React-based Press This editor.
- * All UI is rendered by React using @wordpress/components.
+ * All UI is rendered by React using `@wordpress/components`.
  *
  * @package
  */

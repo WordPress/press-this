@@ -1,7 +1,7 @@
 /**
  * Hook for setting up the Press This editor.
  *
- * Handles block registration using @wordpress/block-library.
+ * Handles block registration using `@wordpress/block-library`.
  *
  * @package
  */
@@ -38,7 +38,7 @@ export const DEFAULT_ALLOWED_BLOCKS = [
  * Hook to set up the editor with allowed blocks.
  *
  * This hook:
- * 1. Registers core WordPress blocks from @wordpress/block-library
+ * 1. Registers core WordPress blocks from `@wordpress/block-library`
  * 2. Unregisters blocks that are not in the allowed list
  * 3. Tracks setup completion state
  *
