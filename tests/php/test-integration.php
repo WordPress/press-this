@@ -115,9 +115,9 @@ class Test_Press_This_Integration extends BaseTestCase {
 			);
 		}
 
-		// wp_json_encode emits a single line; match that line only (no /s)
-		// so later script tags cannot bleed into the capture.
-		preg_match( '/window\.pressThisData\s*=\s*(\{.*\})\s*;/', $html, $matches );
+		// wp_json_encode() prints the object on one line, so match to the last }; on that line.
+		// This keeps a }; inside a JSON string from ending the match early.
+		preg_match( '/window\.pressThisData\s*=\s*(\{.*\});[ \t]*$/m', $html, $matches );
 
 		$this->assertNotEmpty( $matches[1], 'pressThisData JSON not found in html() output.' );
 

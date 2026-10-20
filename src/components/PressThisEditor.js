@@ -1,7 +1,7 @@
 /**
  * Press This Editor Component
  *
- * Native Gutenberg editor wrapper using @wordpress/editor.
+ * Native Gutenberg editor wrapper using `@wordpress/editor`.
  * Provides the full editing experience with native sidebar and publish flow.
  *
  * @package
@@ -138,7 +138,7 @@ function safeRedirect( url, options = {} ) {
 		}
 
 		return fallback;
-	} catch ( e ) {
+	} catch {
 		// If URL parsing fails, treat it as potentially malicious.
 		if ( window.pressThisEditorSettings?.scriptDebug ) {
 			// eslint-disable-next-line no-console
@@ -175,7 +175,7 @@ function performSafeRedirect( url, inParentWindow = false ) {
 				window.close();
 				return;
 			}
-		} catch ( e ) {
+		} catch {
 			// Cross-origin opener - don't redirect parent.
 			// eslint-disable-next-line no-console
 			console.warn(
@@ -269,24 +269,24 @@ function formatScheduleDate( dateString, timezone ) {
 /**
  * Press This Editor component.
  *
- * @param {Object}   props                    Component props.
- * @param {Object}   props.post               Post object with ID, title, content.
- * @param {Object}   props.settings           Editor settings.
- * @param {Array}    props.images             Scraped images from source.
- * @param {Array}    props.embeds             Scraped embeds from source.
- * @param {Object}   props.categories         Available categories.
- * @param {Array}    props.postFormats        Available post formats.
- * @param {Object}   props.capabilities       User capabilities.
- * @param {Object}   props.restConfig         REST API configuration.
- * @param {string}   props.sourceUrl          Source URL being clipped.
- * @param {Object}   props.pendingScrape      Pending scraped content to append.
- * @param {Function} props.onScrapeProcessed  Callback after scrape is processed.
- * @param {Function} props.onSaveReady        Callback when save handler is ready.
- * @param {Function} props.onUndoReady        Callback when undo/redo handlers are ready.
- * @param {string}   props.timezone           Site timezone string from wp_timezone_string().
- * @param {Function} props.onPostStatusChange Callback when post status changes after save.
- * @param {string}   props.categoryNonce      Nonce for category creation.
- * @param {string}   props.ajaxUrl            Admin AJAX URL.
+ * @param {Object}                      props                    Component props.
+ * @param {Object}                      props.post               Post object with ID, title, content.
+ * @param {Object}                      props.settings           Editor settings.
+ * @param {Array}                       props.images             Scraped images from source.
+ * @param {Array}                       props.embeds             Scraped embeds from source.
+ * @param {Object}                      props.categories         Available categories.
+ * @param {Array}                       props.postFormats        Available post formats.
+ * @param {Object}                      props.capabilities       User capabilities.
+ * @param {Object}                      props.restConfig         REST API configuration.
+ * @param {string}                      props.sourceUrl          Source URL being clipped.
+ * @param {Object}                      props.pendingScrape      Pending scraped content to append.
+ * @param {() => void}                  props.onScrapeProcessed  Callback after scrape is processed.
+ * @param {(saveState: Object) => void} props.onSaveReady        Callback when save handler is ready.
+ * @param {(handlers: Object) => void}  props.onUndoReady        Callback when undo/redo handlers are ready.
+ * @param {string}                      props.timezone           Site timezone string from wp_timezone_string().
+ * @param {(change: Object) => void}    props.onPostStatusChange Callback when post status changes after save.
+ * @param {string}                      props.categoryNonce      Nonce for category creation.
+ * @param {string}                      props.ajaxUrl            Admin AJAX URL.
  * @return {JSX.Element} Press This Editor component.
  */
 export { formatScheduleDate };
@@ -597,7 +597,7 @@ export default function PressThisEditor( {
 							__( 'Error saving post.', 'press-this' ),
 					} );
 				}
-			} catch ( error ) {
+			} catch {
 				setNotice( {
 					status: 'error',
 					message: __( 'Error saving post.', 'press-this' ),
@@ -691,10 +691,10 @@ export default function PressThisEditor( {
 					const tagsUrl = wpRestBase.includes( 'rest_route=' )
 						? `${ wpRestBase }wp/v2/tags&search=${ encodeURIComponent(
 								search
-						  ) }&per_page=10`
+							) }&per_page=10`
 						: `${ wpRestBase }wp/v2/tags?search=${ encodeURIComponent(
 								search
-						  ) }&per_page=10`;
+							) }&per_page=10`;
 
 					const response = await fetch( tagsUrl, {
 						headers: {
@@ -708,7 +708,7 @@ export default function PressThisEditor( {
 						const names = results.map( ( tag ) => tag.name );
 						setTagSuggestions( names );
 					}
-				} catch ( error ) {
+				} catch {
 					// Silently fail - suggestions are optional.
 					setTagSuggestions( [] );
 				} finally {
@@ -743,7 +743,7 @@ export default function PressThisEditor( {
 				? ( { onFileChange } ) => {
 						// Default upload handler - uses WordPress media library.
 						onFileChange( [] );
-				  }
+					}
 				: undefined,
 		} ),
 		[ settings, capabilities.canUploadFiles ]

@@ -14,14 +14,25 @@
  * @package press-this
  */
 
+/**
+ * External dependencies
+ */
+import React, { act } from 'react';
+import { createRoot } from 'react-dom/client';
+
+/**
+ * Internal dependencies
+ */
+import ConnectedScrapedMediaPanel from '../../src/components/ConnectedScrapedMediaPanel';
+
 // Tell React 18 that act() in this file is the test runner's act.
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
-const mockInsertBlock = jest.fn();
+const mockInsertBlock = vi.fn();
 let mockInsertionPoint = { rootClientId: undefined, index: undefined };
-let mockCanInsert = jest.fn( () => true );
+let mockCanInsert = vi.fn( () => true );
 
-jest.mock( '@wordpress/data', () => ( {
+vi.mock( '@wordpress/data', () => ( {
 	useDispatch: () => ( { insertBlock: mockInsertBlock } ),
 	useRegistry: () => ( {
 		select: () => ( {
@@ -31,12 +42,12 @@ jest.mock( '@wordpress/data', () => ( {
 	} ),
 } ) );
 
-jest.mock( '@wordpress/block-editor', () => ( {
+vi.mock( '@wordpress/block-editor', () => ( {
 	store: { name: 'core/block-editor' },
 } ) );
 
-jest.mock( '@wordpress/element', () => {
-	const React = require( 'react' );
+vi.mock( '@wordpress/element', async () => {
+	const React = await vi.importActual( 'react' );
 	return {
 		useState: React.useState,
 		useEffect: React.useEffect,
@@ -48,7 +59,7 @@ jest.mock( '@wordpress/element', () => {
 	};
 } );
 
-jest.mock( '@wordpress/i18n', () => ( {
+vi.mock( '@wordpress/i18n', () => ( {
 	__: ( s ) => s,
 	sprintf: ( fmt, ...args ) => {
 		let i = 0;
@@ -56,7 +67,7 @@ jest.mock( '@wordpress/i18n', () => ( {
 	},
 } ) );
 
-jest.mock( '@wordpress/blocks', () => ( {
+vi.mock( '@wordpress/blocks', () => ( {
 	createBlock: ( name, attributes = {} ) => ( {
 		name,
 		attributes,
@@ -65,8 +76,8 @@ jest.mock( '@wordpress/blocks', () => ( {
 	} ),
 } ) );
 
-jest.mock( '@wordpress/components', () => {
-	const React = require( 'react' );
+vi.mock( '@wordpress/components', async () => {
+	const React = await vi.importActual( 'react' );
 	return {
 		Button: ( { children, onClick, className, variant, ...rest } ) =>
 			React.createElement(
@@ -79,12 +90,6 @@ jest.mock( '@wordpress/components', () => {
 	};
 } );
 
-const React = require( 'react' );
-const { createRoot } = require( 'react-dom/client' );
-const { act } = React;
-const ConnectedScrapedMediaPanel =
-	require( '../../src/components/ConnectedScrapedMediaPanel' ).default;
-
 describe( 'ConnectedScrapedMediaPanel — issue #126 cursor position', () => {
 	let container;
 	let root;
@@ -92,7 +97,7 @@ describe( 'ConnectedScrapedMediaPanel — issue #126 cursor position', () => {
 	beforeEach( () => {
 		mockInsertBlock.mockClear();
 		mockInsertionPoint = { rootClientId: undefined, index: undefined };
-		mockCanInsert = jest.fn( () => true );
+		mockCanInsert = vi.fn( () => true );
 		container = document.createElement( 'div' );
 		document.body.appendChild( container );
 	} );
@@ -207,7 +212,7 @@ describe( 'ConnectedScrapedMediaPanel — issue #126 cursor position', () => {
 		// reducer. We should fall back to a top-level append so the user's
 		// click is never a no-op.
 		mockInsertionPoint = { rootClientId: 'list-id', index: 1 };
-		mockCanInsert = jest.fn( ( blockName, rootClientId ) => {
+		mockCanInsert = vi.fn( ( blockName, rootClientId ) => {
 			return ! ( rootClientId === 'list-id' && blockName === 'core/embed' );
 		} );
 

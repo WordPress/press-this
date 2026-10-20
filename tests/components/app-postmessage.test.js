@@ -10,10 +10,21 @@
  * @package press-this
  */
 
+/**
+ * External dependencies
+ */
+import React, { act } from 'react';
+import { createRoot } from 'react-dom/client';
+
+/**
+ * Internal dependencies
+ */
+import App from '../../src/App';
+
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
-jest.mock( '@wordpress/element', () => {
-	const React = require( 'react' );
+vi.mock( '@wordpress/element', async () => {
+	const React = await vi.importActual( 'react' );
 	return {
 		useState: React.useState,
 		useEffect: React.useEffect,
@@ -25,7 +36,7 @@ jest.mock( '@wordpress/element', () => {
 	};
 } );
 
-jest.mock( '@wordpress/i18n', () => ( {
+vi.mock( '@wordpress/i18n', () => ( {
 	__: ( s ) => s,
 	sprintf: ( fmt, ...args ) => {
 		let i = 0;
@@ -34,20 +45,15 @@ jest.mock( '@wordpress/i18n', () => ( {
 } ) );
 
 // Heavy children — stub so App renders without pulling the editor stack.
-jest.mock( '../../src/components/Header', () => () => null );
-jest.mock( '../../src/components/PressThisEditor', () => () => null );
+vi.mock( '../../src/components/Header', () => ( { default: () => null } ) );
+vi.mock( '../../src/components/PressThisEditor', () => ( { default: () => null } ) );
 
 // processScrapedData only calls buildSuggestedContentFromMetadata from this
 // module — stub it so we don't pull in the HTML parser graph just to assert
 // the message handler ran.
-jest.mock( '../../src/utils', () => ( {
+vi.mock( '../../src/utils', () => ( {
 	buildSuggestedContentFromMetadata: () => '<p>stub content</p>',
 } ) );
-
-const React = require( 'react' );
-const { createRoot } = require( 'react-dom/client' );
-const { act } = React;
-const App = require( '../../src/App' ).default;
 
 describe( 'App — bookmarklet postMessage handler (issue #135)', () => {
 	let container;
@@ -60,7 +66,7 @@ describe( 'App — bookmarklet postMessage handler (issue #135)', () => {
 		document.body.appendChild( container );
 
 		originalFetch = global.fetch;
-		global.fetch = jest.fn( () =>
+		global.fetch = vi.fn( () =>
 			Promise.resolve( {
 				ok: true,
 				json: () => Promise.resolve( { embeds: [] } ),

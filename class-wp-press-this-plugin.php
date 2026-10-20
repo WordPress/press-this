@@ -1765,11 +1765,6 @@ class WP_Press_This_Plugin {
 </html>
 		<?php
 		// phpcs:enable WordPress.Security.NonceVerification.Missing, WordPress.Security.NonceVerification.Recommended
-		// Return during unit tests so output can be captured; die in production.
-		if ( defined( 'PRESS_THIS_PHPUNIT' ) && PRESS_THIS_PHPUNIT ) {
-			return;
-		}
-		die();
 	}
 
 	/**

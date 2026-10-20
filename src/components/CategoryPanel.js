@@ -37,14 +37,14 @@ const MIN_TERMS_COUNT_FOR_FILTER = 8;
 /**
  * Category Panel component.
  *
- * @param {Object}   props                    Component props.
- * @param {Array}    props.categories         Flat array of { id, name, parent, slug }.
- * @param {Array}    props.selectedCategories Array of selected category IDs.
- * @param {Function} props.onSelectionChange  State updater for selected IDs (React setState dispatcher).
- * @param {Function} props.onCategoriesChange State updater for the categories list (React setState dispatcher).
- * @param {boolean}  props.canEditCategories  Whether user can create categories.
- * @param {string}   props.categoryNonce      Nonce for add-category AJAX.
- * @param {string}   props.ajaxUrl            WordPress admin-ajax.php URL.
+ * @param {Object}                                                          props                    Component props.
+ * @param {Array}                                                           props.categories         Flat array of { id, name, parent, slug }.
+ * @param {Array}                                                           props.selectedCategories Array of selected category IDs.
+ * @param {(ids: number[] | ((prev: number[]) => number[])) => void}        props.onSelectionChange  State updater for selected IDs (React setState dispatcher).
+ * @param {(categories: Object[] | ((prev: Object[]) => Object[])) => void} props.onCategoriesChange State updater for the categories list (React setState dispatcher).
+ * @param {boolean}                                                         props.canEditCategories  Whether user can create categories.
+ * @param {string}                                                          props.categoryNonce      Nonce for add-category AJAX.
+ * @param {string}                                                          props.ajaxUrl            WordPress admin-ajax.php URL.
  * @return {JSX.Element} Category panel.
  */
 export default function CategoryPanel( {
@@ -191,7 +191,7 @@ export default function CategoryPanel( {
 						__( 'Failed to create category.', 'press-this' )
 				);
 			}
-		} catch ( error ) {
+		} catch {
 			setCategoryError(
 				__( 'Failed to create category.', 'press-this' )
 			);
