@@ -183,4 +183,122 @@ https://www.youtube.com/watch?v=abc
 
 		$this->assertFalse( $repaired );
 	}
+
+	/**
+	 * Test 9: v1 embed markup (no wrapper div) is left alone. It already
+	 * validates through core/embed's v1 deprecation.
+	 */
+	public function test_v1_embed_without_wrapper_is_untouched() {
+		$content = '<!-- wp:embed {"url":"https://www.youtube.com/watch?v=abc","type":"video","providerNameSlug":"youtube"} -->
+<figure class="wp-block-embed is-type-video is-provider-youtube">
+https://www.youtube.com/watch?v=abc
+</figure>
+<!-- /wp:embed -->';
+
+		$this->assertFalse( Press_This_Embed_Repair::repair_content( $content ) );
+	}
+
+	/**
+	 * Test 10: Only the class is added; the caption and the rest of the
+	 * markup come back byte for byte.
+	 */
+	public function test_repair_only_adds_the_class() {
+		$content = '<!-- wp:embed {"url":"https://www.youtube.com/watch?v=abc","type":"video","providerNameSlug":"youtube"} -->
+<figure class="wp-block-embed is-type-video is-provider-youtube"><div class="wp-block-embed__wrapper">
+https://www.youtube.com/watch?v=abc
+</div><figcaption class="wp-element-caption">A caption</figcaption></figure>
+<!-- /wp:embed -->';
+
+		$expected = str_replace( 'is-provider-youtube"', 'is-provider-youtube wp-block-embed-youtube"', $content );
+
+		$this->assertSame( $expected, Press_This_Embed_Repair::repair_content( $content ) );
+	}
+
+	/**
+	 * Create a post with legacy embed markup, then mark it as a missed-schedule
+	 * post: still 'future', but with a publish date in the past.
+	 *
+	 * wp_insert_post() publishes a 'future' post with a past date straight away,
+	 * so the status and date are set directly afterwards.
+	 *
+	 * @return int Post ID.
+	 */
+	private function create_missed_schedule_legacy_post() {
+		global $wpdb;
+
+		$post_id = wp_insert_post(
+			array(
+				'post_title'   => 'Legacy embed',
+				'post_status'  => 'draft',
+				'post_content' => '<!-- wp:embed {"url":"https://www.youtube.com/watch?v=abc","type":"video","providerNameSlug":"youtube"} -->
+<figure class="wp-block-embed is-type-video is-provider-youtube"><div class="wp-block-embed__wrapper">
+https://www.youtube.com/watch?v=abc
+</div></figure>
+<!-- /wp:embed -->',
+			)
+		);
+
+		$wpdb->update(
+			$wpdb->posts,
+			array(
+				'post_status'       => 'future',
+				'post_date'         => '2020-01-01 10:00:00',
+				'post_date_gmt'     => '2020-01-01 10:00:00',
+				'post_modified'     => '2020-01-01 10:00:00',
+				'post_modified_gmt' => '2020-01-01 10:00:00',
+			),
+			array( 'ID' => $post_id )
+		);
+		clean_post_cache( $post_id );
+
+		return $post_id;
+	}
+
+	/**
+	 * Test 11: repair_post() saves the repaired content without publishing a
+	 * missed-schedule post, touching its dates, or adding a revision.
+	 */
+	public function test_repair_post_keeps_status_dates_and_revisions() {
+		$post_id = $this->create_missed_schedule_legacy_post();
+		$before  = get_post( $post_id );
+
+		$this->assertSame( 'repaired', Press_This_Embed_Repair::repair_post( $post_id ) );
+
+		$after = get_post( $post_id );
+
+		$this->assertStringContainsString( 'wp-block-embed-youtube', $after->post_content );
+		$this->assertSame( 'future', $after->post_status );
+		$this->assertSame( $before->post_date, $after->post_date );
+		$this->assertSame( $before->post_modified, $after->post_modified );
+		$this->assertCount( 0, wp_get_post_revisions( $post_id ) );
+
+		$this->assertSame( 'unchanged', Press_This_Embed_Repair::repair_post( $post_id ) );
+	}
+
+	/**
+	 * Test 12: A dry run reports the repair without saving it.
+	 */
+	public function test_repair_post_dry_run_does_not_save() {
+		$post_id = $this->create_missed_schedule_legacy_post();
+		$before  = get_post( $post_id )->post_content;
+
+		$this->assertSame( 'would-repair', Press_This_Embed_Repair::repair_post( $post_id, true ) );
+		$this->assertSame( $before, get_post( $post_id )->post_content );
+	}
+
+	/**
+	 * Test 13: Posts that do not exist or have no embed report 'unchanged'.
+	 */
+	public function test_repair_post_without_embed_is_unchanged() {
+		$post_id = wp_insert_post(
+			array(
+				'post_title'   => 'No embed',
+				'post_status'  => 'publish',
+				'post_content' => '<!-- wp:paragraph --><p>Text.</p><!-- /wp:paragraph -->',
+			)
+		);
+
+		$this->assertSame( 'unchanged', Press_This_Embed_Repair::repair_post( $post_id ) );
+		$this->assertSame( 'unchanged', Press_This_Embed_Repair::repair_post( 999999 ) );
+	}
 }

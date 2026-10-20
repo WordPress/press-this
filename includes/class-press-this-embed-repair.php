@@ -18,6 +18,53 @@
 class Press_This_Embed_Repair {
 
 	/**
+	 * Repair legacy core/embed blocks in a single post.
+	 *
+	 * Writes post_content directly rather than through wp_update_post(), so the
+	 * repair leaves the post's status, dates and revisions alone and fires no save
+	 * hooks. A missed-schedule post, for one, would otherwise be published.
+	 *
+	 * @since 2.1.1
+	 *
+	 * @param int  $post_id Post ID.
+	 * @param bool $dry_run Whether to only report the repair, without saving it.
+	 * @return string One of 'repaired', 'would-repair', 'unchanged' or 'failed'.
+	 */
+	public static function repair_post( $post_id, $dry_run = false ) {
+		global $wpdb;
+
+		$post = get_post( $post_id );
+
+		if ( ! $post || ! has_block( 'core/embed', $post ) ) {
+			return 'unchanged';
+		}
+
+		$repaired_content = self::repair_content( $post->post_content );
+
+		if ( false === $repaired_content ) {
+			return 'unchanged';
+		}
+
+		if ( $dry_run ) {
+			return 'would-repair';
+		}
+
+		$updated = $wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Deliberately bypasses wp_update_post(); see above.
+			$wpdb->posts,
+			array( 'post_content' => $repaired_content ),
+			array( 'ID' => $post->ID )
+		);
+
+		if ( false === $updated ) {
+			return 'failed';
+		}
+
+		clean_post_cache( $post->ID );
+
+		return 'repaired';
+	}
+
+	/**
 	 * Repair legacy core/embed blocks in post content.
 	 *
 	 * @since 2.1.1
@@ -89,6 +136,12 @@ class Press_This_Embed_Repair {
 		// providerNameSlug comes from stored post content, not a trusted source.
 		// Reject anything that isn't a plain CSS class token before it goes near HTML.
 		if ( ! is_string( $provider ) || sanitize_html_class( $provider ) !== $provider ) {
+			return false;
+		}
+
+		// Only the current save() shape, with the wrapper div, is affected. Older v1
+		// markup has no wrapper and already validates through core/embed's deprecations.
+		if ( false === strpos( $block['innerHTML'], 'wp-block-embed__wrapper' ) ) {
 			return false;
 		}
 

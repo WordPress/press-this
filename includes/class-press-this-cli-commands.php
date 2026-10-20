@@ -26,14 +26,16 @@ class Press_This_CLI_Commands {
 	 * [--dry-run]
 	 * : Report the posts that would be changed, without saving.
 	 *
-	 * [--post-type=<post-type>]
-	 * : Limit the scan to a specific post type. Default: post,page.
+	 * [--post-type=<post-types>]
+	 * : Comma-separated list of post types to scan. Default: post,page.
 	 *
 	 * ## EXAMPLES
 	 *
 	 *     wp press-this repair-embeds --dry-run
 	 *     wp press-this repair-embeds
 	 *     wp press-this repair-embeds --post-type=post
+	 *
+	 * @subcommand repair-embeds
 	 *
 	 * @since 2.1.1
 	 *
@@ -48,6 +50,7 @@ class Press_This_CLI_Commands {
 		$post_types = array_map( 'trim', explode( ',', $post_type ) );
 
 		$repaired_count = 0;
+		$failed_count   = 0;
 		$scanned_count  = 0;
 		$batch_size     = 100;
 		$last_id        = 0;
@@ -72,49 +75,31 @@ class Press_This_CLI_Commands {
 				++$scanned_count;
 				$last_id = max( $last_id, $post_id );
 
-				$post = get_post( $post_id );
+				$result = Press_This_Embed_Repair::repair_post( $post_id, $dry_run );
 
-				if ( ! $post || ! has_block( 'core/embed', $post ) ) {
-					continue;
-				}
-
-				$repaired_content = Press_This_Embed_Repair::repair_content( $post->post_content );
-
-				if ( false === $repaired_content ) {
-					continue;
-				}
-
-				if ( $dry_run ) {
+				if ( 'would-repair' === $result ) {
 					++$repaired_count;
 					WP_CLI::log( sprintf( 'Would repair post %d: %s', $post_id, get_the_title( $post_id ) ) );
-					continue;
+				} elseif ( 'repaired' === $result ) {
+					++$repaired_count;
+					WP_CLI::log( sprintf( 'Repaired post %d: %s', $post_id, get_the_title( $post_id ) ) );
+				} elseif ( 'failed' === $result ) {
+					++$failed_count;
+					WP_CLI::warning( sprintf( 'Failed to repair post %d: %s', $post_id, $wpdb->last_error ) );
 				}
-
-				$updated = wp_update_post(
-					array(
-						'ID'           => $post_id,
-						'post_content' => wp_slash( $repaired_content ),
-					),
-					true
-				);
-
-				if ( is_wp_error( $updated ) ) {
-					WP_CLI::warning( sprintf( 'Failed to repair post %d: %s', $post_id, $updated->get_error_message() ) );
-					continue;
-				}
-
-				++$repaired_count;
-				WP_CLI::log( sprintf( 'Repaired post %d: %s', $post_id, get_the_title( $post_id ) ) );
 			}
 		} while ( $batch_count === $batch_size );
 
-		WP_CLI::success(
-			sprintf(
-				/* translators: 1: number of posts repaired or that would be repaired, 2: number of posts scanned. */
-				$dry_run ? '%1$d post(s) would be repaired out of %2$d scanned.' : '%1$d post(s) repaired out of %2$d scanned.',
-				$repaired_count,
-				$scanned_count
-			)
+		$summary = sprintf(
+			$dry_run ? '%1$d post(s) would be repaired out of %2$d scanned.' : '%1$d post(s) repaired out of %2$d scanned.',
+			$repaired_count,
+			$scanned_count
 		);
+
+		if ( $failed_count > 0 ) {
+			WP_CLI::error( sprintf( '%1$s %2$d post(s) failed.', $summary, $failed_count ) );
+		}
+
+		WP_CLI::success( $summary );
 	}
 }
