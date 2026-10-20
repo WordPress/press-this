@@ -243,14 +243,15 @@ function press_this_register_rest_routes() {
 				),
 				'tax_input'      => array(
 					'type'                 => 'object',
-					// Keys are taxonomy names, values are arrays of term names.
+					// Keys are taxonomy names. Values are arrays of term IDs for
+					// hierarchical taxonomies and term names for flat ones.
 					// A taxonomy present with an empty array clears its terms;
 					// a taxonomy absent from the object leaves its terms alone.
-					'description'          => __( 'Custom taxonomy terms to assign to the post.', 'press-this' ),
+					'description'          => __( 'Custom taxonomy terms to assign to the post: term IDs for hierarchical taxonomies, term names for non-hierarchical ones.', 'press-this' ),
 					'default'              => array(),
 					'additionalProperties' => array(
 						'type'  => 'array',
-						'items' => array( 'type' => 'string' ),
+						'items' => array( 'type' => array( 'integer', 'string' ) ),
 					),
 				),
 				'featured_image' => array(
@@ -412,6 +413,14 @@ function press_this_rest_save_post( $request ) {
 
 			if ( ! is_array( $terms ) ) {
 				continue;
+			}
+
+			// Hierarchical taxonomies take term IDs. Flat ones take names, so
+			// cast to strings: wp_set_post_terms() treats an integer as an ID.
+			if ( $tax_object->hierarchical ) {
+				$terms = array_filter( array_map( 'absint', $terms ) );
+			} else {
+				$terms = array_filter( array_map( 'sanitize_text_field', array_map( 'strval', $terms ) ) );
 			}
 
 			// The client sent this taxonomy, so an empty array means "clear the

@@ -616,6 +616,91 @@ class Test_Press_This_REST_Endpoints extends BaseTestCase {
 	}
 
 	/**
+	 * Test a JSON save request with integer term IDs for a hierarchical
+	 * taxonomy passes route validation, the way the editor sends it.
+	 */
+	public function test_save_route_accepts_integer_ids_for_hierarchical_taxonomy() {
+		register_taxonomy(
+			'pt_test_genre',
+			'post',
+			array(
+				'public'       => true,
+				'show_ui'      => true,
+				'hierarchical' => true,
+				'labels'       => array( 'name' => 'Genres' ),
+			)
+		);
+
+		$term    = wp_insert_term( 'Fiction', 'pt_test_genre' );
+		$term_id = is_wp_error( $term ) ? (int) $term->get_error_data() : (int) $term['term_id'];
+
+		wp_set_current_user( $this->editor_user_id );
+		do_action( 'rest_api_init' );
+
+		$request = new WP_REST_Request( 'POST', '/press-this/v1/save' );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$request->set_body(
+			wp_json_encode(
+				array(
+					'post_id'   => $this->test_post_id,
+					'title'     => 'Genre Route Test',
+					'content'   => '<p>Content</p>',
+					'tax_input' => array( 'pt_test_genre' => array( $term_id ) ),
+				)
+			)
+		);
+
+		$response = rest_do_request( $request );
+
+		$this->assertSame( 200, $response->get_status() );
+		$terms = wp_get_post_terms( $this->test_post_id, 'pt_test_genre', array( 'fields' => 'ids' ) );
+		$this->assertSame( array( $term_id ), array_map( 'intval', $terms ) );
+
+		unregister_taxonomy( 'pt_test_genre' );
+	}
+
+	/**
+	 * Test a numeric value for a flat taxonomy is saved as a term name,
+	 * not looked up as a term ID.
+	 */
+	public function test_save_route_treats_numbers_as_names_for_flat_taxonomy() {
+		register_taxonomy(
+			'pt_test_rating',
+			'post',
+			array(
+				'public'       => true,
+				'show_ui'      => true,
+				'hierarchical' => false,
+				'labels'       => array( 'name' => 'Ratings' ),
+			)
+		);
+
+		wp_set_current_user( $this->editor_user_id );
+		do_action( 'rest_api_init' );
+
+		$request = new WP_REST_Request( 'POST', '/press-this/v1/save' );
+		$request->set_header( 'Content-Type', 'application/json' );
+		$request->set_body(
+			wp_json_encode(
+				array(
+					'post_id'   => $this->test_post_id,
+					'title'     => 'Rating Route Test',
+					'content'   => '<p>Content</p>',
+					'tax_input' => array( 'pt_test_rating' => array( 2026 ) ),
+				)
+			)
+		);
+
+		$response = rest_do_request( $request );
+
+		$this->assertSame( 200, $response->get_status() );
+		$terms = wp_get_post_terms( $this->test_post_id, 'pt_test_rating', array( 'fields' => 'names' ) );
+		$this->assertSame( array( '2026' ), $terms );
+
+		unregister_taxonomy( 'pt_test_rating' );
+	}
+
+	/**
 	 * Test save ignores tax_input for a taxonomy not registered on the post type.
 	 */
 	public function test_save_ignores_tax_input_for_unregistered_taxonomy() {
