@@ -14,11 +14,27 @@
  * @package press-this
  */
 
+/**
+ * External dependencies
+ */
+import React, { act } from 'react';
+import { createRoot } from 'react-dom/client';
+
+/**
+ * WordPress dependencies
+ */
+import * as components from '@wordpress/components';
+
+/**
+ * Internal dependencies
+ */
+import TaxonomyPanel from '../../src/components/TaxonomyPanel';
+
 // Tell React 18 that act() in this file is the test runner's act.
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
-jest.mock( '@wordpress/element', () => {
-	const React = require( 'react' );
+vi.mock( '@wordpress/element', async () => {
+	const React = await vi.importActual( 'react' );
 	return {
 		useState: React.useState,
 		useEffect: React.useEffect,
@@ -30,12 +46,12 @@ jest.mock( '@wordpress/element', () => {
 	};
 } );
 
-jest.mock( '@wordpress/i18n', () => ( {
+vi.mock( '@wordpress/i18n', () => ( {
 	__: ( s ) => s,
 } ) );
 
-jest.mock( '@wordpress/components', () => {
-	const React = require( 'react' );
+vi.mock( '@wordpress/components', async () => {
+	const React = await vi.importActual( 'react' );
 	const handlers = {};
 	return {
 		// Exposed so tests can invoke the panel's own onInputChange handler
@@ -72,11 +88,6 @@ jest.mock( '@wordpress/components', () => {
 	};
 } );
 
-const React = require( 'react' );
-const { createRoot } = require( 'react-dom/client' );
-const { act } = React;
-const components = require( '@wordpress/components' );
-const TaxonomyPanel = require( '../../src/components/TaxonomyPanel' ).default;
 
 const TAXONOMY = {
 	name: 'genre',
@@ -110,9 +121,9 @@ describe( 'FlatTaxonomyPanel search', () => {
 	let fetchCalls;
 
 	beforeEach( () => {
-		jest.useFakeTimers();
+		vi.useFakeTimers();
 		fetchCalls = [];
-		global.fetch = jest.fn( ( url, options ) => {
+		global.fetch = vi.fn( ( url, options ) => {
 			fetchCalls.push( { url, options } );
 			return Promise.resolve( okResponse( [] ) );
 		} );
@@ -128,8 +139,8 @@ describe( 'FlatTaxonomyPanel search', () => {
 			root = null;
 		}
 		container.remove();
-		jest.useRealTimers();
-		jest.restoreAllMocks();
+		vi.useRealTimers();
+		vi.restoreAllMocks();
 		delete global.fetch;
 	} );
 
@@ -154,7 +165,7 @@ describe( 'FlatTaxonomyPanel search', () => {
 		// Fire the 300ms debounce, then flush the fetch/json promise chain
 		// so the resulting state update renders inside act().
 		act( () => {
-			jest.advanceTimersByTime( 300 );
+			vi.advanceTimersByTime( 300 );
 		} );
 		await act( async () => {
 			await Promise.resolve();
@@ -224,14 +235,14 @@ describe( 'FlatTaxonomyPanel search', () => {
 		// First search starts a slow request.
 		await typeInto( 'fa' );
 		act( () => {
-			jest.advanceTimersByTime( 300 );
+			vi.advanceTimersByTime( 300 );
 		} );
 		expect( fetchCalls ).toHaveLength( 1 );
 
 		// Second search aborts the first and gets a fast response.
 		await typeInto( 'fant' );
 		act( () => {
-			jest.advanceTimersByTime( 300 );
+			vi.advanceTimersByTime( 300 );
 		} );
 		await act( async () => {
 			await Promise.resolve();
@@ -262,7 +273,7 @@ describe( 'FlatTaxonomyPanel search', () => {
 		} );
 		await typeInto( 'son' );
 		act( () => {
-			jest.advanceTimersByTime( 300 );
+			vi.advanceTimersByTime( 300 );
 		} );
 		await act( async () => {
 			await Promise.resolve();
@@ -278,7 +289,7 @@ describe( 'FlatTaxonomyPanel search', () => {
 		} );
 		await typeInto( 'sonn' );
 		act( () => {
-			jest.advanceTimersByTime( 300 );
+			vi.advanceTimersByTime( 300 );
 		} );
 		await act( async () => {
 			await Promise.resolve();
@@ -300,7 +311,7 @@ describe( 'FlatTaxonomyPanel search', () => {
 		await renderPanel();
 		await typeInto( 'son' );
 		act( () => {
-			jest.advanceTimersByTime( 300 );
+			vi.advanceTimersByTime( 300 );
 		} );
 		expect( fetchCalls ).toHaveLength( 1 );
 		expect( capturedSignal.aborted ).toBe( false );

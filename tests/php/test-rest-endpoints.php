@@ -404,7 +404,7 @@ class Test_Press_This_REST_Endpoints extends BaseTestCase {
 		);
 
 		$term    = wp_insert_term( 'Fiction', 'pt_test_genre' );
-		$term_id = is_wp_error( $term ) ? $term->get_error_data()['term_id'] : $term['term_id'];
+		$term_id = is_wp_error( $term ) ? (int) $term->get_error_data() : (int) $term['term_id'];
 
 		wp_set_current_user( $this->editor_user_id );
 
@@ -529,7 +529,7 @@ class Test_Press_This_REST_Endpoints extends BaseTestCase {
 	 */
 	public function test_save_clears_categories_with_empty_array() {
 		$term        = wp_insert_term( 'Stale Category', 'category' );
-		$category_id = is_wp_error( $term ) ? (int) $term->get_error_data()['term_id'] : (int) $term['term_id'];
+		$category_id = is_wp_error( $term ) ? (int) $term->get_error_data() : (int) $term['term_id'];
 		wp_set_object_terms( $this->test_post_id, array( $category_id ), 'category' );
 		wp_set_current_user( $this->editor_user_id );
 

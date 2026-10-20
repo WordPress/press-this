@@ -527,9 +527,9 @@ function press_this_rest_save_post( $request ) {
 		if ( is_wp_error( $result ) ) {
 			$taxonomy = get_taxonomy( $tax_name );
 			$label    = ( $taxonomy && ! empty( $taxonomy->labels->name ) ) ? strtolower( $taxonomy->labels->name ) : $tax_name;
-			/* translators: %s: taxonomy label. */
 			return new WP_Error(
 				'press_this_term_assignment_failed',
+				/* translators: %s: taxonomy label. */
 				sprintf( __( 'Unable to assign the %s terms. Please try again.', 'press-this' ), $label ),
 				array( 'status' => 500 )
 			);

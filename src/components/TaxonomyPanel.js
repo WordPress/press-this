@@ -41,9 +41,9 @@ const MIN_TERMS_COUNT_FOR_FILTER = 8;
 /**
  * Render a list of terms as hierarchical checkboxes.
  *
- * @param {Array}    terms           Terms tree nodes.
- * @param {Array}    selectedTermIds Selected term IDs.
- * @param {Function} onToggle        Called with a term ID to toggle.
+ * @param {Array}                    terms           Terms tree nodes.
+ * @param {Array}                    selectedTermIds Selected term IDs.
+ * @param {(termId: number) => void} onToggle        Called with a term ID to toggle.
  * @return {JSX.Element[]} Rendered term checkboxes.
  */
 function renderTerms( terms, selectedTermIds, onToggle ) {
@@ -70,10 +70,10 @@ function renderTerms( terms, selectedTermIds, onToggle ) {
 /**
  * Hierarchical taxonomy panel: checkbox tree, same interaction as CategoryPanel.
  *
- * @param {Object}   props                   Component props.
- * @param {Object}   props.taxonomy          Taxonomy data { name, label, terms }.
- * @param {Array}    props.selectedTermIds   Selected term IDs.
- * @param {Function} props.onSelectionChange State updater for selected IDs.
+ * @param {Object}                                                   props                   Component props.
+ * @param {Object}                                                   props.taxonomy          Taxonomy data { name, label, terms }.
+ * @param {Array}                                                    props.selectedTermIds   Selected term IDs.
+ * @param {(ids: number[] | ((prev: number[]) => number[])) => void} props.onSelectionChange State updater for selected IDs.
  * @return {JSX.Element} Hierarchical taxonomy panel.
  */
 function HierarchicalTaxonomyPanel( {
@@ -147,12 +147,12 @@ function HierarchicalTaxonomyPanel( {
 /**
  * Flat taxonomy panel: token field, same interaction as the Tags panel.
  *
- * @param {Object}   props                   Component props.
- * @param {Object}   props.taxonomy          Taxonomy data { name, label, restBase }.
- * @param {Array}    props.selectedTermNames Selected term names.
- * @param {Function} props.onSelectionChange State updater for selected names.
- * @param {string}   props.restUrl           Press This REST URL, used to derive the core REST base.
- * @param {string}   props.restNonce         REST nonce.
+ * @param {Object}                                                     props                   Component props.
+ * @param {Object}                                                     props.taxonomy          Taxonomy data { name, label, restBase }.
+ * @param {Array}                                                      props.selectedTermNames Selected term names.
+ * @param {(names: string[] | ((prev: string[]) => string[])) => void} props.onSelectionChange State updater for selected names.
+ * @param {string}                                                     props.restUrl           Press This REST URL, used to derive the core REST base.
+ * @param {string}                                                     props.restNonce         REST nonce.
  * @return {JSX.Element} Flat taxonomy panel.
  */
 function FlatTaxonomyPanel( {
@@ -257,12 +257,12 @@ function FlatTaxonomyPanel( {
 /**
  * Taxonomy Panel component - dispatches to hierarchical or flat rendering.
  *
- * @param {Object}   props                   Component props.
- * @param {Object}   props.taxonomy          Taxonomy data from press_this_taxonomies.
- * @param {Array}    props.selectedTerms     Selected term IDs (hierarchical) or names (flat).
- * @param {Function} props.onSelectionChange State updater for the selection.
- * @param {string}   props.restUrl           Press This REST URL.
- * @param {string}   props.restNonce         REST nonce.
+ * @param {Object}                                            props                   Component props.
+ * @param {Object}                                            props.taxonomy          Taxonomy data from press_this_taxonomies.
+ * @param {Array}                                             props.selectedTerms     Selected term IDs (hierarchical) or names (flat).
+ * @param {(terms: Array | ((prev: Array) => Array)) => void} props.onSelectionChange State updater for the selection.
+ * @param {string}                                            props.restUrl           Press This REST URL.
+ * @param {string}                                            props.restNonce         REST nonce.
  * @return {JSX.Element} Taxonomy panel.
  */
 export default function TaxonomyPanel( {

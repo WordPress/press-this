@@ -718,7 +718,7 @@ export default function PressThisEditor( {
 	 * Build a selection updater for a single custom taxonomy.
 	 *
 	 * @param {string} taxonomyName Taxonomy name.
-	 * @return {Function} Updater accepting the new value or an updater function.
+	 * @return {(value: Array | ((prev: Array) => Array)) => void} Updater accepting the new value or an updater function.
 	 */
 	const getTaxonomySelectionSetter = useCallback( ( taxonomyName ) => {
 		return ( value ) => {
