@@ -1463,8 +1463,6 @@ class WP_Press_This_Plugin {
 	 * Only taxonomies with 'show_ui' are included, and only if the current user
 	 * can assign terms.
 	 *
-	 * @since 2.1.1
-	 *
 	 * @param string $post_type Post type to get taxonomies for.
 	 * @return array[] List of taxonomy data arrays.
 	 */
@@ -1523,8 +1521,6 @@ class WP_Press_This_Plugin {
 		 * fields have the wrong types, is dropped rather than passed to the
 		 * editor as-is.
 		 *
-		 * @since 2.1.1
-		 *
 		 * @param array[] $taxonomies_data List of taxonomy data arrays, each with
 		 *                                 name, label, hierarchical, restBase, terms.
 		 * @param string  $post_type       Post type the taxonomies belong to.
@@ -1568,8 +1564,6 @@ class WP_Press_This_Plugin {
 	 *
 	 * Keeps only numeric IDs and string names; drops everything else so a
 	 * malformed term cannot reach the editor markup.
-	 *
-	 * @since 2.1.1
 	 *
 	 * @param mixed $terms Raw terms list from a filter callback.
 	 * @return array[] List of sanitized term arrays with id and name keys.

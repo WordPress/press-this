@@ -5,7 +5,7 @@
  * Plugin Name: Press This
  * Plugin URI:  https://wordpress.org
  * Description: A little tool that lets you grab bits of the web and create new posts with ease. Now powered by the Gutenberg block editor.
- * Version:     2.1.1-beta
+ * Version:     2.1.0
  * Author:      WordPress Contributors
  * Author URI:  https://wordpress.org
  * License:     GPL-2.0+
@@ -34,7 +34,7 @@
  * @since 1.0.0
  * @since 2.0.1 Updated for Gutenberg block editor integration.
  */
-define( 'PRESS_THIS__VERSION', '2.1.1-beta' );
+define( 'PRESS_THIS__VERSION', '2.1.0' );
 
 /**
  * Minimum WordPress version required for the Gutenberg features.
@@ -143,7 +143,6 @@ function wp_ajax_press_this_plugin_add_category() {
  * Register REST API routes for Press This.
  *
  * @since 2.0.1
- * @since 2.1.1 Added the custom taxonomy save support.
  */
 function press_this_register_rest_routes() {
 	// Web App Manifest for Add to Home Screen / PWA support.
@@ -343,7 +342,6 @@ function press_this_rest_save_permission( $request ) {
  * REST API handler for saving a post from Press This.
  *
  * @since 2.0.1
- * @since 2.1.1 Added support for saving custom taxonomies.
  *
  * @param WP_REST_Request $request Request object.
  * @return WP_REST_Response|WP_Error Response object on success, WP_Error on failure.
