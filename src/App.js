@@ -398,6 +398,7 @@ export default function App() {
 			<Header
 				siteName={ data.siteName }
 				siteUrl={ data.siteUrl }
+				adminUrl={ data.adminUrl }
 				sourceUrl={ data.sourceUrl }
 				isLegacyBookmarklet={ data.isLegacyBookmarklet }
 				hasBookmarkletContent={ !! data.content }

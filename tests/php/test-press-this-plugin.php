@@ -304,7 +304,9 @@ class Test_WP_Press_This_Plugin extends BaseTestCase {
 			$_SERVER['REQUEST_METHOD'] = $previous_method;
 		}
 
-		preg_match( '/window\.pressThisData\s*=\s*({.+?});/s', $html, $matches );
+		// wp_json_encode() prints the object on one line, so match to the last }; on that line.
+		// This keeps a }; inside a JSON string from ending the match early.
+		preg_match( '/window\.pressThisData\s*=\s*(\{.*\});[ \t]*$/m', $html, $matches );
 
 		// If pressThisData was not found and an exception was caught, surface it
 		// so test failures point to the actual error, not a generic message.

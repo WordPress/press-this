@@ -386,4 +386,62 @@ class Test_Press_This_Integration extends BaseTestCase {
 
 		unset( $_GET['pm'] );
 	}
+
+	/**
+	 * Test: adminUrl defaults to the admin dashboard URL.
+	 *
+	 * The header site name link uses adminUrl so users have an easy
+	 * way back to wp-admin. See GitHub issue #4.
+	 */
+	public function test_admin_url_defaults_to_admin_dashboard() {
+		$data = $this->get_press_this_data_from_html();
+
+		$this->assertArrayHasKey( 'adminUrl', $data );
+		$this->assertSame( admin_url(), $data['adminUrl'] );
+	}
+
+	/**
+	 * Test: press_this_site_link_url filter changes adminUrl.
+	 */
+	public function test_site_link_url_filter_works() {
+		$site_link_filter = function () {
+			return 'https://example.com/custom-dashboard/';
+		};
+		add_filter( 'press_this_site_link_url', $site_link_filter );
+
+		try {
+			$data = $this->get_press_this_data_from_html();
+			$this->assertSame( 'https://example.com/custom-dashboard/', $data['adminUrl'] );
+		} finally {
+			remove_filter( 'press_this_site_link_url', $site_link_filter );
+		}
+	}
+
+	/**
+	 * Test: an empty, non-string or unsafe filter result falls back to the admin URL.
+	 */
+	public function test_site_link_url_filter_falls_back_on_invalid_values() {
+		foreach ( array( '', null, array( 'https://example.com/' ), 'javascript:alert(1)' ) as $value ) {
+			$site_link_filter = function () use ( $value ) {
+				return $value;
+			};
+			add_filter( 'press_this_site_link_url', $site_link_filter );
+
+			try {
+				$data = $this->get_press_this_data_from_html();
+				$this->assertSame( admin_url(), $data['adminUrl'], 'Filter value: ' . wp_json_encode( $value ) );
+			} finally {
+				remove_filter( 'press_this_site_link_url', $site_link_filter );
+			}
+		}
+	}
+
+	/**
+	 * Test: siteUrl still points to the front-end for the View Site menu item.
+	 */
+	public function test_site_url_still_points_to_front_end() {
+		$data = $this->get_press_this_data_from_html();
+
+		$this->assertSame( home_url( '/' ), $data['siteUrl'] );
+	}
 }
