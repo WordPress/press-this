@@ -10,29 +10,29 @@
 import { formatScheduleDate } from '../../src/components/PressThisEditor';
 
 // Mock all @wordpress/* dependencies so the module loads without React/DOM.
-jest.mock( '@wordpress/element', () => ( {
+vi.mock( '@wordpress/element', () => ( {
 	useMemo: ( fn ) => fn(),
 	useCallback: ( fn ) => fn,
-	useState: ( init ) => [ typeof init === 'function' ? init() : init, jest.fn() ],
-	useEffect: jest.fn(),
+	useState: ( init ) => [ typeof init === 'function' ? init() : init, vi.fn() ],
+	useEffect: vi.fn(),
 	useRef: ( val ) => ( { current: val } ),
 } ) );
 
-jest.mock( '@wordpress/data', () => ( {
-	useSelect: jest.fn( () => false ),
-	useDispatch: jest.fn( () => ( {} ) ),
+vi.mock( '@wordpress/data', () => ( {
+	useSelect: vi.fn( () => false ),
+	useDispatch: vi.fn( () => ( {} ) ),
 } ) );
 
-jest.mock( '@wordpress/blocks', () => ( {
-	parse: jest.fn( () => [] ),
-	registerCoreBlocks: jest.fn(),
+vi.mock( '@wordpress/blocks', () => ( {
+	parse: vi.fn( () => [] ),
+	registerCoreBlocks: vi.fn(),
 } ) );
 
-jest.mock( '@wordpress/block-library', () => ( {
-	registerCoreBlocks: jest.fn(),
+vi.mock( '@wordpress/block-library', () => ( {
+	registerCoreBlocks: vi.fn(),
 } ) );
 
-jest.mock( '@wordpress/block-editor', () => ( {
+vi.mock( '@wordpress/block-editor', () => ( {
 	BlockEditorProvider: 'BlockEditorProvider',
 	BlockList: 'BlockList',
 	BlockTools: 'BlockTools',
@@ -45,7 +45,7 @@ jest.mock( '@wordpress/block-editor', () => ( {
 	store: { name: 'core/block-editor' },
 } ) );
 
-jest.mock( '@wordpress/components', () => ( {
+vi.mock( '@wordpress/components', () => ( {
 	SlotFillProvider: 'SlotFillProvider',
 	Popover: Object.assign( () => null, { Slot: 'Slot' } ),
 	Button: 'Button',
@@ -56,7 +56,7 @@ jest.mock( '@wordpress/components', () => ( {
 	FormTokenField: 'FormTokenField',
 } ) );
 
-jest.mock( '@wordpress/i18n', () => ( {
+vi.mock( '@wordpress/i18n', () => ( {
 	__: ( text ) => text,
 	sprintf: ( fmt, ...args ) => {
 		let result = fmt;
@@ -68,10 +68,10 @@ jest.mock( '@wordpress/i18n', () => ( {
 } ) );
 
 // Mock internal component imports to prevent cascading dependency issues.
-jest.mock( '../../src/components/BlockTransformShortcuts', () => 'BlockTransformShortcuts' );
-jest.mock( '../../src/components/ScrapedMediaPanel', () => 'ScrapedMediaPanel' );
-jest.mock( '../../src/components/FeaturedImagePanel', () => 'FeaturedImagePanel' );
-jest.mock( '../../src/components/CategoryPanel', () => 'CategoryPanel' );
+vi.mock( '../../src/components/BlockTransformShortcuts', () => ( { default: 'BlockTransformShortcuts' } ) );
+vi.mock( '../../src/components/ScrapedMediaPanel', () => ( { default: 'ScrapedMediaPanel' } ) );
+vi.mock( '../../src/components/FeaturedImagePanel', () => ( { default: 'FeaturedImagePanel' } ) );
+vi.mock( '../../src/components/CategoryPanel', () => ( { default: 'CategoryPanel' } ) );
 
 describe( 'formatScheduleDate', () => {
 	test( 'formats a naive ISO datetime into a human-readable string', () => {

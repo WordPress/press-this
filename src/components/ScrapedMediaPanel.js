@@ -41,8 +41,8 @@ function sanitizeUrl( url ) {
 /**
  * Filter images by minimum dimensions.
  *
- * @param {string[]} images     Array of image URLs.
- * @param {Function} onFiltered Callback with filtered images.
+ * @param {string[]}                   images     Array of image URLs.
+ * @param {(images: string[]) => void} onFiltered Callback with filtered images.
  */
 function filterImagesByDimensions( images, onFiltered ) {
 	const validImages = [];
@@ -96,11 +96,11 @@ function getDomain( url ) {
 /**
  * Scraped Media Panel component.
  *
- * @param {Object}   props               Component props.
- * @param {string[]} props.images        Array of image URLs.
- * @param {string[]} props.embeds        Array of embed URLs.
- * @param {Function} props.onInsertBlock Callback to insert block into editor.
- * @param {string}   props.sourceUrl     The source URL being clipped.
+ * @param {Object}                  props               Component props.
+ * @param {string[]}                props.images        Array of image URLs.
+ * @param {string[]}                props.embeds        Array of embed URLs.
+ * @param {(block: Object) => void} props.onInsertBlock Callback to insert block into editor.
+ * @param {string}                  props.sourceUrl     The source URL being clipped.
  * @return {JSX.Element|null} Panel component or null if no media.
  */
 export default function ScrapedMediaPanel( {

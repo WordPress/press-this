@@ -24,8 +24,8 @@
     "lint:fix": "wp-scripts lint-js src/ --fix",
     "lint:css": "wp-scripts lint-style src/",
     "lint:css:fix": "wp-scripts lint-style src/ --fix",
-    "test:unit": "wp-scripts test-unit-js --testPathIgnorePatterns='/worktrees/'",
-    "test:js": "wp-scripts test-unit-js --testPathPattern='tests/'",
+    "test:unit": "wp-scripts test-unit-js",
+    "test:js": "wp-scripts test-unit-js tests/",
     "wp-env": "wp-env",
     "env:start": "wp-env start --auto-port",
     "env:stop": "wp-env stop",
@@ -37,8 +37,11 @@
   "devDependencies": {
     "@playwright/test": "^1.58.2",
     "@wordpress/env": "^11.5.0",
-    "@wordpress/scripts": "^31.2.0",
-    "terser": "^5.44.1"
+    "@wordpress/scripts": "^36.1.0",
+    "jsdom": "^26.1.0",
+    "terser": "^5.44.1",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.5"
   },
   "dependencies": {
     "@wordpress/a11y": "^4.40.0",
@@ -58,7 +61,7 @@
     "@wordpress/i18n": "^6.10.0",
     "@wordpress/icons": "^11.4.0",
     "@wordpress/keyboard-shortcuts": "^5.37.0",
-    "@wordpress/rich-text": "^7.37.0"
+    "@wordpress/rich-text": "^7.54.0"
   },
   "overrides": {
     "react-autosize-textarea": {

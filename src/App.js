@@ -315,7 +315,7 @@ export default function App() {
 			if ( parsed?.type === 'press-this-data' && parsed.data ) {
 				processScrapedData( parsed.data );
 			}
-		} catch ( e ) {
+		} catch {
 			// Invalid JSON in window.name — ignore gracefully.
 		}
 	}, [ data.windowNameMode, processScrapedData ] );
@@ -398,6 +398,7 @@ export default function App() {
 			<Header
 				siteName={ data.siteName }
 				siteUrl={ data.siteUrl }
+				adminUrl={ data.adminUrl }
 				sourceUrl={ data.sourceUrl }
 				isLegacyBookmarklet={ data.isLegacyBookmarklet }
 				hasBookmarkletContent={ !! data.content }

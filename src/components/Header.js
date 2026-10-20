@@ -6,8 +6,6 @@
  * @package
  */
 
-/* global navigator */
-
 /**
  * WordPress dependencies
  */
@@ -198,28 +196,29 @@ function isFutureDate( dateString, tz ) {
 /**
  * Header component.
  *
- * @param {Object}   props                       Component props.
- * @param {string}   props.siteName              Site name.
- * @param {string}   props.siteUrl               Site URL.
- * @param {string}   props.sourceUrl             Source URL being clipped.
- * @param {boolean}  props.isLegacyBookmarklet   Whether this is a legacy bookmarklet.
- * @param {boolean}  props.hasBookmarkletContent Whether content was already provided by bookmarklet.
- * @param {boolean}  props.hasBookmarkletMedia   Whether media was already provided by bookmarklet.
- * @param {boolean}  props.proxyEnabled          Whether URL proxy is enabled.
- * @param {string}   props.restUrl               REST API base URL.
- * @param {string}   props.restNonce             REST API nonce.
- * @param {Function} props.onScrapeComplete      Callback when scraping completes.
- * @param {Function} props.onSave                Callback for save operations (status, options).
- * @param {boolean}  props.isSaving              Whether a save operation is in progress.
- * @param {string}   props.publishLabel          Label for the publish button.
- * @param {Function} props.onUndo                Undo callback.
- * @param {Function} props.onRedo                Redo callback.
- * @param {boolean}  props.hasUndo               Whether undo is available.
- * @param {boolean}  props.hasRedo               Whether redo is available.
- * @param {Object}   props.capabilities          User capabilities.
- * @param {string}   props.timezone              Site timezone string from wp_timezone_string().
- * @param {string}   props.postStatus            Current post status.
- * @param {string}   props.postDate              Current post date (ISO 8601).
+ * @param {Object}                                     props                       Component props.
+ * @param {string}                                     props.siteName              Site name.
+ * @param {string}                                     props.siteUrl               Site URL.
+ * @param {string}                                     props.adminUrl              Admin URL used by the site name link.
+ * @param {string}                                     props.sourceUrl             Source URL being clipped.
+ * @param {boolean}                                    props.isLegacyBookmarklet   Whether this is a legacy bookmarklet.
+ * @param {boolean}                                    props.hasBookmarkletContent Whether content was already provided by bookmarklet.
+ * @param {boolean}                                    props.hasBookmarkletMedia   Whether media was already provided by bookmarklet.
+ * @param {boolean}                                    props.proxyEnabled          Whether URL proxy is enabled.
+ * @param {string}                                     props.restUrl               REST API base URL.
+ * @param {string}                                     props.restNonce             REST API nonce.
+ * @param {(result: Object) => void}                   props.onScrapeComplete      Callback when scraping completes.
+ * @param {(status: string, options?: Object) => void} props.onSave                Callback for save operations (status, options).
+ * @param {boolean}                                    props.isSaving              Whether a save operation is in progress.
+ * @param {string}                                     props.publishLabel          Label for the publish button.
+ * @param {() => void}                                 props.onUndo                Undo callback.
+ * @param {() => void}                                 props.onRedo                Redo callback.
+ * @param {boolean}                                    props.hasUndo               Whether undo is available.
+ * @param {boolean}                                    props.hasRedo               Whether redo is available.
+ * @param {Object}                                     props.capabilities          User capabilities.
+ * @param {string}                                     props.timezone              Site timezone string from wp_timezone_string().
+ * @param {string}                                     props.postStatus            Current post status.
+ * @param {string}                                     props.postDate              Current post date (ISO 8601).
  * @return {JSX.Element} Header component.
  */
 export {
@@ -232,6 +231,7 @@ export {
 export default function Header( {
 	siteName,
 	siteUrl,
+	adminUrl,
 	sourceUrl,
 	isLegacyBookmarklet,
 	hasBookmarkletContent = false,
@@ -511,7 +511,7 @@ export default function Header( {
 			<div className="press-this-header__bar">
 				<div className="press-this-header__site">
 					<a
-						href={ siteUrl }
+						href={ adminUrl || siteUrl }
 						target="_blank"
 						rel="noopener noreferrer"
 						className="press-this-header__site-link"
@@ -642,7 +642,7 @@ export default function Header( {
 																? postDate
 																: getCurrentDateInTimezone(
 																		timezone
-																  )
+																	)
 														);
 														onClose();
 													} }

@@ -98,6 +98,12 @@ add_action( 'tool_box', 'press_this_tool_box' );
 // Load text domain for translations.
 add_action( 'init', 'press_this_load_textdomain' );
 
+// Register WP-CLI commands.
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	require_once __DIR__ . '/includes/class-press-this-cli-commands.php';
+	WP_CLI::add_command( 'press-this', 'Press_This_CLI_Commands' );
+}
+
 /**
  * Load plugin text domain for translations.
  *
