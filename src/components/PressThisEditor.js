@@ -111,7 +111,13 @@ function ensureBlocksRegistered( inserterBlocks = [] ) {
 			'blocks.registerBlockType',
 			'press-this/curate-inserter',
 			( blockSettings, name ) => {
-				if ( inserterBlocks.includes( name ) ) {
+				// Child-only blocks never reach the root inserter; hiding them
+				// would also empty the appender inside a pasted parent.
+				if (
+					inserterBlocks.includes( name ) ||
+					blockSettings.parent ||
+					blockSettings.ancestor
+				) {
 					return blockSettings;
 				}
 				return {
