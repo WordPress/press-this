@@ -16,14 +16,14 @@ import {
 } from '../../src/components/Header';
 
 // Mock @wordpress/element so the module can load without React.
-jest.mock( '@wordpress/element', () => ( {
-	useState: ( init ) => [ typeof init === 'function' ? init() : init, jest.fn() ],
+vi.mock( '@wordpress/element', () => ( {
+	useState: ( init ) => [ typeof init === 'function' ? init() : init, vi.fn() ],
 	useCallback: ( fn ) => fn,
-	useEffect: jest.fn(),
+	useEffect: vi.fn(),
 	useRef: ( val ) => ( { current: val } ),
 } ) );
 
-jest.mock( '@wordpress/components', () => ( {
+vi.mock( '@wordpress/components', () => ( {
 	Button: 'Button',
 	TextControl: 'TextControl',
 	Notice: 'Notice',
@@ -35,11 +35,11 @@ jest.mock( '@wordpress/components', () => ( {
 	DateTimePicker: 'DateTimePicker',
 } ) );
 
-jest.mock( '@wordpress/i18n', () => ( {
+vi.mock( '@wordpress/i18n', () => ( {
 	__: ( text ) => text,
 } ) );
 
-jest.mock( '@wordpress/icons', () => ( {
+vi.mock( '@wordpress/icons', () => ( {
 	undo: 'undo-icon',
 	redo: 'redo-icon',
 	moreVertical: 'more-vertical-icon',

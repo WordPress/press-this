@@ -68,7 +68,16 @@ jobs:
         run: composer install --prefer-dist --no-progress
 
       - name: Run PHP unit tests
-        run: composer test:php
+        run: composer test:php -- --log-junit "$RUNNER_TEMP/phpunit-junit.xml"
+
+      # PHPUnit writes the report only after the last test, so a missing file
+      # means something in the code under test ended the process early.
+      - name: Check the PHP suite ran to completion
+        run: |
+          if [ ! -s "$RUNNER_TEMP/phpunit-junit.xml" ]; then
+            echo "::error::PHPUnit exited before finishing the suite. A test likely reached exit() or die()."
+            exit 1
+          fi
 
   lint:
     name: Code Linting

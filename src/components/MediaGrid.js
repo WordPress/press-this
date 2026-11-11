@@ -45,8 +45,8 @@ function sanitizeUrl( url ) {
 /**
  * Filter out invalid images by loading them.
  *
- * @param {string[]} images     Array of image URLs.
- * @param {Function} onFiltered Callback with filtered images.
+ * @param {string[]}                   images     Array of image URLs.
+ * @param {(images: string[]) => void} onFiltered Callback with filtered images.
  */
 function filterImagesByDimensions( images, onFiltered ) {
 	const validImages = [];
@@ -85,14 +85,14 @@ function filterImagesByDimensions( images, onFiltered ) {
 /**
  * MediaGrid component.
  *
- * @param {Object}   props                    Component props.
- * @param {string[]} props.images             Array of image URLs.
- * @param {string[]} props.embeds             Array of embed URLs.
- * @param {string}   props.featuredImage      Currently selected featured image URL.
- * @param {Function} props.onInsert           Callback when inserting media into editor.
- * @param {Function} props.onSetFeatured      Callback when setting featured image.
- * @param {boolean}  props.filterByDimensions Whether to filter images by dimensions.
- * @param {string}   props.className          Additional CSS class.
+ * @param {Object}                  props                    Component props.
+ * @param {string[]}                props.images             Array of image URLs.
+ * @param {string[]}                props.embeds             Array of embed URLs.
+ * @param {string}                  props.featuredImage      Currently selected featured image URL.
+ * @param {(media: Object) => void} props.onInsert           Callback when inserting media into editor.
+ * @param {(src: string) => void}   props.onSetFeatured      Callback when setting featured image.
+ * @param {boolean}                 props.filterByDimensions Whether to filter images by dimensions.
+ * @param {string}                  props.className          Additional CSS class.
  * @return {JSX.Element|null} The MediaGrid component or null if no media.
  */
 export default function MediaGrid( {

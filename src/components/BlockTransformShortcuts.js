@@ -2,7 +2,7 @@
  * Block Transform Keyboard Shortcuts
  *
  * Registers keyboard shortcuts for transforming blocks between types.
- * Mirrors the behavior of @wordpress/block-library's internal
+ * Mirrors the behavior of `@wordpress/block-library`'s internal
  * BlockKeyboardShortcuts component, which Press This doesn't render
  * since it uses BlockEditorProvider directly.
  *

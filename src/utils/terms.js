@@ -1,7 +1,7 @@
 /**
  * Term tree utilities.
  *
- * Ported from @wordpress/editor/src/utils/terms.js and the
+ * Ported from `@wordpress/editor/src/utils/terms.js` and the
  * HierarchicalTermSelector filter logic. These are pure functions
  * with no data-store dependencies.
  *
@@ -81,10 +81,10 @@ export const unescapeString = ( arg ) => {
  * When a child term matches, its ancestor path is preserved in the result
  * so the user sees the hierarchical context.
  *
- * Ported from @wordpress/editor HierarchicalTermSelector.
+ * Ported from `@wordpress/editor` HierarchicalTermSelector.
  *
  * @param {string} filterValue Search string.
- * @return {Function} Matcher that accepts a term tree node and returns the
+ * @return {(term: Object) => Object|false} Matcher that accepts a term tree node and returns the
  *                    (possibly pruned) node or false.
  */
 export function getFilterMatcher( filterValue ) {

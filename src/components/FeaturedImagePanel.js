@@ -20,8 +20,8 @@ import { __ } from '@wordpress/i18n';
 /**
  * Filter images by loading them and checking dimensions.
  *
- * @param {string[]} images     Array of image URLs.
- * @param {Function} onFiltered Callback with filtered images.
+ * @param {string[]}                   images     Array of image URLs.
+ * @param {(images: string[]) => void} onFiltered Callback with filtered images.
  */
 function filterValidImages( images, onFiltered ) {
 	const validImages = [];
@@ -90,7 +90,7 @@ async function sideloadImage( url, restConfig, postId = 0 ) {
 /**
  * Open WordPress media library.
  *
- * @param {Function} onSelect Callback when media is selected.
+ * @param {(attachment: Object) => void} onSelect Callback when media is selected.
  */
 function openMediaLibrary( onSelect ) {
 	// Use the WordPress media library directly.
@@ -116,12 +116,12 @@ function openMediaLibrary( onSelect ) {
 /**
  * Featured Image Panel component.
  *
- * @param {Object}   props               Component props.
- * @param {Function} props.onSelect      Callback when image is selected.
- * @param {Function} props.onRemove      Callback when image is removed.
- * @param {Array}    props.scrapedImages Array of scraped image URLs.
- * @param {Object}   props.restConfig    REST API configuration.
- * @param {number}   props.postId        Current post ID.
+ * @param {Object}                         props               Component props.
+ * @param {(attachmentId: number) => void} props.onSelect      Callback when image is selected.
+ * @param {() => void}                     props.onRemove      Callback when image is removed.
+ * @param {Array}                          props.scrapedImages Array of scraped image URLs.
+ * @param {Object}                         props.restConfig    REST API configuration.
+ * @param {number}                         props.postId        Current post ID.
  * @return {JSX.Element} Panel component.
  */
 export default function FeaturedImagePanel( {

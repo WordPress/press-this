@@ -50,11 +50,11 @@ export const DEFAULT_ALLOWED_BLOCKS = [
 /**
  * Press This Editor Component
  *
- * @param {Object}   props                 Component props.
- * @param {Object}   props.settings        Editor settings from PHP.
- * @param {Object}   props.initialData     Initial scraped data from bookmarklet.
- * @param {Function} props.onContentChange Callback when content changes.
- * @param {Function} props.onDirtyChange   Callback when dirty state changes.
+ * @param {Object}                     props                 Component props.
+ * @param {Object}                     props.settings        Editor settings from PHP.
+ * @param {Object}                     props.initialData     Initial scraped data from bookmarklet.
+ * @param {(content: string) => void}  props.onContentChange Callback when content changes.
+ * @param {(isDirty: boolean) => void} props.onDirtyChange   Callback when dirty state changes.
  * @return {JSX.Element} The editor component.
  */
 export default function PressThisEditor( {
