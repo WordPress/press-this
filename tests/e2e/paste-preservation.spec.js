@@ -116,21 +116,43 @@ test.describe( 'Paste Preservation', () => {
 		await page.goto( '/wp-admin/press-this.php' );
 		await page.locator( editorContent ).waitFor( { timeout: 10000 } );
 
-		const { inserterTypes, canInsertTable } = await page.evaluate( () => {
-			const store = window.wp.data.select( 'core/block-editor' );
-			const types = [
-				...new Set( store.getInserterItems().map( ( i ) => i.name ) ),
-			];
-			return {
-				inserterTypes: types,
-				canInsertTable: store.canInsertBlockType( 'core/table' ),
-			};
-		} );
+		const rootInserterTypes = () =>
+			page.evaluate( () => [
+				...new Set(
+					window.wp.data
+						.select( 'core/block-editor' )
+						.getInserterItems()
+						.map( ( i ) => i.name )
+				),
+			] );
+
+		// Blocks register in an effect after mount, so wait for the inserter to fill.
+		await expect.poll( rootInserterTypes ).toContain( 'core/paragraph' );
+		const inserterTypes = await rootInserterTypes();
 
 		// Non-curated blocks are hidden from the inserter...
+		expect( inserterTypes ).toContain( 'core/heading' );
 		expect( inserterTypes ).not.toContain( 'core/table' );
-		expect( inserterTypes ).toContain( 'core/paragraph' );
+		expect( inserterTypes ).not.toContain( 'core/columns' );
+
+		const { canInsertTable, buttonsChildTypes } = await page.evaluate(
+			() => {
+				const { dispatch, select } = window.wp.data;
+				const buttons = window.wp.blocks.createBlock( 'core/buttons' );
+				dispatch( 'core/block-editor' ).insertBlock( buttons );
+				const store = select( 'core/block-editor' );
+				return {
+					canInsertTable: store.canInsertBlockType( 'core/table' ),
+					buttonsChildTypes: store
+						.getInserterItems( buttons.clientId )
+						.map( ( i ) => i.name ),
+				};
+			}
+		);
+
 		// ...but remain insertable, which is what keeps paste working.
 		expect( canInsertTable ).toBe( true );
+		// Child-only blocks stay available inside their (pasted) parent.
+		expect( buttonsChildTypes ).toContain( 'core/button' );
 	} );
 } );
