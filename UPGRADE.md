@@ -43,7 +43,7 @@ If your extension performed server-side content extraction, you'll need to:
 
 ### press_this_allowed_blocks
 
-Control which blocks are available in the Press This editor.
+Control which blocks are shown in the Press This inserter. Other block types are hidden from the inserter but still kept when pasted.
 
 ```php
 /**
