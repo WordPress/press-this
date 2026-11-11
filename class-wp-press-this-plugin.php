@@ -1288,7 +1288,10 @@ class WP_Press_This_Plugin {
 		 *
 		 * @param string[] $allowed_blocks Array of block type names shown in the inserter.
 		 */
-		return apply_filters( 'press_this_allowed_blocks', $default_blocks );
+		$blocks = apply_filters( 'press_this_allowed_blocks', $default_blocks );
+
+		// Reindex so a filtered list (e.g. via array_filter) encodes as a JSON array, not an object.
+		return array_values( (array) $blocks );
 	}
 
 	/**
