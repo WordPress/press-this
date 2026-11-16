@@ -3,8 +3,8 @@ Contributors: kraftbj, wordpressdotorg
 Donate link: http://wordpressfoundation.org/donate/
 Tags: post, quick-post, photo-post, bookmarklet, gutenberg
 Requires at least: 6.9
-Tested up to: 7.1
-Stable tag: 2.1.0
+Tested up to: 7.2
+Stable tag: 2.1.1
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -124,6 +124,9 @@ All existing hooks continue to work:
 
 == Upgrade Notice ==
 
+= 2.1.1 =
+Recommended update: improvements to how suggested content is generated from scraped pages, plus dependency updates.
+
 = 2.1.0 =
 Post scheduling, mobile home-screen support, and fixes for embed previews and cursor placement.
 
@@ -140,6 +143,11 @@ Fixes styling issues and bumps tested version.
 Restores bookmarklet functionality.
 
 == Changelog ==
+
+= 2.1.1 =
+* **Fix:** Suggested content built from scraped pages now validates and normalizes URLs and only generates supported block types.
+* **Change:** "Tested up to" raised to WordPress 7.2.
+* **Dev:** Dependency updates.
 
 = 2.1.0 =
 * **New:** Schedule posts for future publishing directly from Press This
