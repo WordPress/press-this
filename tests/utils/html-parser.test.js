@@ -838,6 +838,21 @@ describe( 'content builder block-injection hardening', () => {
 		expect( content ).not.toContain( 'script:alert' );
 	} );
 
+	// Regression: a mailto: href must not carry raw markup or a block
+	// delimiter into the serialized content, whatever the URL implementation.
+	test( 'mailto href cannot carry markup or a block delimiter', () => {
+		const content = htmlToBlocks(
+			'<p><a href="mailto:a@b.com?subject=--><!-- wp:x/y --><iframe src=javascript:alert(1)></iframe>">x</a></p>'
+		);
+		expect( content ).not.toContain( '<iframe' );
+		expect( content ).not.toContain( '<!-- wp:x/y' );
+		// The href's own "-->" is percent-encoded; no raw terminator survives.
+		expect( content ).toContain( '--%3E' );
+		for ( const name of parsedBlockNames( content ) ) {
+			expect( BUILDER_BLOCKS ).toContain( name );
+		}
+	} );
+
 	// Regression: an embed URL containing a comment terminator must not break
 	// out of the wp:embed delimiter.
 	test( 'embed URL cannot terminate the block delimiter', () => {

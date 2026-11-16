@@ -111,16 +111,28 @@ function normalizeHref( value ) {
 	const stripped = value.replace( /[\u0000- ]+/g, '' );
 	const scheme = stripped.match( /^([a-z][a-z0-9+.-]*):/i );
 
+	let href;
 	if ( scheme ) {
 		if ( ! /^(https?|mailto)$/i.test( scheme[ 1 ] ) ) {
 			return '';
 		}
-		return safeUrl( value );
+		href = safeUrl( value );
+		if ( ! href ) {
+			return '';
+		}
+	} else {
+		// Relative or protocol-relative URL: no scheme to abuse.
+		href = value;
 	}
 
-	// Relative or protocol-relative URL: no scheme to abuse, so just neutralize
-	// the characters that could escape the attribute or a block delimiter.
-	return value
+	/*
+	 * Belt and suspenders: HTML attribute serialization never escapes `<` or
+	 * `>`, and a "cannot-be-a-base" URL such as mailto: is not guaranteed to
+	 * percent-encode them across URL implementations. Encode the characters
+	 * that could escape the attribute or a block-delimiter comment on every
+	 * returned href, whatever its scheme.
+	 */
+	return href
 		.replace( /</g, '%3C' )
 		.replace( />/g, '%3E' )
 		.replace( /"/g, '%22' );

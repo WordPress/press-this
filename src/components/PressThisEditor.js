@@ -78,20 +78,46 @@ const ALLOWED_SCRAPED_BLOCKS = new Set( [
 ] );
 
 /**
- * Drop any top-level block that the scraped-content builder would never emit.
+ * Whether a parsed block and its entire subtree are safe to keep.
  *
- * Only the top level is filtered: the injected block always appears as a
- * sibling of the builder's own blocks, and `sanitizeInlineContent` already
- * strips the comment nodes that could smuggle a block into nested content.
- * Filtering nested blocks would desynchronize each parent's `innerContent`
- * placeholders from its `innerBlocks`, breaking serialization.
+ * A named block must be in the allowlist; an unnamed (freeform) block is a
+ * raw-HTML segment and is tolerated only when it carries no content, which is
+ * the inter-block whitespace the parser emits for well-formed content. Every
+ * descendant is checked too, so a disallowed block hidden inside an allowed
+ * wrapper (e.g. a `core/missing` smuggled into a quote) fails the check.
+ *
+ * @param {Object} block Parsed block object.
+ * @return {boolean} True when the block and all its descendants are allowed.
+ */
+function isBlockSubtreeAllowed( block ) {
+	if ( ! block.name ) {
+		return ( block.innerHTML || '' ).trim() === '';
+	}
+	if ( ! ALLOWED_SCRAPED_BLOCKS.has( block.name ) ) {
+		return false;
+	}
+	return ( block.innerBlocks || [] ).every( isBlockSubtreeAllowed );
+}
+
+/**
+ * Drop any scraped block the content builder would never emit.
+ *
+ * A top-level block is kept only when it is an allowed type whose whole
+ * subtree is also allowed, so an injected block is dropped whether it lands as
+ * a sibling of the builder's blocks or nested inside one. Whole top-level
+ * blocks are kept or dropped intact — nested blocks are never pruned in place,
+ * which would desynchronize a parent's `innerContent` placeholders from its
+ * `innerBlocks` and break serialization.
  *
  * @param {Array} blocks Parsed block objects.
- * @return {Array} Blocks limited to the allowed types.
+ * @return {Array} Blocks limited to allowed types with allowed subtrees.
  */
-function filterScrapedBlocks( blocks ) {
+export function filterScrapedBlocks( blocks ) {
 	return blocks.filter(
-		( block ) => block.name && ALLOWED_SCRAPED_BLOCKS.has( block.name )
+		( block ) =>
+			block.name &&
+			ALLOWED_SCRAPED_BLOCKS.has( block.name ) &&
+			isBlockSubtreeAllowed( block )
 	);
 }
 
