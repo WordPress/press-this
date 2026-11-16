@@ -4,14 +4,40 @@
  * @package press-this
  */
 
+import { parse } from '@wordpress/block-serialization-default-parser';
 import {
 	escapeHtml,
 	escapeAttr,
+	safeUrl,
 	htmlToBlocks,
 	parseHtmlMetadata,
 	buildSuggestedContent,
 	buildSuggestedContentFromMetadata,
 } from '../../src/utils/html-parser';
+
+/**
+ * Names of blocks produced by parsing a serialized content string. A block
+ * name the content builder never emits (e.g. "x/y", "core/missing",
+ * "core/html") means a page-supplied value broke out of its intended block.
+ *
+ * @param {string} content Serialized block content.
+ * @return {Array<string|null>} Parsed block names.
+ */
+const parsedBlockNames = ( content ) =>
+	parse( content )
+		.filter( ( block ) => block.blockName !== null || block.innerHTML.trim() )
+		.map( ( block ) => block.blockName );
+
+// Block types the Press This content builder is expected to emit.
+const BUILDER_BLOCKS = [
+	'core/paragraph',
+	'core/heading',
+	'core/list',
+	'core/list-item',
+	'core/quote',
+	'core/code',
+	'core/embed',
+];
 
 describe( 'escapeHtml', () => {
 	test( 'escapes ampersand', () => {
@@ -72,12 +98,12 @@ describe( 'escapeAttr', () => {
 		expect( escapeAttr( "it's" ) ).toBe( 'it&#039;s' );
 	} );
 
-	test( 'does NOT escape less-than', () => {
-		expect( escapeAttr( 'a < b' ) ).toBe( 'a < b' );
+	test( 'escapes less-than', () => {
+		expect( escapeAttr( 'a < b' ) ).toBe( 'a &lt; b' );
 	} );
 
-	test( 'does NOT escape greater-than', () => {
-		expect( escapeAttr( 'a > b' ) ).toBe( 'a > b' );
+	test( 'escapes greater-than', () => {
+		expect( escapeAttr( 'a > b' ) ).toBe( 'a &gt; b' );
 	} );
 
 	test( 'returns empty string for non-string', () => {
@@ -250,7 +276,7 @@ describe( 'htmlToBlocks', () => {
 		const html =
 			'<p><a href="https://example.com" class="btn" style="color:red">link</a></p>';
 		const result = htmlToBlocks( html );
-		expect( result ).toContain( '<a href="https://example.com">' );
+		expect( result ).toContain( '<a href="https://example.com/">' );
 		expect( result ).not.toContain( 'class=' );
 		expect( result ).not.toContain( 'style=' );
 	} );
@@ -281,7 +307,7 @@ describe( 'htmlToBlocks', () => {
 		const result = htmlToBlocks( html );
 		expect( result ).toContain( '<strong>bold</strong>' );
 		expect( result ).toContain( '<em>italic</em>' );
-		expect( result ).toContain( '<a href="https://example.com">link</a>' );
+		expect( result ).toContain( '<a href="https://example.com/">link</a>' );
 	} );
 
 	test( 'escapes special characters in plain text nodes', () => {
@@ -494,7 +520,8 @@ describe( 'buildSuggestedContent', () => {
 		const content = buildSuggestedContent( data, 'https://example.com' );
 		expect( content ).toContain( 'Source:' );
 		expect( content ).toContain( 'Page Title' );
-		expect( content ).toContain( 'href="https://example.com"' );
+		// safeUrl() normalizes the bare origin to include a trailing slash.
+		expect( content ).toContain( 'href="https://example.com/"' );
 	} );
 
 	test( 'uses siteName as fallback link text', () => {
@@ -585,11 +612,16 @@ describe( 'buildSuggestedContent', () => {
 		expect( content ).toContain( '&lt;script&gt;' );
 	} );
 
-	test( 'escapes attribute characters in URL', () => {
+	test( 'normalizes quote characters in URL out of the href', () => {
 		const data = { title: 'Test' };
 		const url = 'https://example.com/page?a="b"';
 		const content = buildSuggestedContent( data, url );
-		expect( content ).toContain( 'href="https://example.com/page?a=&quot;b&quot;"' );
+		// safeUrl() percent-encodes the quotes, so no raw quote reaches the
+		// attribute value.
+		expect( content ).toContain(
+			'href="https://example.com/page?a=%22b%22"'
+		);
+		expect( content ).not.toContain( 'a="b"' );
 	} );
 
 	test( 'handles empty data gracefully', () => {
@@ -698,9 +730,124 @@ describe( 'buildSuggestedContentFromMetadata', () => {
 		expect( content ).toContain( 'href="https://example.com/url"' );
 	} );
 
-	test( 'falls back to empty string when no canonical or url', () => {
+	test( 'omits the source link when no canonical or url', () => {
 		const data = { title: 'Test' };
 		const content = buildSuggestedContentFromMetadata( data );
-		expect( content ).toContain( 'href=""' );
+		// With no usable URL there is no anchor at all; the attribution is
+		// plain text rather than an empty, danger-prone href.
+		expect( content ).not.toContain( '<a ' );
+		expect( content ).not.toContain( 'href' );
+		expect( content ).toContain( 'Source: <em>Test</em>' );
+	} );
+} );
+
+describe( 'safeUrl', () => {
+	test( 'passes through and normalizes http(s) URLs', () => {
+		expect( safeUrl( 'https://example.com/page' ) ).toBe(
+			'https://example.com/page'
+		);
+		expect( safeUrl( 'http://example.com' ) ).toBe( 'http://example.com/' );
+	} );
+
+	test( 'percent-encodes angle brackets so markup cannot survive', () => {
+		const result = safeUrl( 'https://example.com/<script>' );
+		expect( result ).not.toContain( '<' );
+		expect( result ).not.toContain( '>' );
+		expect( result ).toContain( '%3C' );
+	} );
+
+	test( 'rejects javascript:, data: and vbscript: schemes', () => {
+		expect( safeUrl( 'javascript:alert(1)' ) ).toBe( '' );
+		expect( safeUrl( 'data:text/html,<script>alert(1)</script>' ) ).toBe(
+			''
+		);
+		expect( safeUrl( 'vbscript:MsgBox(1)' ) ).toBe( '' );
+	} );
+
+	test( 'returns empty string for unparseable or non-string input', () => {
+		expect( safeUrl( 'not a url' ) ).toBe( '' );
+		expect( safeUrl( '' ) ).toBe( '' );
+		expect( safeUrl( null ) ).toBe( '' );
+		expect( safeUrl( 42 ) ).toBe( '' );
+	} );
+} );
+
+describe( 'content builder block-injection hardening', () => {
+	// Regression: an attacker-controlled canonical URL that embeds Gutenberg
+	// block delimiters must not break out of the source-attribution block.
+	test( 'canonical URL cannot inject a separate block', () => {
+		const canonical =
+			'https://news.example/post' +
+			'<!-- /wp:paragraph -->' +
+			'<!-- wp:x/y -->' +
+			'<iframe src=javascript:alert(document.domain)></iframe>' +
+			'<!-- /wp:x/y -->';
+		const content = buildSuggestedContentFromMetadata( {
+			title: 'Hello',
+			canonical,
+		} );
+
+		expect( content ).not.toContain( '<iframe' );
+		expect( content ).not.toContain( '<!-- wp:x/y' );
+		// Every parsed block is one the builder is allowed to emit.
+		for ( const name of parsedBlockNames( content ) ) {
+			expect( BUILDER_BLOCKS ).toContain( name );
+		}
+	} );
+
+	test( 'javascript: canonical URL does not produce a link', () => {
+		const content = buildSuggestedContentFromMetadata( {
+			title: 'Hello',
+			canonical: 'javascript:alert(1)',
+		} );
+		expect( content ).not.toContain( 'javascript:' );
+		expect( content ).not.toContain( '<a ' );
+	} );
+
+	// Regression: HTML comments in the selection must not smuggle block
+	// delimiters into the generated markup.
+	test( 'comment nodes in selection HTML cannot inject a block', () => {
+		const content = htmlToBlocks(
+			'<p>hi<!-- /wp:paragraph --><!-- wp:x/y --><iframe src=javascript:alert(1)></iframe><!-- /wp:x/y --></p>'
+		);
+		expect( content ).not.toContain( '<!-- wp:x/y' );
+		expect( content ).not.toContain( '<iframe' );
+		for ( const name of parsedBlockNames( content ) ) {
+			expect( BUILDER_BLOCKS ).toContain( name );
+		}
+	} );
+
+	// Regression: a link breakout via a crafted href inside the selection.
+	test( 'angle brackets in a selection href cannot break out', () => {
+		const content = htmlToBlocks(
+			'<p><a href="https://a/<!-- /wp:paragraph --><!-- wp:x/y --><iframe src=javascript:alert(1)></iframe><!-- /wp:x/y -->">x</a></p>'
+		);
+		expect( content ).not.toContain( '<!-- wp:x/y' );
+		expect( content ).not.toContain( '<iframe' );
+		for ( const name of parsedBlockNames( content ) ) {
+			expect( BUILDER_BLOCKS ).toContain( name );
+		}
+	} );
+
+	// Regression: whitespace/control-char obfuscation of a dangerous scheme.
+	test( 'strips a javascript: href obfuscated with a tab', () => {
+		const content = htmlToBlocks(
+			'<p><a href="java\tscript:alert(1)">x</a></p>'
+		);
+		expect( content.toLowerCase() ).not.toContain( 'javascript:' );
+		expect( content ).not.toContain( 'script:alert' );
+	} );
+
+	// Regression: an embed URL containing a comment terminator must not break
+	// out of the wp:embed delimiter.
+	test( 'embed URL cannot terminate the block delimiter', () => {
+		const url =
+			'https://www.youtube.com/watch?v=x--><iframe src=javascript:alert(1)></iframe>';
+		const content = buildSuggestedContent( { title: 'v' }, url );
+		expect( content ).not.toContain( '<iframe' );
+		expect( content ).not.toContain( '--><' );
+		for ( const name of parsedBlockNames( content ) ) {
+			expect( BUILDER_BLOCKS ).toContain( name );
+		}
 	} );
 } );

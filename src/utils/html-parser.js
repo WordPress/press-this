@@ -6,7 +6,7 @@
  * @package
  */
 
-/* global DOMParser */
+/* global DOMParser, NodeFilter */
 
 /**
  * Escape HTML special characters.
@@ -33,8 +33,10 @@ export function escapeHtml( str ) {
 /**
  * Escape attribute value special characters.
  *
- * Escapes values for use in HTML attributes.
- * Escapes: & " '
+ * Escapes values for use in HTML attributes. Angle brackets are escaped as
+ * well as quotes so a value can never break out of the attribute, close the
+ * surrounding tag, or terminate a block-delimiter HTML comment.
+ * Escapes: & < > " '
  *
  * @param {string} str String to escape.
  * @return {string} Escaped string.
@@ -46,8 +48,102 @@ export function escapeAttr( str ) {
 
 	return str
 		.replace( /&/g, '&amp;' )
+		.replace( /</g, '&lt;' )
+		.replace( />/g, '&gt;' )
 		.replace( /"/g, '&quot;' )
 		.replace( /'/g, '&#039;' );
+}
+
+/**
+ * Normalize a URL and confirm it uses a safe scheme.
+ *
+ * Page-supplied URLs (canonical, source, embed, link hrefs) are attacker
+ * controlled on the Press This data path. Parsing with the URL constructor
+ * percent-encodes angle brackets, quotes and spaces, so a normalized value
+ * can never carry raw markup or a block-delimiter comment into serialized
+ * block content. Only http(s) and mailto are allowed through; anything else
+ * (javascript:, data:, vbscript:, an unparseable value) returns an empty
+ * string so the caller can drop the link rather than emit a dangerous one.
+ *
+ * @param {string} url       URL to validate.
+ * @param {string} [baseUrl] Optional base for resolving a relative URL.
+ * @return {string} Normalized absolute URL, or '' when unsafe or invalid.
+ */
+export function safeUrl( url, baseUrl ) {
+	if ( typeof url !== 'string' || url.trim() === '' ) {
+		return '';
+	}
+
+	let parsed;
+	try {
+		parsed = baseUrl ? new URL( url, baseUrl ) : new URL( url );
+	} catch {
+		return '';
+	}
+
+	const allowed = [ 'http:', 'https:', 'mailto:' ];
+	if ( ! allowed.includes( parsed.protocol ) ) {
+		return '';
+	}
+
+	return parsed.href;
+}
+
+/**
+ * Normalize an `href` value kept on a sanitized `<a>`.
+ *
+ * An absolute URL is run through safeUrl, which both rejects dangerous
+ * schemes and percent-encodes markup. A scheme-bearing value is checked
+ * against the allowlist with ASCII whitespace and control characters stripped
+ * first, since browsers ignore them when resolving a scheme (`java\tscript:`).
+ * A relative or protocol-relative value has no scheme to abuse, so only the
+ * characters that could break out of the attribute or a block-delimiter
+ * comment are encoded.
+ *
+ * @param {string} value Raw href value.
+ * @return {string} Safe href, or '' when the value must be dropped.
+ */
+function normalizeHref( value ) {
+	if ( typeof value !== 'string' ) {
+		return '';
+	}
+
+	const stripped = value.replace( /[\u0000- ]+/g, '' );
+	const scheme = stripped.match( /^([a-z][a-z0-9+.-]*):/i );
+
+	if ( scheme ) {
+		if ( ! /^(https?|mailto)$/i.test( scheme[ 1 ] ) ) {
+			return '';
+		}
+		return safeUrl( value );
+	}
+
+	// Relative or protocol-relative URL: no scheme to abuse, so just neutralize
+	// the characters that could escape the attribute or a block delimiter.
+	return value
+		.replace( /</g, '%3C' )
+		.replace( />/g, '%3E' )
+		.replace( /"/g, '%22' );
+}
+
+/**
+ * Serialize a block's attributes the way Gutenberg's serializer does.
+ *
+ * `@wordpress/blocks` escapes `--`, `<`, `>` and `&` inside the JSON so the
+ * attribute text can never terminate the block-delimiter comment or open a
+ * tag. Building the comment by hand with raw interpolation skips that step,
+ * so mirror it here.
+ *
+ * @param {Object} attributes Block attribute object.
+ * @return {string} Escaped JSON string for the block delimiter.
+ */
+function serializeBlockAttributes( attributes ) {
+	return JSON.stringify( attributes )
+		.replace( /--/g, '\\u002d\\u002d' )
+		.replace( /</g, '\\u003c' )
+		.replace( />/g, '\\u003e' )
+		.replace( /&/g, '\\u0026' )
+		.replace( /\\"/g, '\\u0022' );
 }
 
 /**
@@ -448,14 +544,34 @@ function getCanonical( doc, meta ) {
 }
 
 /**
+ * Remove every comment node within an element (in-place).
+ *
+ * @param {Element} element DOM element to clean.
+ */
+function removeCommentNodes( element ) {
+	const walker = element.ownerDocument.createTreeWalker(
+		element,
+		NodeFilter.SHOW_COMMENT
+	);
+	const comments = [];
+	let node = walker.nextNode();
+	while ( node ) {
+		comments.push( node );
+		node = walker.nextNode();
+	}
+	comments.forEach( ( comment ) => comment.remove() );
+}
+
+/**
  * Sanitize inline HTML, keeping only a safe allowlist of formatting elements.
  *
  * Allowlisted inline elements: strong, em, b, i, u, s, a (href only),
  * code, mark, sub, sup, span, br.
  * All other elements are unwrapped (their children are preserved).
  * Dangerous elements (script, style, object, embed, iframe) are fully removed.
+ * Comment nodes are removed so block-delimiter comments cannot be injected.
  * All attributes are stripped except `href` on `<a>` elements.
- * URI schemes `javascript:`, `data:`, and `vbscript:` are blocked in `href`.
+ * Only http(s) and mailto schemes are allowed in `href`.
  *
  * @param {Element} element DOM element to sanitize (in-place).
  */
@@ -465,6 +581,13 @@ function sanitizeInlineContent( element ) {
 		'script, style, object, embed, iframe'
 	);
 	dangerous.forEach( ( el ) => el.remove() );
+
+	/*
+	 * Remove comment nodes so page content cannot smuggle block-delimiter
+	 * comments (`<!-- wp:... -->`) into the serialized innerHTML and have the
+	 * editor parse them as separate, attacker-chosen blocks.
+	 */
+	removeCommentNodes( element );
 
 	const ALLOWED_INLINE = new Set( [
 		'strong',
@@ -495,8 +618,10 @@ function sanitizeInlineContent( element ) {
 		// Strip all attributes except allowed ones per element.
 		Array.from( el.attributes ).forEach( ( attr ) => {
 			if ( tagName === 'a' && attr.name === 'href' ) {
-				// Block dangerous URI schemes.
-				if ( /^\s*(javascript|data|vbscript):/i.test( attr.value ) ) {
+				const normalized = normalizeHref( attr.value );
+				if ( normalized ) {
+					el.setAttribute( 'href', normalized );
+				} else {
 					el.removeAttribute( attr.name );
 				}
 			} else {
@@ -584,6 +709,10 @@ export function htmlToBlocks( html, depth = 0 ) {
 	const parser = new DOMParser();
 	const doc = parser.parseFromString( `<body>${ html }</body>`, 'text/html' );
 	const body = doc.body;
+
+	// Drop comment nodes up front so no path can serialize a page-supplied
+	// block-delimiter comment into the generated block markup.
+	removeCommentNodes( body );
 
 	let blocks = '';
 	let inlineBuffer = '';
@@ -739,20 +868,31 @@ export function buildSuggestedContent( data, sourceUrl ) {
 	// Check if source URL is an embeddable video.
 	const isEmbed = isEmbeddableUrl( sourceUrl );
 
-	if ( isEmbed ) {
-		// Escape URL in JSON attribute.
-		const escapedUrl = escapeAttr( sourceUrl );
+	// Normalize once: a safe, percent-encoded URL for the embed and the source
+	// link, or '' when the page-supplied value is unsafe or unparseable.
+	const safeSourceUrl = safeUrl( sourceUrl );
+
+	if ( isEmbed && safeSourceUrl ) {
 		const provider = getEmbedProvider( sourceUrl );
 
-		// Add embed block.
-		// The figure class list must match what core/embed save() produces or
-		// the block fails validation in the editor and the user sees
-		// "Block contains unexpected or invalid content" instead of the
-		// preview. core/embed save() emits the provider class twice — once as
-		// `is-provider-X` and once as `wp-block-embed-X`.
-		content += `<!-- wp:embed {"url":"${ escapedUrl }","type":"video","providerNameSlug":"${ provider }"} -->
+		/*
+		 * Add embed block.
+		 * Attributes are serialized the way Gutenberg does so the URL cannot
+		 * break out of the block-delimiter comment.
+		 * The figure class list must match what core/embed save() produces or
+		 * the block fails validation in the editor and the user sees
+		 * "Block contains unexpected or invalid content" instead of the
+		 * preview. core/embed save() emits the provider class twice — once as
+		 * `is-provider-X` and once as `wp-block-embed-X`.
+		 */
+		const embedAttrs = serializeBlockAttributes( {
+			url: safeSourceUrl,
+			type: 'video',
+			providerNameSlug: provider,
+		} );
+		content += `<!-- wp:embed ${ embedAttrs } -->
 <figure class="wp-block-embed is-type-video is-provider-${ provider } wp-block-embed-${ provider }"><div class="wp-block-embed__wrapper">
-${ escapeHtml( sourceUrl ) }
+${ escapeHtml( safeSourceUrl ) }
 </div></figure>
 <!-- /wp:embed -->
 
@@ -779,13 +919,17 @@ ${ escapeHtml( sourceUrl ) }
 `;
 	}
 
-	// Add source attribution.
-	// Escape link text.
-	const linkText = data.title || data.siteName || sourceUrl;
+	/*
+	 * Add source attribution. The link text is HTML-escaped, and the href is
+	 * the normalized URL. When the source URL is unsafe or unparseable, emit
+	 * the attribution as plain text with no link rather than a dangerous one.
+	 */
+	const linkText = escapeHtml( data.title || data.siteName || sourceUrl );
+	const sourceMarkup = safeSourceUrl
+		? `<a href="${ escapeAttr( safeSourceUrl ) }">${ linkText }</a>`
+		: linkText;
 	content += `<!-- wp:paragraph -->
-<p>Source: <em><a href="${ escapeAttr( sourceUrl ) }">${ escapeHtml(
-		linkText
-	) }</a></em></p>
+<p>Source: <em>${ sourceMarkup }</em></p>
 <!-- /wp:paragraph -->`;
 
 	return content;

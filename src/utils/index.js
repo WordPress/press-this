@@ -11,6 +11,7 @@ export {
 	htmlToBlocks,
 	escapeHtml,
 	escapeAttr,
+	safeUrl,
 } from './html-parser';
 
 export { isStandaloneMode } from './standalone';

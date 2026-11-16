@@ -55,6 +55,47 @@ import CategoryPanel from './CategoryPanel';
 import { isStandaloneMode } from '../utils';
 
 /**
+ * Block types the scraped-content builder is allowed to produce.
+ *
+ * Scraped content comes from an untrusted third-party page (delivered by the
+ * bookmarklet via postMessage or window.name). The content builder only ever
+ * emits these block types. Any other parsed block — most importantly
+ * `core/missing`, `core/html` and `core/freeform`, which render raw page
+ * markup — means a delimiter was injected into the serialized string, so it
+ * is dropped before it reaches the editor. This is a defense-in-depth
+ * backstop; the builder and its escaping are the primary defense.
+ *
+ * @type {Set<string>}
+ */
+const ALLOWED_SCRAPED_BLOCKS = new Set( [
+	'core/paragraph',
+	'core/heading',
+	'core/list',
+	'core/list-item',
+	'core/quote',
+	'core/code',
+	'core/embed',
+] );
+
+/**
+ * Drop any top-level block that the scraped-content builder would never emit.
+ *
+ * Only the top level is filtered: the injected block always appears as a
+ * sibling of the builder's own blocks, and `sanitizeInlineContent` already
+ * strips the comment nodes that could smuggle a block into nested content.
+ * Filtering nested blocks would desynchronize each parent's `innerContent`
+ * placeholders from its `innerBlocks`, breaking serialization.
+ *
+ * @param {Array} blocks Parsed block objects.
+ * @return {Array} Blocks limited to the allowed types.
+ */
+function filterScrapedBlocks( blocks ) {
+	return blocks.filter(
+		( block ) => block.name && ALLOWED_SCRAPED_BLOCKS.has( block.name )
+	);
+}
+
+/**
  * Sidebar Block Inspector component.
  *
  * This must be a separate component to access BlockEditorProvider context.
@@ -462,7 +503,9 @@ export default function PressThisEditor( {
 
 		// Parse and append the scraped content blocks (with undo level).
 		if ( pendingScrape.content ) {
-			const newBlocks = parse( pendingScrape.content );
+			const newBlocks = filterScrapedBlocks(
+				parse( pendingScrape.content )
+			);
 			undoStackRef.current = [
 				...undoStackRef.current,
 				blocksRef.current,
