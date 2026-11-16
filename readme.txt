@@ -34,7 +34,7 @@ Press This 2.0 brings the modern WordPress block editor experience to the bookma
 
 Press This 2.0 includes new filters for customization:
 
-* `press_this_allowed_blocks` - Customize which blocks are available in the editor
+* `press_this_allowed_blocks` - Customize which blocks are shown in the editor's inserter
 * `press_this_post_format_suggestion` - Modify the auto-suggested post format
 
 See the [Developer Documentation](#developer-documentation) section below for details.
@@ -56,7 +56,7 @@ Yes! Existing bookmarklets from version 1.x will continue to work. However, we r
 
 = Which blocks are available in Press This? =
 
-By default, Press This includes: Paragraph, Heading, Image, Quote, List, and Embed blocks. Developers can customize this using the `press_this_allowed_blocks` filter.
+By default, the Press This inserter offers Paragraph, Heading, Image, Quote, List, and Embed blocks. Developers can customize this using the `press_this_allowed_blocks` filter. Pasted content keeps its other blocks, such as tables, even though they are not offered in the inserter.
 
 = Can I still use the full WordPress editor? =
 
@@ -68,7 +68,7 @@ Absolutely! Click the "Standard Editor" option in the publish dropdown to save y
 
 **press_this_allowed_blocks**
 
-Customize which blocks are available in the Press This editor.
+Customize which blocks are shown in the Press This inserter. Other block types are hidden from the inserter but still kept when pasted.
 
 `
 add_filter( 'press_this_allowed_blocks', function( $blocks ) {

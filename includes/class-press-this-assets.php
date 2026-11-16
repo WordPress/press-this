@@ -180,14 +180,8 @@ class Press_This_Assets {
 			'core/embed',
 		);
 
-		/**
-		 * Filters the allowed blocks in Press This.
-		 *
-		 * @since 2.0.1
-		 *
-		 * @param string[] $allowed_blocks Array of allowed block type names.
-		 */
-		$allowed_blocks = apply_filters( 'press_this_allowed_blocks', $default_blocks );
+		/** This filter is documented in class-wp-press-this-plugin.php */
+		$allowed_blocks = array_values( (array) apply_filters( 'press_this_allowed_blocks', $default_blocks ) );
 
 		return array(
 			'allowedBlocks'   => $allowed_blocks,
@@ -228,6 +222,7 @@ class Press_This_Assets {
 			'wp-dom-ready',
 			'wp-element',
 			'wp-format-library',
+			'wp-hooks',
 			'wp-html-entities',
 			'wp-i18n',
 			'wp-keyboard-shortcuts',

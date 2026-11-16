@@ -852,6 +852,27 @@ class Test_WP_Press_This_Plugin_Extended extends BaseTestCase {
 		$this->assertEquals( array( 'core/paragraph' ), $blocks );
 	}
 
+	/**
+	 * Test get_allowed_blocks reindexes a filtered list so it encodes as a JSON array.
+	 */
+	public function test_get_allowed_blocks_reindexes_filtered_list() {
+		add_filter(
+			'press_this_allowed_blocks',
+			function ( $blocks ) {
+				return array_filter(
+					$blocks,
+					function ( $block ) {
+						return 'core/heading' !== $block;
+					}
+				);
+			}
+		);
+
+		$blocks = $this->plugin->get_allowed_blocks();
+		$this->assertSame( array_keys( $blocks ), range( 0, count( $blocks ) - 1 ) );
+		$this->assertStringStartsWith( '[', wp_json_encode( $blocks ) );
+	}
+
 	// ---- get_suggested_post_format ----
 
 	/**
