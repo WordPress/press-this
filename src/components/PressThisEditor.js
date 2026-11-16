@@ -55,6 +55,73 @@ import CategoryPanel from './CategoryPanel';
 import { isStandaloneMode } from '../utils';
 
 /**
+ * Block types the scraped-content builder is allowed to produce.
+ *
+ * Scraped content comes from an untrusted third-party page (delivered by the
+ * bookmarklet via postMessage or window.name). The content builder only ever
+ * emits these block types. Any other parsed block — most importantly
+ * `core/missing`, `core/html` and `core/freeform`, which render raw page
+ * markup — means a delimiter was injected into the serialized string, so it
+ * is dropped before it reaches the editor. This is a defense-in-depth
+ * backstop; the builder and its escaping are the primary defense.
+ *
+ * @type {Set<string>}
+ */
+const ALLOWED_SCRAPED_BLOCKS = new Set( [
+	'core/paragraph',
+	'core/heading',
+	'core/list',
+	'core/list-item',
+	'core/quote',
+	'core/code',
+	'core/embed',
+] );
+
+/**
+ * Whether a parsed block and its entire subtree are safe to keep.
+ *
+ * A named block must be in the allowlist; an unnamed (freeform) block is a
+ * raw-HTML segment and is tolerated only when it carries no content, which is
+ * the inter-block whitespace the parser emits for well-formed content. Every
+ * descendant is checked too, so a disallowed block hidden inside an allowed
+ * wrapper (e.g. a `core/missing` smuggled into a quote) fails the check.
+ *
+ * @param {Object} block Parsed block object.
+ * @return {boolean} True when the block and all its descendants are allowed.
+ */
+function isBlockSubtreeAllowed( block ) {
+	if ( ! block.name ) {
+		return ( block.innerHTML || '' ).trim() === '';
+	}
+	if ( ! ALLOWED_SCRAPED_BLOCKS.has( block.name ) ) {
+		return false;
+	}
+	return ( block.innerBlocks || [] ).every( isBlockSubtreeAllowed );
+}
+
+/**
+ * Drop any scraped block the content builder would never emit.
+ *
+ * A top-level block is kept only when it is an allowed type whose whole
+ * subtree is also allowed, so an injected block is dropped whether it lands as
+ * a sibling of the builder's blocks or nested inside one. Whole top-level
+ * blocks are kept or dropped intact — nested blocks are never pruned in place,
+ * which would desynchronize a parent's `innerContent` placeholders from its
+ * `innerBlocks` and break serialization.
+ *
+ * @param {Array} blocks Parsed block objects.
+ * @return {Array} Blocks limited to allowed types with allowed subtrees.
+ */
+export function filterScrapedBlocks( blocks ) {
+	return blocks.filter(
+		( block ) =>
+			block.name &&
+			ALLOWED_SCRAPED_BLOCKS.has( block.name ) &&
+			isBlockSubtreeAllowed( block )
+	);
+}
+
+/**
  * Sidebar Block Inspector component.
  *
  * This must be a separate component to access BlockEditorProvider context.
@@ -462,7 +529,9 @@ export default function PressThisEditor( {
 
 		// Parse and append the scraped content blocks (with undo level).
 		if ( pendingScrape.content ) {
-			const newBlocks = parse( pendingScrape.content );
+			const newBlocks = filterScrapedBlocks(
+				parse( pendingScrape.content )
+			);
 			undoStackRef.current = [
 				...undoStackRef.current,
 				blocksRef.current,

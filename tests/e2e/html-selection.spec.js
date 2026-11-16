@@ -334,10 +334,11 @@ test.describe( 'HTML Selection Preservation', () => {
 			} );
 			await waitForBlocks( page );
 
-			// The safe link should be present.
+			// The safe link should be present. safeUrl() normalizes the bare
+			// origin to include a trailing slash.
 			await expect(
 				page.locator(
-					`${ editorContent } a[href="https://safe.example"]`
+					`${ editorContent } a[href="https://safe.example/"]`
 				)
 			).toBeVisible();
 
