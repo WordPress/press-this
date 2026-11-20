@@ -231,14 +231,28 @@ function press_this_register_rest_routes() {
 					'default'           => '',
 				),
 				'categories'     => array(
-					'type'    => 'array',
-					'items'   => array( 'type' => 'integer' ),
-					'default' => array(),
+					'type'  => 'array',
+					'items' => array( 'type' => 'integer' ),
+					// No default: an absent param must leave the existing
+					// categories alone, while an explicit empty array clears
+					// them. A default of array() would make absent clear too.
 				),
 				'tags'           => array(
-					'type'    => 'array',
-					'items'   => array( 'type' => 'string' ),
-					'default' => array(),
+					'type'  => 'array',
+					'items' => array( 'type' => 'string' ),
+				),
+				'tax_input'      => array(
+					'type'                 => 'object',
+					// Keys are taxonomy names. Values are arrays of term IDs for
+					// hierarchical taxonomies and term names for flat ones.
+					// A taxonomy present with an empty array clears its terms;
+					// a taxonomy absent from the object leaves its terms alone.
+					'description'          => __( 'Custom taxonomy terms to assign to the post: term IDs for hierarchical taxonomies, term names for non-hierarchical ones.', 'press-this' ),
+					'default'              => array(),
+					'additionalProperties' => array(
+						'type'  => 'array',
+						'items' => array( 'type' => array( 'integer', 'string' ) ),
+					),
 				),
 				'featured_image' => array(
 					'type'              => 'integer',
@@ -352,22 +366,67 @@ function press_this_rest_save_post( $request ) {
 	);
 
 	// Handle categories if user can assign.
-	$category_tax = get_taxonomy( 'category' );
-	if ( current_user_can( $category_tax->cap->assign_terms ) ) {
+	$category_tax   = get_taxonomy( 'category' );
+	$set_categories = null;
+	if ( $category_tax && is_object_in_taxonomy( $post_type, 'category' ) && current_user_can( $category_tax->cap->assign_terms ) ) {
 		$categories = $request->get_param( 'categories' );
-		if ( ! empty( $categories ) ) {
-			$post_data['post_category'] = array_map( 'absint', $categories );
+		if ( is_array( $categories ) ) {
+			// The client sent this field, so an empty array means "clear the
+			// categories", not "leave them alone". The route registers no
+			// default, so only a param actually present in the request can
+			// reach this branch.
+			$set_categories = array_values( array_filter( array_map( 'absint', $categories ) ) );
 		}
 	}
 
 	// Handle tags if user can assign.
-	$tag_tax = get_taxonomy( 'post_tag' );
-	if ( current_user_can( $tag_tax->cap->assign_terms ) ) {
+	$tag_tax  = get_taxonomy( 'post_tag' );
+	$set_tags = null;
+	if ( $tag_tax && is_object_in_taxonomy( $post_type, 'post_tag' ) && current_user_can( $tag_tax->cap->assign_terms ) ) {
 		$tags = $request->get_param( 'tags' );
-		if ( ! empty( $tags ) ) {
-			$post_data['tax_input'] = array(
-				'post_tag' => array_map( 'sanitize_text_field', $tags ),
-			);
+		if ( is_array( $tags ) ) {
+			// The client sent this field, so an empty array means "clear the
+			// tags", not "leave them alone". No route default is registered,
+			// so only a param actually present in the request gets here.
+			$set_tags = array_values( array_filter( array_map( 'sanitize_text_field', $tags ) ) );
+		}
+	}
+
+	// Handle custom taxonomies (excludes category/post_tag, which are handled above).
+	$custom_tax_input = $request->get_param( 'tax_input' );
+	$set_terms        = array();
+	if ( ! empty( $custom_tax_input ) && is_array( $custom_tax_input ) ) {
+		foreach ( $custom_tax_input as $tax_name => $terms ) {
+			$tax_name = sanitize_key( $tax_name );
+			if ( in_array( $tax_name, array( 'category', 'post_tag' ), true ) ) {
+				continue;
+			}
+
+			if ( ! is_object_in_taxonomy( $post_type, $tax_name ) ) {
+				continue;
+			}
+
+			$tax_object = get_taxonomy( $tax_name );
+			if ( ! $tax_object || ! $tax_object->show_ui || ! current_user_can( $tax_object->cap->assign_terms ) ) {
+				continue;
+			}
+
+			if ( ! is_array( $terms ) ) {
+				continue;
+			}
+
+			// Hierarchical taxonomies take term IDs. Flat ones take names, so
+			// cast to strings: wp_set_post_terms() treats an integer as an ID.
+			if ( $tax_object->hierarchical ) {
+				$terms = array_filter( array_map( 'absint', $terms ) );
+			} else {
+				$terms = array_filter( array_map( 'sanitize_text_field', array_map( 'strval', $terms ) ) );
+			}
+
+			// The client sent this taxonomy, so an empty array means "clear the
+			// terms", not "leave them alone". Only keys absent from the request
+			// are left untouched.
+			$set_terms[ $tax_name ] = array_values( $terms );
 		}
 	}
 
@@ -443,6 +502,45 @@ function press_this_rest_save_post( $request ) {
 			__( 'Unable to save the post. Please try again.', 'press-this' ),
 			array( 'status' => 500 )
 		);
+	}
+
+	// Apply term changes directly. wp_update_post() cannot clear terms:
+	// for categories it falls back to the existing terms when the list is
+	// empty (wp-includes/post.php), and for taxonomies it restores existing
+	// terms from an empty tax_input entry. Only call these when the client
+	// actually sent the field; null means "leave untouched".
+	if ( null !== $set_categories ) {
+		$result = wp_set_post_categories( $post_id, $set_categories );
+		if ( is_wp_error( $result ) ) {
+			return new WP_Error(
+				'press_this_term_assignment_failed',
+				__( 'Unable to assign the categories. Please try again.', 'press-this' ),
+				array( 'status' => 500 )
+			);
+		}
+	}
+	if ( null !== $set_tags ) {
+		$result = wp_set_post_tags( $post_id, $set_tags );
+		if ( is_wp_error( $result ) ) {
+			return new WP_Error(
+				'press_this_term_assignment_failed',
+				__( 'Unable to assign the tags. Please try again.', 'press-this' ),
+				array( 'status' => 500 )
+			);
+		}
+	}
+	foreach ( $set_terms as $tax_name => $terms ) {
+		$result = wp_set_post_terms( $post_id, $terms, $tax_name );
+		if ( is_wp_error( $result ) ) {
+			$taxonomy = get_taxonomy( $tax_name );
+			$label    = ( $taxonomy && ! empty( $taxonomy->labels->name ) ) ? strtolower( $taxonomy->labels->name ) : $tax_name;
+			return new WP_Error(
+				'press_this_term_assignment_failed',
+				/* translators: %s: taxonomy label. */
+				sprintf( __( 'Unable to assign the %s terms. Please try again.', 'press-this' ), $label ),
+				array( 'status' => 500 )
+			);
+		}
 	}
 
 	// Set post format.

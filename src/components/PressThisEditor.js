@@ -52,7 +52,8 @@ import LinkEscapeFix from './LinkEscapeFix';
 import ConnectedScrapedMediaPanel from './ConnectedScrapedMediaPanel';
 import FeaturedImagePanel from './FeaturedImagePanel';
 import CategoryPanel from './CategoryPanel';
-import { isStandaloneMode } from '../utils';
+import TaxonomyPanel from './TaxonomyPanel';
+import { isStandaloneMode, getWpRestBaseUrl } from '../utils';
 
 /**
  * Block types the scraped-content builder is allowed to produce.
@@ -258,28 +259,6 @@ function performSafeRedirect( url, inParentWindow = false ) {
 }
 
 /**
- * Build the WordPress REST API base URL for core endpoints.
- *
- * Handles both pretty permalinks (/wp-json/) and index.php?rest_route= formats.
- *
- * @param {string} pressThisRestUrl The Press This REST URL (e.g., /wp-json/press-this/v1/ or index.php?rest_route=/press-this/v1/).
- * @return {string} The base URL for WordPress core REST endpoints.
- */
-function getWpRestBaseUrl( pressThisRestUrl ) {
-	// Check if using index.php?rest_route= format.
-	if ( pressThisRestUrl.includes( 'rest_route=' ) ) {
-		// Extract the base URL up to and including rest_route=.
-		const match = pressThisRestUrl.match( /^(.*[?&]rest_route=)/ );
-		if ( match ) {
-			return match[ 1 ] + '/';
-		}
-	}
-
-	// Pretty permalinks format - replace the namespace.
-	return pressThisRestUrl.replace( /press-this\/v1\/$/, '' );
-}
-
-/**
  * Format a date string for display in the schedule snackbar.
  *
  * Uses the browser's default locale for formatting so the date is displayed
@@ -342,6 +321,7 @@ function formatScheduleDate( dateString, timezone ) {
  * @param {Array}                       props.images             Scraped images from source.
  * @param {Array}                       props.embeds             Scraped embeds from source.
  * @param {Object}                      props.categories         Available categories.
+ * @param {Array}                       props.taxonomies         Custom taxonomies registered for the post type.
  * @param {Array}                       props.postFormats        Available post formats.
  * @param {Object}                      props.capabilities       User capabilities.
  * @param {Object}                      props.restConfig         REST API configuration.
@@ -364,6 +344,7 @@ export default function PressThisEditor( {
 	images = [],
 	embeds = [],
 	categories: initialCategories = [],
+	taxonomies = [],
 	postFormats = [],
 	capabilities = {},
 	restConfig = {},
@@ -394,6 +375,9 @@ export default function PressThisEditor( {
 	const [ postFormat, setPostFormat ] = useState( initialFormat );
 	const [ selectedCategories, setSelectedCategories ] = useState( [] );
 	const [ tags, setTags ] = useState( [] );
+	// Custom taxonomy selections, keyed by taxonomy name: term IDs for
+	// hierarchical taxonomies, term names for flat taxonomies.
+	const [ taxonomyTerms, setTaxonomyTerms ] = useState( {} );
 	const [ featuredImageId, setFeaturedImageId ] = useState( 0 );
 	const [ isSaving, setIsSaving ] = useState( false );
 	const [ isReady, setIsReady ] = useState( false );
@@ -610,6 +594,7 @@ export default function PressThisEditor( {
 						format: postFormat,
 						categories: selectedCategories,
 						tags,
+						tax_input: taxonomyTerms,
 						featured_image: featuredImageId,
 						force_redirect: options.forceRedirect || false,
 						date: options.date || '',
@@ -681,6 +666,7 @@ export default function PressThisEditor( {
 			postFormat,
 			selectedCategories,
 			tags,
+			taxonomyTerms,
 			featuredImageId,
 			post.id,
 			restConfig,
@@ -795,6 +781,24 @@ export default function PressThisEditor( {
 	 */
 	const handleTagsChange = useCallback( ( newTags ) => {
 		setTags( newTags );
+	}, [] );
+
+	/**
+	 * Build a selection updater for a single custom taxonomy.
+	 *
+	 * @param {string} taxonomyName Taxonomy name.
+	 * @return {(value: Array | ((prev: Array) => Array)) => void} Updater accepting the new value or an updater function.
+	 */
+	const getTaxonomySelectionSetter = useCallback( ( taxonomyName ) => {
+		return ( value ) => {
+			setTaxonomyTerms( ( prev ) => ( {
+				...prev,
+				[ taxonomyName ]:
+					typeof value === 'function'
+						? value( prev[ taxonomyName ] || [] )
+						: value,
+			} ) );
+		};
 	}, [] );
 
 	// Editor settings.
@@ -1068,6 +1072,24 @@ export default function PressThisEditor( {
 											) }
 										</PanelBody>
 									) }
+
+									{ /* Custom Taxonomy Panels */ }
+									{ taxonomies.map( ( taxonomy ) => (
+										<TaxonomyPanel
+											key={ taxonomy.name }
+											taxonomy={ taxonomy }
+											selectedTerms={
+												taxonomyTerms[
+													taxonomy.name
+												] || []
+											}
+											onSelectionChange={ getTaxonomySelectionSetter(
+												taxonomy.name
+											) }
+											restUrl={ restConfig.restUrl }
+											restNonce={ restConfig.restNonce }
+										/>
+									) ) }
 								</Panel>
 							</div>
 						</div>

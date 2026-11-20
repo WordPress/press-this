@@ -36,6 +36,7 @@ Press This 2.0 includes new filters for customization:
 
 * `press_this_allowed_blocks` - Customize which blocks are available in the editor
 * `press_this_post_format_suggestion` - Modify the auto-suggested post format
+* `press_this_taxonomies` - Customize the custom taxonomies shown in the panel
 
 See the [Developer Documentation](#developer-documentation) section below for details.
 
@@ -109,6 +110,21 @@ The `$data` array contains scraped content including:
 - `_embeds` - Array of embed URLs
 - `_meta` - Meta tag data
 - `_jsonld` - JSON-LD structured data
+
+**press_this_taxonomies**
+
+Customize the custom taxonomies shown in the Press This panel. Category and Tags always have their own dedicated panels and are not affected by this filter.
+
+`
+add_filter( 'press_this_taxonomies', function( $taxonomies_data, $post_type ) {
+    // Remove a taxonomy from the panel entirely.
+    return array_values( array_filter( $taxonomies_data, function( $taxonomy ) {
+        return 'my_internal_taxonomy' !== $taxonomy['name'];
+    } ) );
+}, 10, 2 );
+`
+
+Only taxonomies registered for the post type with `show_ui` enabled are included by default, and only if the current user can assign terms for that taxonomy.
 
 = Preserved Hooks from 1.x =
 
