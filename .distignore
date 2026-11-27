@@ -1,0 +1,68 @@
+# Files and folders left out of the distributed plugin (press-this.zip).
+#
+# bin/build-dist.js copies everything in the repository except what matches
+# below, so this file is the single source of truth for both `npm run build:dist`
+# and the Build Release workflow.
+#
+# Syntax (a subset of .gitignore):
+#   - Blank lines and lines starting with # are ignored.
+#   - A leading / anchors the pattern to the repository root.
+#   - Without a leading /, the pattern matches that name at any depth.
+#   - A trailing / matches directories only.
+#   - * matches any run of characters except /.
+
+# Version control and repository metadata
+/.git
+/.github/
+/.gitattributes
+/.gitignore
+/.svnignore
+/.distignore
+
+# Developer documentation
+/CLAUDE.md
+/UPGRADE.md
+/docs/
+
+# Source, tests, and tooling (compiled output ships from /build/)
+/src/
+/tests/
+/bin/
+/node_modules/
+/vendor/
+/package.json
+/package-lock.json
+/composer.json
+/composer.lock
+/webpack.config.js
+/eslint.config.js
+/vitest.config.mjs
+/playwright.config.js
+/phpunit.xml
+/.phpcs.xml.dist
+/.nvmrc
+
+# Local environments and build artifacts
+/.wp-env.json
+/.wp-env/
+/wordpress/
+/playground-blueprint.json
+/dist/
+/*.zip
+
+# Test output and caches
+/test-results/
+/playwright-report/
+/.auth/
+/.phpunit.cache/
+/.phpunit.result.cache
+
+# Editor, agent, and OS files
+/.idea/
+/.vscode/
+/.claude/
+/.playwright-mcp/
+*.sublime-*
+.DS_Store
+Thumbs.db
+*.log

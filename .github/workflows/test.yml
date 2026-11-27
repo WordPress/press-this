@@ -28,6 +28,12 @@ jobs:
       - name: Build assets
         run: npm run build
 
+      # Packages the plugin the same way releases do, so a new root file that
+      # is neither in .distignore nor expected in the package fails the PR
+      # instead of the release.
+      - name: Check plugin package
+        run: node bin/build-dist.js
+
       - name: Run JS unit tests
         run: npm run test:unit
 
