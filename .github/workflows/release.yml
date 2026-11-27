@@ -39,7 +39,6 @@ jobs:
           cp press-this-plugin.php dist/press-this/
           cp class-wp-press-this-plugin.php dist/press-this/
           cp readme.txt dist/press-this/
-          cp UPGRADE.md dist/press-this/
 
           # Copy directories
           cp -r includes dist/press-this/
