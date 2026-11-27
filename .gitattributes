@@ -44,6 +44,7 @@ Gruntfile.js export-ignore
 .gitignore export-ignore
 .gitattributes export-ignore
 .svnignore export-ignore
+.distignore export-ignore
 
 # Documentation (internal only)
 SECURITY-AUDIT.md export-ignore
